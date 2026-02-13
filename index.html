@@ -65,8 +65,8 @@
                 <p class="text-sm text-gray-500 mb-8">Identifique-se para acessar seu espaço.</p>
                 <div class="w-full mb-4">
                     <select id="user-gender" class="w-full p-4 mb-3 rounded-2xl border border-sky-100 bg-white/80 text-sm outline-none focus:ring-2 focus:ring-sky-200">
-                        <option value="M">Sou Homem</option>
-                        <option value="F">Sou Mulher</option>
+                        <option value="homem">Sou Homem</option>
+                        <option value="mulher">Sou Mulher</option>
                     </select>
                     <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl border border-sky-100 bg-white/80 text-center uppercase font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-200">
                 </div>
@@ -150,7 +150,7 @@
                     <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-amber-400 text-3xl"></i></div>
                     <h2 class="text-xl font-bold text-gray-800 mb-2">Sua Esperança</h2>
                     <p class="text-xs text-gray-500 mb-6">Receba uma mensagem e uma imagem para o seu coração.</p>
-                    <button onclick="generateHopeHybrid()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Abrir Presente</button>
+                    <button onclick="generateHopeGemini()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Abrir Presente</button>
                 </div>
                 <div id="hope-loading" class="hidden">
                     <div class="loader mx-auto mb-4 border-t-amber-500"></div>
@@ -163,7 +163,7 @@
                     <div class="bg-white/80 p-5 rounded-xl border border-amber-100 shadow-sm w-full">
                         <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
                     </div>
-                    <button onclick="generateHopeHybrid()" class="mt-6 text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                    <button onclick="generateHopeGemini()" class="mt-6 text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
                 </div>
             </div>
         </section>
@@ -177,8 +177,10 @@
 
     <script>
         const GROQ_API_KEY = "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";
+        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
+        
         let clientName = "Visitante";
-        let clientGender = "M";
+        let clientGender = "homem";
         let chatHistory = [];
         let isWaiting = false;
         let messageCounter = 0;
@@ -191,12 +193,22 @@
         };
 
         const therapists = [
-            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart', prompt: "Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Chame homens de 'querido' e mulheres de 'querida'. Respostas curtas, pontuais e demonstre preocupação. Sempre pergunte o que a pessoa acha da sua ideia." },
-            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie', prompt: "Sua persona é o Dr. William. Você já é conhecido, não se apresente. Seja direto, solucione demandas de forma pontual. Demonstre preocupação técnica e peça a opinião do paciente sobre as sugestões." },
-            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon', prompt: "Sua persona é a Dra. Yara, suporte noturno. Seja poética, serena e calma." },
-            { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset', prompt: "Você é a Fernanda, secretária. Seja educada e eficiente nos agendamentos." }
+            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart', prompt: "" },
+            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie', prompt: "" },
+            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon', prompt: "" },
+            { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset', prompt: "" }
         ];
-        let activeTherapist = null;
+
+        function getSystemPrompt(therapistId) {
+            const tratamento = clientGender === "homem" ? "querido" : "querida";
+            const prompts = {
+                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Suas respostas devem ser curtas, pontuais e demonstrar preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó.`,
+                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente, vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual e peça a opinião do paciente sobre as reflexões técnicas que você propor.`,
+                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma.`,
+                'fer': `Você é a Fernanda, secretária eficiente. Trate o paciente como '${tratamento}'. Auxilie nos agendamentos.`
+            };
+            return prompts[therapistId] || "";
+        }
 
         function login() {
             const name = document.getElementById('user-name-input').value.trim();
@@ -222,13 +234,11 @@
             return therapists.map(t => {
                 let status = 'online';
                 let label = 'Online';
-                
                 if (isNight) {
                     if (t.id !== 'yara') { status = 'offline'; label = 'Offline'; }
                 } else {
                     if (t.id === 'yara') { status = 'offline'; label = 'Offline'; }
                     if (t.id === 'william') { status = 'busy'; label = 'Ocupado'; }
-                    // Lia ocupada nos primeiros 10 min de cada hora
                     if (t.id === 'lia' && min < 10) { status = 'busy'; label = 'Ocupada'; }
                 }
                 return { ...t, status, label };
@@ -256,7 +266,6 @@
                             <span class="text-[8px] uppercase font-bold text-gray-400">${t.label}</span>
                         </div>
                     </div>
-                    ${t.id === 'william' ? '<i class="fas fa-clock text-amber-500 text-xs" title="Espera de 15 min"></i>' : ''}
                 `;
                 list.appendChild(card);
             });
@@ -266,6 +275,7 @@
         function startChat(id) {
             activeTherapist = therapists.find(t => t.id === id);
             const availability = checkAvailability().find(t => t.id === id);
+            const tratamento = clientGender === "homem" ? "querido" : "querida";
             
             document.getElementById('active-name').innerText = activeTherapist.name;
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
@@ -278,13 +288,13 @@
             document.getElementById('chat-messages').innerHTML = '';
             messageCounter = 0;
             
-            chatHistory = [{ role: "system", content: `${activeTherapist.prompt} Paciente: ${clientName}. Gênero: ${clientGender}. Regras: Respostas curtas, sem enrolação. Sempre pergunte a opinião do paciente sobre sua sugestão.` }];
+            chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
             if (id === 'william') {
                 addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'system');
             }
             
-            const welcome = id === 'lia' ? `Oi ${clientGender === 'M' ? 'querido' : 'querida'}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
@@ -309,7 +319,6 @@
             isWaiting = true;
             messageCounter++;
 
-            // Lógica de Status da Lia
             if (activeTherapist.id === 'lia') {
                 document.getElementById('active-status-dot').className = "status-dot status-online";
                 document.getElementById('active-status-text').innerText = "Online";
@@ -318,7 +327,6 @@
             let waitTime = messageCounter % 2 !== 0 ? 20000 : 30000;
             let typingTime = messageCounter % 2 !== 0 ? 40000 : 30000;
 
-            // Busca na API em paralelo
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
@@ -327,7 +335,6 @@
             .then(res => res.json())
             .catch(() => null);
 
-            // Sequência Dinâmica
             setTimeout(() => {
                 document.getElementById('typing-box').classList.remove('hidden');
                 setTimeout(async () => {
@@ -344,44 +351,57 @@
             }, waitTime);
         };
 
-        // --- CAIXINHA MELHORADA ---
-        const styles = ["nature", "abstract", "cosmic", "ocean", "forest", "dreamy"];
-        
-        async function generateHopeHybrid() {
+        // --- CAIXINHA VIA GEMINI (TEXTO E IMAGEM) ---
+        async function generateHopeGemini() {
             if(isWaiting) return;
             isWaiting = true;
             document.getElementById('hope-start').classList.add('hidden');
             document.getElementById('hope-result').classList.add('hidden');
             document.getElementById('hope-loading').classList.remove('hidden');
             
-            let frase = "Tudo passa. Respire.";
-            let imgPrompt = "serene landscape";
+            let frase = "Respire... tudo vai ficar bem.";
+            let promptImagem = "peaceful zen garden nature high resolution";
 
             try {
-                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                // 1. Gera o texto da frase pelo Gemini
+                const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role: "user", content: "Escreva uma frase de esperança curta. Depois uma palavra em inglês para imagem."}], temperature: 0.9 })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. Responda apenas com a frase." }] }]
+                    })
                 });
-                if(response.ok) {
-                    const data = await response.json();
-                    const lines = data.choices[0].message.content.split('\n');
-                    frase = lines[0].replace(/[*"]/g, '');
-                    imgPrompt = lines.pop().trim();
+                const dataText = await resText.json();
+                frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
+
+                // 2. Gera a imagem pelo Gemini Imagen
+                const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: { prompt: `serene peaceful nature landscape, soft sunlight, high resolution, professional photography, seed ${Math.random()}` },
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const dataImg = await resImg.json();
+                if (dataImg.predictions?.[0]?.bytesBase64Encoded) {
+                    document.getElementById('hope-img').src = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    handleImageError(document.getElementById('hope-img'));
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Erro Gemini:", e);
+                handleImageError(document.getElementById('hope-img'));
+            }
 
             document.getElementById('hope-msg').innerText = frase;
-            const style = styles[Math.floor(Math.random()*styles.length)];
-            const safePrompt = encodeURIComponent(`${imgPrompt} ${style} high resolution serene`);
-            document.getElementById('hope-img').src = `https://image.pollinations.ai/prompt/${safePrompt}?width=800&height=600&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
             
             setTimeout(() => {
                 document.getElementById('hope-loading').classList.add('hidden');
                 document.getElementById('hope-result').classList.remove('hidden');
                 document.getElementById('hope-result').style.display = 'flex';
                 isWaiting = false;
-            }, 2500);
+            }, 1000);
         }
 
         function handleImageError(img) {
