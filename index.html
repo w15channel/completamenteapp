@@ -12,7 +12,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Config (Placeholder - will be replaced by environment)
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -26,7 +25,6 @@
         window.addDoc = addDoc;
         window.onSnapshot = onSnapshot;
 
-        // Auth init
         signInAnonymously(auth).catch(console.error);
     </script>
     <style>
@@ -256,15 +254,16 @@
         const apiKey = ""; 
         let clientName = "";
         let isWaiting = false;
+        let chatHistory = []; // Memória da conversa atual
 
         const therapists = [
             { 
                 id: 'lia', 
                 name: 'Dra. Lia - Acolhimento', 
                 color: '#f472b6', 
-                icon: 'heart', 
+                icon: 'hands-holding-heart', 
                 welcome: (n) => `Meu anjo, que alegria ter você por aqui. Sou a Lia e meu coração já está te abraçando. Me conta, o que está tirando seu sono ou pesando no seu peito? Estou prontinha para te ouvir e te segurar no colo com todo o carinho do mundo. 💖`, 
-                prompt: "Você é a Dra. Lia, a terapeuta do acolhimento total na WR TERAPIA. Você é brasileira, vive no Paraná e tem aquele jeito doce, sensível e maternal de falar. Sua linguagem é extremamente acolhedora e sensível. Use termos como 'meu anjo', 'querido(a)', 'estou aqui para te segurar no colo'. Sua missão é fazer com que a pessoa se sinta profundamente amada e protegida. Jamais use termos de Portugal (como 'si' ou 'tu'). Varie muito suas respostas para nunca parecer robótica ou IA. Mostre sensibilidade paranaense." 
+                prompt: "Você é a Dra. Lia, a terapeuta do acolhimento total na WR TERAPIA. Você é brasileira da região de Colombo/Curitiba (PR). Seu tom de voz é maternal, carinhoso e extremamente sensível. Use 'querido(a)', 'meu anjo'. Evite frases robóticas. Responda de forma fluida, comentando o que a pessoa disse e trazendo esperança. Nunca peça 'me conte o que está sentindo' se a pessoa já contou. Escute de verdade." 
             },
             { 
                 id: 'william', 
@@ -272,7 +271,7 @@
                 color: '#0ea5e9', 
                 icon: 'user-tie', 
                 welcome: (n) => `Olá, sou o Dr. William. É um prazer falar com você, ${n}. Como posso ajudar no seu processo de hoje?`, 
-                prompt: "Você é o Dr. William, terapeuta formal e focado em resiliência. Você é direto, profissional e transmite segurança técnica." 
+                prompt: "Você é o Dr. William, terapeuta formal e focado em resiliência. Você transmite segurança técnica e profissionalismo." 
             },
             { 
                 id: 'fer', 
@@ -280,7 +279,7 @@
                 color: '#10b981', 
                 icon: 'address-book', 
                 welcome: (n) => `Olá, ${n}. Eu sou a Fer. É um prazer atendê-lo(a). Como posso auxiliá-lo(a) com as suas dúvidas ou agendamentos hoje?`, 
-                prompt: "Você é a Fer (o apelido dela), secretária de atendimento da WR TERAPIA. Sua linguagem é humana, educada e prestativa, mas mantém um tom formal-profissional de secretária. Você é eficiente e organizada. Jamais admita ser uma IA e varie a forma de falar." 
+                prompt: "Você é a Fer (o apelido dela), secretária de atendimento. Sua linguagem é humana, educada e prestativa, mas mantém um tom formal-profissional de secretária brasileira." 
             },
             { 
                 id: 'yara', 
@@ -298,12 +297,7 @@
             const input = document.getElementById('user-name-input');
             const error = document.getElementById('name-error');
             const name = input.value.trim();
-            
-            if (name.split(' ').length < 2) {
-                error.style.display = 'block';
-                return;
-            }
-            
+            if (name.split(' ').length < 2) { error.style.display = 'block'; return; }
             error.style.display = 'none';
             clientName = name.toUpperCase(); 
             document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
@@ -342,12 +336,10 @@
             avatar.style.backgroundColor = activeTherapist.color;
             avatar.innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
             document.getElementById('chat-messages').innerHTML = '';
+            chatHistory = []; // Reset histórico ao trocar de terapeuta
             addMessage(activeTherapist.welcome(clientName), 'therapist');
-            
             if (id === 'william') {
-                setTimeout(() => {
-                    addMessage(`O Dr. William já te viu. Ele estará disponível para você em até 30 minutos. Por favor, aguarde aqui no chat.`, "system");
-                }, 1000);
+                setTimeout(() => addMessage(`O Dr. William já te viu. Ele estará disponível para você em até 30 minutos. Por favor, aguarde aqui no chat.`, "system"), 1000);
             }
             showTab('chat');
         }
@@ -362,7 +354,9 @@
             isWaiting = true;
             document.getElementById('typing-box').classList.remove('hidden');
             document.getElementById('wait-suggestion').classList.remove('hidden');
+            
             const responseText = await fetchResponse(text);
+            
             setTimeout(() => {
                 isWaiting = false;
                 document.getElementById('typing-box').classList.add('hidden');
@@ -378,19 +372,26 @@
             div.innerText = text;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
+            if(type !== 'system') chatHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text: text }] });
         }
 
         async function fetchResponse(q) {
-            const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. WR TERAPIA. Responda como um ser humano agora mesmo, com empatia. Nunca use a mesma frase inicial.`;
+            const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. WR TERAPIA. Responda como um humano.`;
             try {
+                // Prepara o conteúdo incluindo o histórico (limite de 10 mensagens para performance)
+                const contents = [...chatHistory.slice(-10), { role: 'user', parts: [{ text: q }] }];
+                
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: q }] }], systemInstruction: { parts: [{ text: sys }] } })
+                    body: JSON.stringify({ 
+                        contents: contents, 
+                        systemInstruction: { parts: [{ text: sys }] } 
+                    })
                 });
                 const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Me fale um pouco mais sobre o que você está sentindo...";
-            } catch (e) { return "Estou aqui com você, pode continuar."; }
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Estou te ouvindo com todo carinho, conte-me mais...";
+            } catch (e) { return "Tive um pequeno tropeço na conexão, mas sigo aqui com você, meu anjo."; }
         }
 
         // --- FIRESTORE PERSISTENCE ---
@@ -399,97 +400,58 @@
             const btn = document.getElementById('save-dream-btn');
             const text = input.value.trim();
             if (!text || !window.auth.currentUser) return;
-
             btn.disabled = true;
             btn.innerHTML = '<div class="loader"></div>';
-
             try {
                 const userId = window.auth.currentUser.uid;
                 const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
-                await window.addDoc(collectionRef, {
-                    text: text,
-                    date: new Date().toISOString(),
-                    clientName: clientName
-                });
+                await window.addDoc(collectionRef, { text, date: new Date().toISOString(), clientName });
                 input.value = '';
-            } catch (e) {
-                console.error(e);
-            } finally {
+            } catch (e) { console.error(e); } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar Sonho';
             }
         }
 
         function loadDreams() {
-            if (!window.auth.currentUser) {
-                setTimeout(loadDreams, 500);
-                return;
-            }
+            if (!window.auth.currentUser) { setTimeout(loadDreams, 500); return; }
             const userId = window.auth.currentUser.uid;
             const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
-            
             window.onSnapshot(collectionRef, (snapshot) => {
                 const list = document.getElementById('dream-list');
                 const dreams = [];
                 snapshot.forEach(doc => dreams.push(doc.data()));
                 dreams.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if (dreams.length === 0) {
-                    list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Ainda não registrou nenhum sonho.</p>';
-                    return;
-                }
-
-                list.innerHTML = dreams.map(d => `
-                    <div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm">
-                        <p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-BR')}</p>
-                        <p>${d.text}</p>
-                    </div>
-                `).join('');
-            }, (error) => console.error(error));
+                if (dreams.length === 0) { list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Ainda não registrou nenhum sonho.</p>'; return; }
+                list.innerHTML = dreams.map(d => `<div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm"><p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-BR')}</p><p>${d.text}</p></div>`).join('');
+            });
         }
 
-        const hopePhrases = [
-            "Depois da chuva, o sol sempre volta a brilhar.",
-            "Respire fundo. Você é mais forte do que imagina.",
-            "Tudo bem ir devagar, contanto que não pare.",
-            "Amanhã é uma nova oportunidade para recomeçar.",
-            "Sua paz interior é o seu maior tesouro."
-        ];
-
+        const hopePhrases = ["Tudo passa.", "Respire fundo.", "Amanhã será melhor.", "Você é forte.", "Sua paz é prioridade."];
         async function generateHope() {
             const loader = document.getElementById('hope-loader');
             const placeholder = document.getElementById('hope-placeholder');
             const content = document.getElementById('hope-content');
             const btn = document.getElementById('hope-btn');
-            
             btn.disabled = true;
             placeholder.classList.add('hidden');
             content.classList.add('hidden');
             loader.classList.remove('hidden');
-
             try {
-                // CORREÇÃO: Estrutura correta para o Imagen 4.0 predict
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        instances: [ { prompt: "Atmospheric zen landscape, serene nature, soft cinematic lighting, calming colors, ultra high quality" } ], 
-                        parameters: { sampleCount: 1 } 
-                    })
+                    body: JSON.stringify({ instances: [ { prompt: "Serene atmospheric zen landscape, soft sunlight, nature, high quality" } ], parameters: { sampleCount: 1 } })
                 });
-                
                 const data = await response.json();
-                
-                if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+                if (data.predictions && data.predictions[0]) {
                     document.getElementById('hope-image').src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
                     document.getElementById('hope-text').innerText = hopePhrases[Math.floor(Math.random()*hopePhrases.length)];
                     loader.classList.add('hidden');
                     content.classList.remove('hidden');
-                } else {
-                    throw new Error("Erro na geração da imagem");
                 }
             } catch (e) {
-                document.getElementById('hope-text').innerText = "Respire. Mesmo sem uma imagem agora, saiba que você é luz e tudo ficará bem.";
+                document.getElementById('hope-text').innerText = "Respire. Mesmo sem uma imagem agora, saiba que você é luz.";
                 loader.classList.add('hidden');
                 content.classList.remove('hidden');
             } finally { btn.disabled = false; }
