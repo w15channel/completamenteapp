@@ -6,27 +6,6 @@
     <title>Harmonia Diária - WR TERAPIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wr-terapia-vFinal';
-
-        window.db = db;
-        window.auth = auth;
-        window.appId = appId;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.onSnapshot = onSnapshot;
-
-        signInAnonymously(auth).catch(console.error);
-    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
@@ -36,434 +15,301 @@
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
             min-height: 100vh; 
             color: #334155; 
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
         }
         .heading-font { font-family: 'Quicksand', sans-serif; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .glass-card {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
         }
-
-        .chat-container { height: calc(100vh - 380px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; }
-        .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; }
-        .message.therapist { align-self: flex-start; background: white; color: #334155; border-bottom-left-radius: 0.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .message.system { align-self: center; background: rgba(255, 255, 255, 0.6); color: #475569; font-size: 0.8rem; text-align: center; padding: 12px; border-radius: 12px; width: 95%; border: 1px solid rgba(14, 165, 233, 0.2); font-weight: 500; }
-
-        .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border-radius: 20px; width: fit-content; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .dot { width: 4px; height: 4px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        /* Chat */
+        .chat-container { height: calc(100vh - 380px); overflow-y: auto; scroll-behavior: smooth; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 10px; }
+        .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
+        .message.therapist { align-self: flex-start; background: white; color: #334155; border-bottom-left-radius: 0.2rem; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Loader e Animações */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .hope-img { width: 100%; height: 220px; object-fit: cover; border-radius: 1rem; }
-        iframe { border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #000; }
-        
-        .error-msg { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; display: none; }
+        .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="pb-24">
 
-    <header class="p-4 text-center">
+    <header class="p-5 text-center sticky top-0 z-10 bg-white/30 backdrop-blur-md border-b border-white/20">
         <h1 class="text-2xl font-bold text-sky-800 heading-font">Harmonia Diária</h1>
-        <p class="text-sky-600 text-[10px] uppercase tracking-widest font-bold">WR TERAPIA • Suporte Total</p>
+        <p class="text-sky-600 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA</p>
     </header>
 
-    <main class="max-w-md mx-auto px-4">
+    <main class="max-w-md mx-auto px-4 pt-4">
         
-        <!-- ONBOARDING -->
         <section id="onboarding" class="tab-content active">
             <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
                 <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="fas fa-id-card text-sky-500 text-3xl"></i>
+                    <i class="fas fa-fingerprint text-sky-500 text-3xl"></i>
                 </div>
-                <h2 class="text-xl font-bold text-sky-900 mb-2">Oi, bem-vindo(a) à<br>WR TERAPIA</h2>
-                <p class="text-sm text-gray-500 mb-8">Para um atendimento personalizado, informe seu nome completo.</p>
-                <div class="w-full">
-                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="NOME COMPLETO" class="w-full p-4 rounded-2xl border border-sky-100 mb-2 outline-none text-center text-lg uppercase font-bold">
-                    <p id="name-error" class="error-msg">Por favor, insira seu nome completo.</p>
-                </div>
-                <button onclick="saveName()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition-all mt-4">Confirmar e Entrar</button>
+                <h2 class="text-2xl font-bold text-sky-900 mb-2 heading-font">Bem-vindo(a)</h2>
+                <p class="text-sm text-gray-500 mb-8">Identifique-se para acessar seu espaço.</p>
+                <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl border border-sky-100 bg-white/80 text-center uppercase font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-200">
+                <button onclick="login()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg mt-6 hover:bg-sky-600 transition-all">Entrar</button>
             </div>
         </section>
 
-        <!-- DASHBOARD -->
         <section id="home" class="tab-content">
             <div class="glass-card p-6 mb-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Olá, <span class="client-name"></span>!</h2>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="openChatSelection()" class="p-4 bg-white rounded-2xl border border-sky-50 flex flex-col items-center gap-2 hover:bg-sky-50 transition-all">
-                        <i class="fas fa-comment-dots text-sky-500 text-xl"></i>
-                        <span class="text-[10px] font-bold uppercase">Suporte</span>
-                    </button>
-                    <button onclick="showTab('relaxation')" class="p-4 bg-white rounded-2xl border border-purple-50 flex flex-col items-center gap-2 hover:bg-purple-50 transition-all">
-                        <i class="fas fa-couch text-purple-500 text-xl"></i>
-                        <span class="text-[10px] font-bold uppercase">Relaxar</span>
-                    </button>
-                    <button onclick="showTab('dreams')" class="p-4 bg-white rounded-2xl border border-blue-50 flex flex-col items-center gap-2 hover:bg-blue-50 transition-all">
-                        <i class="fas fa-moon text-blue-500 text-xl"></i>
-                        <span class="text-[10px] font-bold uppercase">Sonhos</span>
-                    </button>
-                    <button onclick="showTab('hope')" class="p-4 bg-white rounded-2xl border border-amber-50 flex flex-col items-center gap-2 hover:bg-amber-50 transition-all">
-                        <i class="fas fa-star text-amber-500 text-xl"></i>
-                        <span class="text-[10px] font-bold uppercase">Esperança</span>
-                    </button>
+                <p class="text-xs text-gray-400">Olá,</p>
+                <h2 class="text-xl font-bold text-gray-800 heading-font mb-6 client-name">Visitante</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="openChatSelection()" class="p-5 bg-white/80 rounded-2xl border border-sky-50 flex flex-col items-center gap-3 hover:bg-sky-50 shadow-sm transition-all"><i class="fas fa-comment-medical text-2xl text-sky-500"></i><span class="text-[10px] font-bold uppercase">Conversar</span></button>
+                    <button onclick="showTab('relaxation')" class="p-5 bg-white/80 rounded-2xl border border-purple-50 flex flex-col items-center gap-3 hover:bg-purple-50 shadow-sm transition-all"><i class="fas fa-spa text-2xl text-purple-500"></i><span class="text-[10px] font-bold uppercase">Relaxar</span></button>
+                    <button onclick="showTab('dreams')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-book-open text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Diário</span></button>
+                    <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-lightbulb text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
                 </div>
-            </div>
-            
-            <div class="glass-card p-5 bg-sky-50/40 text-center italic text-xs text-gray-500">
-                <p id="daily-quote">"A sua jornada é única. Respeite seu tempo."</p>
             </div>
         </section>
 
-        <!-- RELAXATION -->
-        <section id="relaxation" class="tab-content">
-            <div class="glass-card p-4">
-                <h2 class="text-lg font-bold text-sky-800 mb-2 text-center heading-font">Espaço de Relaxamento</h2>
-                <p class="text-[11px] text-gray-500 text-center mb-4 leading-relaxed px-4">Um refúgio para descompressão profunda. Ideal para preparar o sono, relaxar após um dia exaustivo e equilibrar sentimentos negativos.</p>
-                <div class="aspect-video w-full mb-4">
-                    <iframe id="yt-player" width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0?enablejsapi=1&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                </div>
-                
-                <div class="bg-sky-50 p-4 rounded-xl text-[11px] text-sky-800 leading-relaxed mb-4">
-                    <p class="font-bold mb-1"><i class="fas fa-info-circle mr-1"></i> Instrução:</p>
-                    Encontre uma posição confortável, feche os olhos e permita que a frequência sonora restaure seu equilíbrio interior.
-                </div>
-
-                <button onclick="window.open('https://www.youtube.com/watch?v=sF80I-TQiW0')" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md mb-2">
-                    <i class="fab fa-youtube"></i> Abrir no YouTube
-                </button>
-
-                <button onclick="showTab('home')" class="mt-4 w-full text-[10px] text-gray-400 font-bold uppercase tracking-widest">Voltar para o Início</button>
-            </div>
-        </section>
-
-        <!-- DREAM JOURNAL -->
-        <section id="dreams" class="tab-content">
-            <div class="glass-card p-6">
-                <h2 class="text-xl font-bold text-sky-900 mb-2 heading-font">Diário dos Sonhos</h2>
-                <p class="text-xs text-gray-500 mb-4">Seus relatos são salvos automaticamente para que você possa revisitá-los sempre que quiser.</p>
-                <textarea id="dream-input" placeholder="O que seu subconsciente revelou hoje?" class="w-full p-4 rounded-2xl border border-sky-100 h-32 resize-none text-sm outline-none focus:ring-2 focus:ring-sky-400 bg-white/50"></textarea>
-                <button id="save-dream-btn" onclick="saveDream()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-bold mt-4 shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i> Salvar Sonho
-                </button>
-                
-                <div id="dream-list" class="mt-8 space-y-4">
-                    <p class="text-center text-xs text-gray-400 py-10">Carregando seus sonhos...</p>
-                </div>
-                <button onclick="showTab('home')" class="mt-8 w-full text-center text-[10px] text-gray-400 font-bold uppercase">Voltar</button>
-            </div>
-        </section>
-
-        <!-- HOPE BOX -->
-        <section id="hope" class="tab-content">
-            <div class="glass-card p-6 text-center">
-                <h2 class="text-xl font-bold text-amber-600 mb-2 heading-font">Caixinha de Esperança</h2>
-                <p class="text-xs text-gray-500 mb-6">Uma imagem e uma palavra para iluminar seu momento.</p>
-                
-                <div id="hope-container" class="min-h-[300px] flex flex-col items-center justify-center">
-                    <div id="hope-placeholder" class="text-gray-300">
-                        <i class="fas fa-sun text-6xl mb-4 opacity-10"></i>
-                        <p class="text-sm">Clique abaixo para abrir seu presente</p>
-                    </div>
-                    <div id="hope-content" class="hidden w-full">
-                        <img id="hope-image" class="hope-img shadow-lg mb-4" src="" alt="Natureza">
-                        <p id="hope-text" class="text-gray-700 italic text-sm leading-relaxed bg-white/60 p-5 rounded-2xl border border-amber-100 shadow-sm"></p>
-                    </div>
-                </div>
-
-                <div id="hope-loader" class="hidden flex flex-col items-center mt-4">
-                    <div class="loader mb-2"></div>
-                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Buscando serenidade...</p>
-                </div>
-
-                <button id="hope-btn" onclick="generateHope()" class="w-full bg-amber-500 text-white py-4 rounded-2xl font-bold mt-8 shadow-lg active:scale-95 transition-all">
-                    Abrir Minha Esperança
-                </button>
-                <button onclick="showTab('home')" class="mt-6 w-full text-[10px] text-gray-400 font-bold uppercase">Voltar</button>
-            </div>
-        </section>
-
-        <!-- CHAT SELECTION -->
         <section id="chat-selection" class="tab-content">
             <div class="glass-card p-6">
-                <h2 class="text-xl font-bold text-sky-900 mb-6 text-center heading-font">Nossa Equipe de Apoio</h2>
-                <div id="therapist-list" class="flex flex-col gap-4"></div>
-                <button onclick="showTab('home')" class="mt-8 w-full text-[10px] text-gray-400 font-bold uppercase tracking-widest">Voltar</button>
+                <h2 class="text-lg font-bold text-sky-900 mb-4 text-center">Escolha quem vai te ouvir</h2>
+                <div id="therapist-list" class="space-y-3"></div>
+                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-gray-400 font-bold uppercase">Voltar</button>
             </div>
         </section>
 
-        <!-- CHAT INTERFACE -->
         <section id="chat" class="tab-content">
-            <div class="glass-card flex flex-col h-[78vh]">
+            <div class="glass-card flex flex-col h-[75vh]">
                 <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/40">
                     <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
-                    <div class="flex-1">
-                        <p id="active-name" class="font-bold text-gray-800 text-sm"></p>
-                        <p id="wait-suggestion" class="text-[9px] text-sky-500 font-bold hidden uppercase tracking-tighter">Dica: Registre um sonho no Diário enquanto espera</p>
-                    </div>
-                    <button onclick="openChatSelection()" class="text-gray-300"><i class="fas fa-exchange-alt"></i></button>
+                    <div class="flex-1"><p id="active-name" class="font-bold text-gray-800 text-sm"></p></div>
+                    <button onclick="openChatSelection()" class="text-gray-400"><i class="fas fa-times"></i></button>
                 </div>
-
-                <div id="chat-messages" class="chat-container p-4"></div>
-
-                <div id="typing-box" class="px-4 hidden">
-                    <div class="typing-indicator">
-                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                        <span class="text-[10px] text-gray-400 font-medium ml-2 uppercase">Digitando...</span>
-                    </div>
-                </div>
-
-                <div class="p-4 border-t border-gray-100 bg-white/50 rounded-b-[1.5rem]">
+                <div id="chat-messages" class="chat-container p-4 flex flex-col"></div>
+                <div id="typing-box" class="px-4 hidden text-xs text-gray-400 italic mb-2">Digitando...</div>
+                <div class="p-4 bg-white/50 rounded-b-[1.5rem]">
                     <form id="chat-form" class="flex items-center gap-2">
-                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center transition-all"><i class="fas fa-microphone"></i></button>
-                        <input type="text" id="chat-input" placeholder="Pode falar..." class="flex-1 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
-                        <button type="submit" class="w-10 h-10 bg-sky-500 text-white rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane"></i></button>
+                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-gray-100 rounded-full text-gray-500"><i class="fas fa-microphone"></i></button>
+                        <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
+                        <button type="submit" class="w-10 h-10 bg-sky-500 text-white rounded-full shadow-md"><i class="fas fa-paper-plane"></i></button>
                     </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="relaxation" class="tab-content">
+            <div class="glass-card p-4">
+                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
+                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+                <p class="text-xs text-center mt-4 text-gray-500">Frequência 432Hz para equilíbrio emocional.</p>
+            </div>
+        </section>
+
+        <section id="dreams" class="tab-content">
+            <div class="glass-card p-5">
+                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Diário</h2></div>
+                <textarea id="dream-input" placeholder="Escreva aqui..." class="w-full p-4 rounded-xl border border-sky-100 h-32 resize-none text-sm bg-white/60 mb-3"></textarea>
+                <button onclick="saveDream()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-md text-sm">Salvar</button>
+                <div id="dream-list" class="mt-6 space-y-3 max-h-60 overflow-y-auto"></div>
+            </div>
+        </section>
+
+        <section id="hope" class="tab-content">
+            <div class="glass-card p-6 text-center min-h-[500px] flex flex-col justify-center relative">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
+                    <span class="text-[10px] uppercase font-bold text-amber-500">Gerado por IA</span>
+                </div>
+
+                <div id="hope-start">
+                    <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-amber-500 text-3xl"></i></div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Caixinha de Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-6">A Inteligência Artificial vai criar uma mensagem e uma imagem exclusivas para o seu momento.</p>
+                    <button onclick="generateHopeAI()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg">Abrir Presente</button>
+                </div>
+
+                <div id="hope-loading" class="hidden">
+                    <div class="loader mx-auto mb-4 border-t-amber-500"></div>
+                    <p class="text-xs text-gray-400 uppercase font-bold animate-pulse">A IA está criando...</p>
+                </div>
+
+                <div id="hope-result" class="hidden">
+                    <img id="hope-img" src="" class="w-full h-48 object-cover rounded-xl shadow-md mb-4 bg-gray-200">
+                    <div class="bg-white/60 p-4 rounded-xl border border-amber-100">
+                        <p id="hope-msg" class="text-sm italic text-gray-700 font-medium"></p>
+                    </div>
+                    <button onclick="generateHopeAI()" class="mt-4 text-xs text-amber-600 font-bold underline">Gerar Outra</button>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 px-6 py-4 flex justify-around items-center z-50">
-        <button onclick="showTab('home')" class="nav-btn text-sky-500 flex flex-col items-center gap-1">
-            <i class="fas fa-home"></i>
-            <span class="text-[9px] font-bold uppercase">Início</span>
-        </button>
-        <button onclick="openChatSelection()" class="nav-btn text-gray-400 flex flex-col items-center gap-1">
-            <i class="fas fa-comment-medical"></i>
-            <span class="text-[9px] font-bold uppercase">Suporte</span>
-        </button>
-        <button onclick="showTab('relaxation')" class="nav-btn text-gray-400 flex flex-col items-center gap-1">
-            <i class="fas fa-spa"></i>
-            <span class="text-[9px] font-bold uppercase">Zen</span>
-        </button>
+    <nav class="fixed bottom-0 w-full bg-white/95 border-t border-gray-100 py-3 flex justify-around z-50">
+        <button onclick="showTab('home')" class="text-sky-500 flex flex-col items-center"><i class="fas fa-home"></i><span class="text-[9px] font-bold">INÍCIO</span></button>
+        <button onclick="openChatSelection()" class="text-gray-400 flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-[9px] font-bold">CHAT</span></button>
     </nav>
 
     <script>
-        const apiKey = ""; 
-        let clientName = "";
-        let isWaiting = false;
-        let chatHistory = []; 
-
+        // CONFIGURAÇÕES GLOBAIS
+        const API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE"; // SUA CHAVE AQUI
+        let clientName = "Visitante";
+        let chatHistory = [];
+        
+        // TERAPEUTAS
         const therapists = [
-            { 
-                id: 'lia', 
-                name: 'Lia - Acolhimento', 
-                color: '#f472b6', 
-                icon: 'hands-holding-heart', 
-                welcome: (n) => `Meu anjo, que alegria ter você aqui comigo. Eu sou a Lia. Me conta o que está pesando no seu peito agora? Estou aqui pra te ouvir com todo carinho do mundo. 💖`, 
-                prompt: "Você é a Lia, uma terapeuta de acolhimento total na WR TERAPIA. Sua voz é maternal, carinhosa e extremamente humana. Use termos como 'meu anjo' e 'querido(a)'. Responda de forma fluida e natural ao que a pessoa diz. Nunca repita frases iniciais ou pergunte 'o que está sentindo' se a pessoa já explicou. Interaja com profundidade e sensibilidade. Linguagem natural brasileira, sem regionalismos forçados." 
-            },
-            { 
-                id: 'william', 
-                name: 'Dr. William', 
-                color: '#0ea5e9', 
-                icon: 'user-tie', 
-                welcome: (n) => `Olá, sou o Dr. William. É um prazer falar com você, ${n}. Como posso te ajudar hoje?`, 
-                prompt: "Você é o Dr. William, terapeuta profissional e resiliente. Linguagem formal mas acolhedora. Responda com base no que o usuário compartilha, propondo reflexões seguras e apoio técnico humano." 
-            },
-            { 
-                id: 'fer', 
-                name: 'Secretária Fer', 
-                color: '#10b981', 
-                icon: 'address-book', 
-                welcome: (n) => `Olá, ${n}. Eu sou a Fer. É um prazer te atender. Como posso te auxiliar com dúvidas ou agendamentos hoje?`, 
-                prompt: "Você é a Fer, secretária da WR TERAPIA. Educada, eficiente e humana. Mantenha um tom profissional mas atencioso. Responda livremente às dúvidas do usuário sobre o serviço." 
-            },
-            { 
-                id: 'yara', 
-                name: 'Yara', 
-                color: '#6366f1', 
-                icon: 'moon', 
-                welcome: (n) => `Boa noite, sou a Yara. Como posso acalmar seu coração nesse momento, ${n}?`, 
-                prompt: "Você é a Yara, suporte noturno sereno. Seu tom é poético, calmo e profundamente acolhedor. Ajude a pessoa a encontrar paz no silêncio da noite." 
-            }
+            { id: 'lia', name: 'Lia (Acolhimento)', color: '#f472b6', icon: 'heart', prompt: "Você é a Lia, terapeuta maternal e carinhosa da WR TERAPIA. Use 'meu anjo'. Acolha emocionalmente." },
+            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie', prompt: "Você é o Dr. William, psicólogo clínico. Seja objetivo, técnico mas humano. Foco em solução." },
+            { id: 'yara', name: 'Yara (Noturna)', color: '#6366f1', icon: 'moon', prompt: "Você é a Yara, terapeuta noturna. Voz calma, poética, ajuda na insônia e ansiedade." }
         ];
+        let activeTherapist = therapists[0];
 
-        let activeTherapist = null;
-
-        function saveName() {
-            const input = document.getElementById('user-name-input');
-            const error = document.getElementById('name-error');
-            const name = input.value.trim();
-            if (name.split(' ').length < 2) { error.style.display = 'block'; return; }
-            error.style.display = 'none';
-            clientName = name.toUpperCase(); 
-            document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
-            showTab('home');
-            loadDreams();
+        // FUNÇÕES BÁSICAS
+        function login() {
+            const name = document.getElementById('user-name-input').value.trim();
+            if(name) {
+                clientName = name;
+                document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
+                showTab('home');
+                loadDreams();
+            }
         }
 
-        function showTab(tabId) {
+        function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-sky-500', 'text-gray-400'));
-            const btnIdx = (tabId === 'home') ? 0 : (tabId === 'chat' || tabId === 'chat-selection') ? 1 : (tabId === 'relaxation') ? 2 : -1;
-            if(btnIdx >= 0) document.querySelectorAll('.nav-btn')[btnIdx].classList.replace('text-gray-400', 'text-sky-500');
+            document.getElementById(id).classList.add('active');
         }
 
+        // FUNÇÕES DO CHAT
         function openChatSelection() {
-            const h = new Date().getHours();
             const list = document.getElementById('therapist-list');
             list.innerHTML = '';
-            const isNight = (h >= 23 || h < 9);
-            const available = isNight ? therapists.filter(t => t.id === 'yara') : therapists.filter(t => t.id !== 'yara');
-            available.forEach(t => {
-                const card = document.createElement('div');
-                card.className = "flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-50 shadow-sm cursor-pointer hover:border-sky-200 transition-all";
-                card.onclick = () => selectTherapist(t.id);
-                card.innerHTML = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background-color: ${t.color}"><i class="fas fa-${t.icon} text-xl"></i></div><div class="flex-1 font-bold text-sm text-gray-700">${t.name}</div><i class="fas fa-chevron-right text-gray-200"></i>`;
-                list.appendChild(card);
+            therapists.forEach(t => {
+                list.innerHTML += `<div onclick="startChat('${t.id}')" class="flex items-center gap-4 p-4 bg-white rounded-xl border shadow-sm cursor-pointer hover:bg-sky-50"><div class="w-10 h-10 rounded-full flex items-center justify-center text-white" style="background-color:${t.color}"><i class="fas fa-${t.icon}"></i></div><span class="font-bold text-sm text-gray-700">${t.name}</span></div>`;
             });
             showTab('chat-selection');
         }
 
-        function selectTherapist(id) {
+        function startChat(id) {
             activeTherapist = therapists.find(t => t.id === id);
             document.getElementById('active-name').innerText = activeTherapist.name;
-            const avatar = document.getElementById('active-avatar');
-            avatar.style.backgroundColor = activeTherapist.color;
-            avatar.innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
+            document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
+            document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
             document.getElementById('chat-messages').innerHTML = '';
-            chatHistory = []; 
-            addMessage(activeTherapist.welcome(clientName), 'therapist');
-            if (id === 'william') {
-                setTimeout(() => addMessage(`O Dr. William já te viu. Ele estará disponível em até 30 minutos. Por favor, aguarde aqui no chat para manter sua vez.`, "system"), 1000);
-            }
+            chatHistory = [];
+            
+            const welcome = `Olá ${clientName}, sou ${activeTherapist.name.split(' ')[0]}. Como você está se sentindo agora?`;
+            addMessage(welcome, 'therapist');
             showTab('chat');
+        }
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerText = text;
+            document.getElementById('chat-messages').appendChild(div);
+            document.getElementById('chat-messages').scrollTop = 9999;
+            if(type !== 'system') chatHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text }] });
         }
 
         document.getElementById('chat-form').onsubmit = async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if (!text || isWaiting) return;
+            if(!text) return;
+            
             addMessage(text, 'user');
             input.value = '';
-            isWaiting = true;
             document.getElementById('typing-box').classList.remove('hidden');
-            document.getElementById('wait-suggestion').classList.remove('hidden');
-            const responseText = await fetchResponse(text);
-            setTimeout(() => {
-                isWaiting = false;
-                document.getElementById('typing-box').classList.add('hidden');
-                document.getElementById('wait-suggestion').classList.add('hidden');
-                addMessage(responseText, 'therapist');
-            }, 30000);
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        contents: chatHistory,
+                        systemInstruction: { parts: [{ text: `${activeTherapist.prompt} O cliente é ${clientName}. Responda curto (max 50 palavras).` }] }
+                    })
+                });
+                const data = await response.json();
+                const reply = data.candidates[0].content.parts[0].text;
+                addMessage(reply, 'therapist');
+            } catch(err) {
+                addMessage("Erro na conexão com a IA.", 'system');
+            }
+            document.getElementById('typing-box').classList.add('hidden');
         };
 
-        function addMessage(text, type) {
-            const container = document.getElementById('chat-messages');
-            const div = document.createElement('div');
-            div.className = `message ${type} animate-[fadeIn_0.3s]`;
-            div.innerText = text;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            if(type !== 'system') chatHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text: text }] });
-        }
+        // CAIXINHA DE ESPERANÇA COM IA
+        async function generateHopeAI() {
+            document.getElementById('hope-start').classList.add('hidden');
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-loading').classList.remove('hidden');
 
-        async function fetchResponse(q) {
-            const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. Atendimento humano real da WR TERAPIA. Responda livremente, interaja com o que o usuário disse.`;
             try {
-                const contents = [...chatHistory.slice(-10)];
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                // 1. Pede frase e prompt de imagem para o Gemini
+                const prompt = "Gere um objeto JSON com dois campos: 'frase' (uma frase curta, poética e motivacional em português sobre esperança/paz) e 'imagem_prompt' (uma descrição curta em INGLÊS de uma paisagem relaxante ou abstrata zen para gerar uma imagem). Não use markdown.";
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: contents, systemInstruction: { parts: [{ text: sys }] } })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
                 });
-                const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Estou aqui te ouvindo, conte-me mais...";
-            } catch (e) { return "Tive um probleminha na conexão, mas sigo aqui com você."; }
-        }
+                
+                const data = await response.json();
+                let textRaw = data.candidates[0].content.parts[0].text;
+                // Limpeza básica para garantir JSON válido se a IA colocar ```json
+                textRaw = textRaw.replace(/```json/g, '').replace(/```/g, '');
+                const result = JSON.parse(textRaw);
 
-        async function saveDream() {
-            const input = document.getElementById('dream-input');
-            const btn = document.getElementById('save-dream-btn');
-            const text = input.value.trim();
-            if (!text || !window.auth.currentUser) return;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
-            try {
-                const userId = window.auth.currentUser.uid;
-                const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
-                await window.addDoc(collectionRef, { text, date: new Date().toISOString(), clientName });
-                input.value = '';
-            } catch (e) { console.error(e); } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Salvar Sonho';
+                // 2. Exibe o resultado
+                document.getElementById('hope-msg').innerText = result.frase;
+                // Usa Pollinations.ai para gerar imagem baseada no prompt da IA
+                const encodedPrompt = encodeURIComponent(result.imagem_prompt + " cinematic lighting, 4k, peaceful");
+                document.getElementById('hope-img').src = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
+
+                document.getElementById('hope-loading').classList.add('hidden');
+                document.getElementById('hope-result').classList.remove('hidden');
+
+            } catch(err) {
+                console.error(err);
+                document.getElementById('hope-loading').classList.add('hidden');
+                document.getElementById('hope-start').classList.remove('hidden');
+                alert("A IA estava dormindo... tente novamente.");
             }
         }
 
+        // DIÁRIO
+        function saveDream() {
+            const txt = document.getElementById('dream-input').value;
+            if(!txt) return;
+            const dreams = JSON.parse(localStorage.getItem('dreams') || '[]');
+            dreams.unshift({ date: new Date().toLocaleDateString(), text: txt });
+            localStorage.setItem('dreams', JSON.stringify(dreams));
+            document.getElementById('dream-input').value = '';
+            loadDreams();
+        }
         function loadDreams() {
-            if (!window.auth.currentUser) { setTimeout(loadDreams, 500); return; }
-            const userId = window.auth.currentUser.uid;
-            const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
-            window.onSnapshot(collectionRef, (snapshot) => {
-                const list = document.getElementById('dream-list');
-                const dreams = [];
-                snapshot.forEach(doc => dreams.push(doc.data()));
-                dreams.sort((a, b) => new Date(b.date) - new Date(a.date));
-                if (dreams.length === 0) { list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Você ainda não registrou nenhum sonho.</p>'; return; }
-                list.innerHTML = dreams.map(d => `<div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm"><p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-BR')}</p><p>${d.text}</p></div>`).join('');
-            });
+            const list = document.getElementById('dream-list');
+            const dreams = JSON.parse(localStorage.getItem('dreams') || '[]');
+            list.innerHTML = dreams.map(d => `<div class="bg-white p-3 rounded-lg border border-gray-100 text-xs text-gray-600"><b class="text-sky-500 block mb-1">${d.date}</b>${d.text}</div>`).join('');
         }
 
-        const hopePhrases = ["Tudo passa.", "Respire fundo.", "Amanhã será melhor.", "Você é forte.", "Sua paz é prioridade."];
-        async function generateHope() {
-            const loader = document.getElementById('hope-loader');
-            const placeholder = document.getElementById('hope-placeholder');
-            const content = document.getElementById('hope-content');
-            const btn = document.getElementById('hope-btn');
-            btn.disabled = true;
-            placeholder.classList.add('hidden');
-            content.classList.add('hidden');
-            loader.classList.remove('hidden');
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instances: [ { prompt: "Atmospheric peaceful zen landscape, soft sunlight, nature, high resolution" } ], parameters: { sampleCount: 1 } })
-                });
-                const data = await response.json();
-                if (data.predictions && data.predictions[0]) {
-                    document.getElementById('hope-image').src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-                    document.getElementById('hope-text').innerText = hopePhrases[Math.floor(Math.random()*hopePhrases.length)];
-                    loader.classList.add('hidden');
-                    content.classList.remove('hidden');
-                }
-            } catch (e) {
-                document.getElementById('hope-text').innerText = "Respire. Você é luz.";
-                loader.classList.add('hidden');
-                content.classList.remove('hidden');
-            } finally { btn.disabled = false; }
-        }
-
+        // MICROFONE
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.onresult = (e) => { 
-                document.getElementById('chat-input').value = e.results[0][0].transcript; 
-                document.getElementById('mic-btn').classList.remove('mic-active');
-                recognition.stop();
-            };
-        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.onresult = (e) => { document.getElementById('chat-input').value = e.results[0][0].transcript; toggleMic(); };
         function toggleMic() {
             const btn = document.getElementById('mic-btn');
-            if (btn.classList.contains('mic-active')) { recognition.stop(); btn.classList.remove('mic-active'); }
-            else if (recognition) { recognition.start(); btn.classList.add('mic-active'); }
+            if(btn.classList.contains('mic-active')) { recognition.stop(); btn.classList.remove('mic-active'); }
+            else { recognition.start(); btn.classList.add('mic-active'); }
         }
     </script>
 </body>
