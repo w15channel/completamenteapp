@@ -101,7 +101,9 @@
                 </div>
                 
                 <div id="chat-messages" class="chat-container p-4 flex flex-col"></div>
-                <div id="typing-box" class="px-4 hidden text-xs text-sky-500 italic mb-2 font-medium">Digitando...</div>
+                <div id="typing-box" class="px-4 hidden text-xs text-sky-500 italic mb-2 font-medium flex items-center gap-1">
+                    Digitando <span class="animate-pulse">...</span>
+                </div>
                 
                 <div class="p-4 bg-white/50 rounded-b-[1.5rem] border-t border-sky-50">
                     <form id="chat-form" class="flex items-center gap-2">
@@ -150,7 +152,7 @@
                 </div>
                 <div id="hope-result" class="hidden w-full flex-col items-center">
                     <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4">
-                        <img id="hope-img" src="" class="w-full h-56 object-cover bg-gray-200">
+                        <img id="hope-img" src="" class="w-full h-56 object-cover bg-gray-200" onerror="this.onerror=null;this.src='https://picsum.photos/seed/' + Math.random() + '/400/300?blur=1';">
                     </div>
                     <div class="bg-white/80 p-5 rounded-xl border border-amber-100 shadow-sm w-full">
                         <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
@@ -257,14 +259,11 @@
         }
 
         function getOfflineResponse(therapistId, userText) {
-            // Lógica simples de palavras-chave para quando estiver offline
             const txt = userText.toLowerCase();
             const responses = offlineResponses[therapistId] || offlineResponses['generico'];
-            
             if (txt.includes('triste') || txt.includes('chorar')) return "Sinto muito que esteja doendo. Quer falar mais sobre o que causou essa tristeza?";
             if (txt.includes('ansios') || txt.includes('medo')) return "Respire fundo comigo... O medo é só uma reação. Você está seguro aqui.";
             if (txt.includes('obrigad')) return "Eu que agradeço a confiança. Estou sempre por aqui.";
-            
             return responses[Math.floor(Math.random() * responses.length)];
         }
 
@@ -274,34 +273,48 @@
             const text = input.value.trim();
             if(!text || isWaiting) return;
             
+            // 1. Envia mensagem do usuário imediatamente
             addMessage(text, 'user');
             input.value = '';
             isWaiting = true;
-            document.getElementById('typing-box').classList.remove('hidden');
+            
+            // Preparar variável para guardar a resposta da API enquanto o tempo passa
+            let apiResponse = null;
+            let apiError = false;
 
-            try {
-                // TENTA API GROQ
-                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 250 })
-                });
+            // 2. Inicia busca na API imediatamente em "segundo plano"
+            const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 250 })
+            })
+            .then(res => { if(!res.ok) throw new Error("Erro API"); return res.json(); })
+            .then(data => { apiResponse = data.choices[0].message.content; })
+            .catch(err => { console.warn("Erro API:", err); apiError = true; });
 
-                if (!response.ok) throw new Error("Falha na API");
-                const data = await response.json();
-                addMessage(data.choices[0].message.content, 'therapist');
+            // 3. Sequência de Animação (10s espera -> 30s digitando -> Mostrar)
+            
+            // Delay de 10 segundos antes de mostrar "Digitando..."
+            setTimeout(() => {
+                document.getElementById('typing-box').classList.remove('hidden');
+                
+                // Delay de mais 30 segundos (total 40s desde o envio) para mostrar a resposta
+                setTimeout(async () => {
+                    document.getElementById('typing-box').classList.add('hidden');
+                    isWaiting = false;
 
-            } catch(err) {
-                console.warn("Usando modo offline:", err);
-                // USA MODO OFFLINE SE FALHAR
-                setTimeout(() => {
-                    const offlineReply = getOfflineResponse(activeTherapist.id, text);
-                    addMessage(offlineReply, 'therapist');
-                }, 1000);
-            } finally {
-                isWaiting = false;
-                document.getElementById('typing-box').classList.add('hidden');
-            }
+                    // Garante que a API terminou (geralmente termina em 1-2s, então aqui já estará pronto)
+                    await apiPromise; 
+
+                    if (apiResponse) {
+                        addMessage(apiResponse, 'therapist');
+                    } else {
+                        // Se deu erro na API, usa o offline
+                        const offlineReply = getOfflineResponse(activeTherapist.id, text);
+                        addMessage(offlineReply, 'therapist');
+                    }
+                }, 30000); // 30 segundos de "Digitando..."
+            }, 10000); // 10 segundos de "Vácuo/Leitura"
         };
 
         // --- CAIXINHA HÍBRIDA ---
@@ -318,22 +331,25 @@
             let imgPrompt = "nature landscape";
 
             try {
-                // Tenta IA
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role: "user", content: "Gere JSON: { \"frase\": \"Frase curta motivacional PT\", \"prompt\": \"Short english prompt for calm nature image\" }"}], temperature: 0.8 })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role: "user", content: "Gere JSON: { \"frase\": \"Frase curta motivacional PT\", \"prompt\": \"nature landscape\" }"}], temperature: 0.8 })
                 });
                 if(response.ok) {
                     const data = await response.json();
                     const json = JSON.parse(data.choices[0].message.content.match(/\{[\s\S]*\}/)[0]);
                     frase = json.frase;
-                    imgPrompt = json.prompt;
+                    imgPrompt = json.prompt.substring(0, 50); // Limita tamanho para evitar erro 1033
                 }
             } catch(e) { console.log("Modo offline ativado para caixinha"); }
 
             document.getElementById('hope-msg').innerText = frase;
-            document.getElementById('hope-img').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}?seed=${Math.random()}`;
+            
+            // Encode URI Component protege caracteres especiais
+            const safePrompt = encodeURIComponent(imgPrompt);
+            // URL da Pollinations com nologo e seed
+            document.getElementById('hope-img').src = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&seed=${Math.random()}`;
             
             setTimeout(() => {
                 document.getElementById('hope-loading').classList.add('hidden');
