@@ -186,8 +186,8 @@
         let messageCounter = 0;
         
         const offlineResponses = {
-            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
-            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
+            'lia': ["Querido, sem problema estou te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
+            'william': ["Ah, entendi, vamos analisar. O que resolvemos agora?", "Analise esses fatos. O que você acha de tentarmos isso?"],
             'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
             'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
         };
@@ -294,7 +294,7 @@
                 addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'system');
             }
             
-            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            const welcome = id === 'lia' ? `Oi ${tratamento}, essa mensagem é fixa, me chamo Lia, já te respondo. O que te traz aqui hoje?` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
