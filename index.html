@@ -6,6 +6,29 @@
     <title>Harmonia Diária - WR TERAPIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Placeholder - will be replaced by environment)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wr-terapia-vFinal';
+
+        window.db = db;
+        window.auth = auth;
+        window.appId = appId;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.onSnapshot = onSnapshot;
+
+        // Auth init
+        signInAnonymously(auth).catch(console.error);
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
@@ -31,7 +54,6 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         }
 
-        /* Chat Styles */
         .chat-container { height: calc(100vh - 380px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; }
         .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; }
@@ -40,17 +62,15 @@
 
         .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border-radius: 20px; width: fit-content; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .dot { width: 4px; height: 4px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        /* Loader */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .hope-img { width: 100%; height: 220px; object-fit: cover; border-radius: 1rem; }
-        
         iframe { border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #000; }
+        
+        .error-msg { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; display: none; }
     </style>
 </head>
 <body class="pb-24">
@@ -66,12 +86,15 @@
         <section id="onboarding" class="tab-content active">
             <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
                 <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="fas fa-heart text-sky-500 text-3xl"></i>
+                    <i class="fas fa-id-card text-sky-500 text-3xl"></i>
                 </div>
-                <h2 class="text-xl font-bold text-sky-900 mb-2">Olá, bem-vindo(a) à<br>WR TERAPIA</h2>
-                <p class="text-sm text-gray-500 mb-8">Com quem estou a falar?</p>
-                <input type="text" id="user-name-input" placeholder="O seu nome" class="w-full p-4 rounded-2xl border border-sky-100 mb-6 outline-none text-center text-lg">
-                <button onclick="saveName()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition-all">Começar Atendimento</button>
+                <h2 class="text-xl font-bold text-sky-900 mb-2">Oi, bem-vindo(a) à<br>WR TERAPIA</h2>
+                <p class="text-sm text-gray-500 mb-8">Para um atendimento personalizado, informe o seu nome completo.</p>
+                <div class="w-full">
+                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="NOME COMPLETO" class="w-full p-4 rounded-2xl border border-sky-100 mb-2 outline-none text-center text-lg uppercase font-bold">
+                    <p id="name-error" class="error-msg">Por favor, insira o seu nome completo.</p>
+                </div>
+                <button onclick="saveName()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition-all mt-4">Confirmar e Entrar</button>
             </div>
         </section>
 
@@ -100,29 +123,29 @@
             </div>
             
             <div class="glass-card p-5 bg-sky-50/40 text-center italic text-xs text-gray-500">
-                <p id="daily-quote">"Um dia de cada vez, um suspiro de cada vez."</p>
+                <p id="daily-quote">"A sua jornada é única. Respeite o seu tempo."</p>
             </div>
         </section>
 
-        <!-- RELAXATION (FIXED PLAYER) -->
+        <!-- RELAXATION -->
         <section id="relaxation" class="tab-content">
             <div class="glass-card p-4">
-                <h2 class="text-lg font-bold text-sky-800 mb-4 text-center heading-font">Espaço de Relaxamento</h2>
+                <h2 class="text-lg font-bold text-sky-800 mb-2 text-center heading-font">Espaço de Relaxamento</h2>
+                <p class="text-[11px] text-gray-500 text-center mb-4 leading-relaxed px-4">Um refúgio para descompressão profunda. Ideal para preparar o sono, relaxar após um dia exaustivo e equilibrar sentimentos negativos.</p>
                 <div class="aspect-video w-full mb-4">
-                    <!-- Link corrigido com parâmetros adicionais para evitar erro 153 -->
-                    <iframe id="yt-player" width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0?enablejsapi=1&rel=0&showinfo=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    <iframe id="yt-player" width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0?enablejsapi=1&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                 </div>
                 
-                <div class="bg-amber-50 p-4 rounded-xl text-[11px] text-amber-800 leading-relaxed mb-4">
-                    <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Se o vídeo não aparecer:</p>
-                    Alguns dispositivos bloqueiam o vídeo por segurança. Se vir uma mensagem de erro, clique no botão abaixo para abrir no YouTube.
+                <div class="bg-sky-50 p-4 rounded-xl text-[11px] text-sky-800 leading-relaxed mb-4">
+                    <p class="font-bold mb-1"><i class="fas fa-info-circle mr-1"></i> Instrução:</p>
+                    Encontre uma posição confortável, feche os olhos e permita que a frequência sonora restaure o seu equilíbrio interior.
                 </div>
 
-                <button onclick="window.open('https://www.youtube.com/watch?v=sF80I-TQiW0')" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md">
-                    <i class="fab fa-youtube"></i> Abrir no YouTube Original
+                <button onclick="window.open('https://www.youtube.com/watch?v=sF80I-TQiW0')" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md mb-2">
+                    <i class="fab fa-youtube"></i> Abrir no YouTube
                 </button>
 
-                <button onclick="showTab('home')" class="mt-6 w-full text-[10px] text-gray-400 font-bold uppercase tracking-widest">Voltar para o Início</button>
+                <button onclick="showTab('home')" class="mt-4 w-full text-[10px] text-gray-400 font-bold uppercase tracking-widest">Voltar para o Início</button>
             </div>
         </section>
 
@@ -130,11 +153,15 @@
         <section id="dreams" class="tab-content">
             <div class="glass-card p-6">
                 <h2 class="text-xl font-bold text-sky-900 mb-2 heading-font">Diário dos Sonhos</h2>
-                <p class="text-xs text-gray-500 mb-4">Registe o que o seu subconsciente revelou hoje.</p>
-                <textarea id="dream-input" placeholder="Descreva aqui o que se lembra..." class="w-full p-4 rounded-2xl border border-sky-100 h-32 resize-none text-sm outline-none focus:ring-2 focus:ring-sky-400 bg-white/50"></textarea>
-                <button onclick="saveDream()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-bold mt-4 shadow-md active:scale-95 transition-transform">Guardar Sonho</button>
+                <p class="text-xs text-gray-500 mb-4">Seus relatos são salvos automaticamente para que você possa revisitá-los sempre que quiser.</p>
+                <textarea id="dream-input" placeholder="O que o seu subconsciente revelou hoje?" class="w-full p-4 rounded-2xl border border-sky-100 h-32 resize-none text-sm outline-none focus:ring-2 focus:ring-sky-400 bg-white/50"></textarea>
+                <button id="save-dream-btn" onclick="saveDream()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-bold mt-4 shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <i class="fas fa-cloud-upload-alt"></i> Guardar Sonho
+                </button>
                 
-                <div id="dream-list" class="mt-8 space-y-4"></div>
+                <div id="dream-list" class="mt-8 space-y-4">
+                    <p class="text-center text-xs text-gray-400 py-10">A carregar os seus sonhos...</p>
+                </div>
                 <button onclick="showTab('home')" class="mt-8 w-full text-center text-[10px] text-gray-400 font-bold uppercase">Voltar</button>
             </div>
         </section>
@@ -143,12 +170,12 @@
         <section id="hope" class="tab-content">
             <div class="glass-card p-6 text-center">
                 <h2 class="text-xl font-bold text-amber-600 mb-2 heading-font">Caixinha de Esperança</h2>
-                <p class="text-xs text-gray-500 mb-6">Pequenas doses de luz para o seu dia.</p>
+                <p class="text-xs text-gray-500 mb-6">Uma imagem e uma palavra para iluminar o seu momento.</p>
                 
                 <div id="hope-container" class="min-h-[300px] flex flex-col items-center justify-center">
                     <div id="hope-placeholder" class="text-gray-300">
                         <i class="fas fa-sun text-6xl mb-4 opacity-10"></i>
-                        <p class="text-sm">Clique abaixo para receber a sua mensagem</p>
+                        <p class="text-sm">Clique abaixo para abrir o seu presente</p>
                     </div>
                     <div id="hope-content" class="hidden w-full">
                         <img id="hope-image" class="hope-img shadow-lg mb-4" src="" alt="Natureza">
@@ -158,11 +185,11 @@
 
                 <div id="hope-loader" class="hidden flex flex-col items-center mt-4">
                     <div class="loader mb-2"></div>
-                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">A procurar serenidade...</p>
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Criando um momento de paz...</p>
                 </div>
 
                 <button id="hope-btn" onclick="generateHope()" class="w-full bg-amber-500 text-white py-4 rounded-2xl font-bold mt-8 shadow-lg active:scale-95 transition-all">
-                    Abrir a Minha Mensagem
+                    Abrir Minha Esperança
                 </button>
                 <button onclick="showTab('home')" class="mt-6 w-full text-[10px] text-gray-400 font-bold uppercase">Voltar</button>
             </div>
@@ -171,7 +198,7 @@
         <!-- CHAT SELECTION -->
         <section id="chat-selection" class="tab-content">
             <div class="glass-card p-6">
-                <h2 class="text-xl font-bold text-sky-900 mb-6 text-center heading-font">Com quem deseja falar?</h2>
+                <h2 class="text-xl font-bold text-sky-900 mb-6 text-center heading-font">Nossa Equipe de Apoio</h2>
                 <div id="therapist-list" class="flex flex-col gap-4"></div>
                 <button onclick="showTab('home')" class="mt-8 w-full text-[10px] text-gray-400 font-bold uppercase tracking-widest">Voltar</button>
             </div>
@@ -184,7 +211,7 @@
                     <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
                     <div class="flex-1">
                         <p id="active-name" class="font-bold text-gray-800 text-sm"></p>
-                        <p id="wait-suggestion" class="text-[9px] text-sky-500 font-bold hidden uppercase tracking-tighter">Sugestão: Escreva no Diário de Sonhos enquanto aguarda</p>
+                        <p id="wait-suggestion" class="text-[9px] text-sky-500 font-bold hidden uppercase tracking-tighter">Dica: Registe um sonho no Diário enquanto espera</p>
                     </div>
                     <button onclick="openChatSelection()" class="text-gray-300"><i class="fas fa-exchange-alt"></i></button>
                 </div>
@@ -201,7 +228,7 @@
                 <div class="p-4 border-t border-gray-100 bg-white/50 rounded-b-[1.5rem]">
                     <form id="chat-form" class="flex items-center gap-2">
                         <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center transition-all"><i class="fas fa-microphone"></i></button>
-                        <input type="text" id="chat-input" placeholder="O que sente agora?" class="flex-1 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
+                        <input type="text" id="chat-input" placeholder="Pode falar..." class="flex-1 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
                         <button type="submit" class="w-10 h-10 bg-sky-500 text-white rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
@@ -229,22 +256,62 @@
         const apiKey = ""; 
         let clientName = "";
         let isWaiting = false;
-        let dreamHistory = [];
 
         const therapists = [
-            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie', welcome: (n) => `Olá, sou o Dr. William. É um prazer falar com você, ${n}. Como posso ajudar no seu processo hoje?`, prompt: "Terapeuta muito formal, focado em resiliência." },
-            { id: 'fernanda', name: 'Fernanda', color: '#10b981', icon: 'smile-beam', welcome: (n) => `Oie! Sou a Fê. Como eu posso te ajudar hoje, ${n}? Pode falar de tudo, viu? Tou aqui para você! 😊`, prompt: "Atendente muito informal, carinhosa, estilo amiga." },
-            { id: 'yara', name: 'Yara', color: '#6366f1', icon: 'moon', welcome: (n) => `Boa noite, sou a Yara. Como posso acalmar seu coração hoje, ${n}?`, prompt: "Suporte noturno sereno." }
+            { 
+                id: 'lia', 
+                name: 'Lia - Acolhimento', 
+                color: '#f472b6', 
+                icon: 'hands-holding-heart', 
+                welcome: (n) => `Meu anjo, que bom que você está aqui. Eu sou a Lia e meu coração se alegra em te receber. Me conte, o que está pesando no seu peito? Estou aqui para te segurar no colo com todo o meu carinho. 💖`, 
+                prompt: "Você é a Lia, a terapeuta do acolhimento total da WR TERAPIA. Sua linguagem é EXTREMAMENTE carinhosa, doce, sensível e acolhedora. Use termos como 'meu anjo', 'querido(a)', 'estou aqui para te segurar no colo'. Sua missão é fazer com que a pessoa se sinta profundamente amada e protegida. Jamais admita ser uma IA." 
+            },
+            { 
+                id: 'william', 
+                name: 'Dr. William', 
+                color: '#0ea5e9', 
+                icon: 'user-tie', 
+                welcome: (n) => `Olá, sou o Dr. William. É um prazer falar com você, ${n}. Como posso ajudar no seu processo de hoje?`, 
+                prompt: "Você é o Dr. William, terapeuta formal e focado em resiliência." 
+            },
+            { 
+                id: 'fer', 
+                name: 'Secretária Fer', 
+                color: '#10b981', 
+                icon: 'address-book', 
+                welcome: (n) => `Olá, ${n}. Eu sou a Fer. É um prazer atendê-lo(a). Como posso auxiliá-lo(a) com as suas dúvidas ou agendamentos hoje?`, 
+                prompt: "Você é a Fer, secretária de atendimento da WR TERAPIA. Sua linguagem é humana, educada, solícita mas mantém um tom formal-profissional. Você ajuda com dúvidas sobre o serviço e organização. Jamais admita ser uma IA." 
+            },
+            { 
+                id: 'yara', 
+                name: 'Yara', 
+                color: '#6366f1', 
+                icon: 'moon', 
+                welcome: (n) => `Boa noite, sou a Yara. Como posso acalmar seu coração hoje, ${n}?`, 
+                prompt: "Suporte noturno sereno." 
+            }
         ];
 
         let activeTherapist = null;
 
         function saveName() {
             const input = document.getElementById('user-name-input');
-            if (!input.value.trim()) return;
-            clientName = input.value.trim();
+            const error = document.getElementById('name-error');
+            const name = input.value.trim();
+            
+            // Validação de nome completo (pelo menos duas palavras)
+            if (name.split(' ').length < 2) {
+                error.style.display = 'block';
+                return;
+            }
+            
+            error.style.display = 'none';
+            clientName = name.toUpperCase(); // Força CAIXA ALTA
             document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
             showTab('home');
+            
+            // Inicia busca de sonhos assim que logar
+            loadDreams();
         }
 
         function showTab(tabId) {
@@ -279,6 +346,7 @@
             avatar.innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
             document.getElementById('chat-messages').innerHTML = '';
             addMessage(activeTherapist.welcome(clientName), 'therapist');
+            
             if (id === 'william') {
                 setTimeout(() => {
                     addMessage(`O Dr. William já o viu. Ele estará disponível para si em até 30 minutos. Por favor, aguarde aqui.`, "system");
@@ -318,28 +386,74 @@
         async function fetchResponse(q) {
             const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. WR TERAPIA. Humano sempre.`;
             try {
+                // CORREÇÃO: Removido o 'gener' extra na URL
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: q }] }], systemInstruction: { parts: [{ text: sys }] } })
                 });
                 const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "...";
-            } catch (e) { return "Sigo aqui consigo."; }
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Estou a ouvir, pode continuar...";
+            } catch (e) { return "Estou aqui consigo, conte-me mais."; }
         }
 
-        function saveDream() {
+        // --- FIRESTORE PERSISTENCE ---
+        async function saveDream() {
             const input = document.getElementById('dream-input');
-            if (!input.value.trim()) return;
-            const dream = { text: input.value, date: new Date().toLocaleString('pt-PT') };
-            dreamHistory.unshift(dream);
-            input.value = '';
-            renderDreams();
+            const btn = document.getElementById('save-dream-btn');
+            const text = input.value.trim();
+            if (!text || !window.auth.currentUser) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div>';
+
+            try {
+                const userId = window.auth.currentUser.uid;
+                // Rule 1: Strict paths
+                const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
+                await window.addDoc(collectionRef, {
+                    text: text,
+                    date: new Date().toISOString(),
+                    clientName: clientName
+                });
+                input.value = '';
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar Sonho';
+            }
         }
 
-        function renderDreams() {
-            const list = document.getElementById('dream-list');
-            list.innerHTML = dreamHistory.map(d => `<div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm"><p class="font-bold text-blue-400 mb-1">${d.date}</p><p>${d.text}</p></div>`).join('');
+        function loadDreams() {
+            if (!window.auth.currentUser) {
+                setTimeout(loadDreams, 500);
+                return;
+            }
+            const userId = window.auth.currentUser.uid;
+            const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
+            
+            // Rule 2: Simple query (fetch all and sort in memory)
+            window.onSnapshot(collectionRef, (snapshot) => {
+                const list = document.getElementById('dream-list');
+                const dreams = [];
+                snapshot.forEach(doc => dreams.push(doc.data()));
+                
+                // Sort in memory
+                dreams.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (dreams.length === 0) {
+                    list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Ainda não registou nenhum sonho.</p>';
+                    return;
+                }
+
+                list.innerHTML = dreams.map(d => `
+                    <div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm">
+                        <p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-PT')}</p>
+                        <p>${d.text}</p>
+                    </div>
+                `).join('');
+            }, (error) => console.error(error));
         }
 
         const hopePhrases = ["Tudo passa.", "Respire fundo.", "Amanhã será melhor.", "Você é forte.", "Sua paz é prioridade."];
