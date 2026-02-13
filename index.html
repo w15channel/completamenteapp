@@ -211,7 +211,7 @@
                     <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
                     <div class="flex-1">
                         <p id="active-name" class="font-bold text-gray-800 text-sm"></p>
-                        <p id="wait-suggestion" class="text-[9px] text-sky-500 font-bold hidden uppercase tracking-tighter">Dica: Registe um sonho no Diário enquanto espera</p>
+                        <p id="wait-suggestion" class="text-[9px] text-sky-500 font-bold hidden uppercase tracking-tighter">Dica: Registre um sonho no Diário enquanto espera</p>
                     </div>
                     <button onclick="openChatSelection()" class="text-gray-300"><i class="fas fa-exchange-alt"></i></button>
                 </div>
@@ -221,7 +221,7 @@
                 <div id="typing-box" class="px-4 hidden">
                     <div class="typing-indicator">
                         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                        <span class="text-[10px] text-gray-400 font-medium ml-2 uppercase">A digitar...</span>
+                        <span class="text-[10px] text-gray-400 font-medium ml-2 uppercase">Digitando...</span>
                     </div>
                 </div>
 
@@ -260,11 +260,11 @@
         const therapists = [
             { 
                 id: 'lia', 
-                name: 'Lia - Acolhimento', 
+                name: 'Dra. Lia - Acolhimento', 
                 color: '#f472b6', 
-                icon: 'hands-holding-heart', 
-                welcome: (n) => `Meu anjo, que bom que você está aqui. Eu sou a Lia e meu coração se alegra em te receber. Me conte, o que está pesando no seu peito? Estou aqui para te segurar no colo com todo o meu carinho. 💖`, 
-                prompt: "Você é a Lia, a terapeuta do acolhimento total da WR TERAPIA. Sua linguagem é EXTREMAMENTE carinhosa, doce, sensível e acolhedora. Use termos como 'meu anjo', 'querido(a)', 'estou aqui para te segurar no colo'. Sua missão é fazer com que a pessoa se sinta profundamente amada e protegida. Jamais admita ser uma IA." 
+                icon: 'heart', 
+                welcome: (n) => `Meu anjo, que alegria ter você por aqui. Sou a Lia e meu coração já está te abraçando. Me conta, o que está tirando seu sono ou pesando no seu peito? Estou prontinha para te ouvir e te segurar no colo com todo o carinho do mundo. 💖`, 
+                prompt: "Você é a Dra. Lia, a terapeuta do acolhimento total na WR TERAPIA. Você é brasileira, vive no Paraná e tem aquele jeito doce, sensível e maternal de falar. Sua linguagem é extremamente acolhedora e sensível. Use termos como 'meu anjo', 'querido(a)', 'estou aqui para te segurar no colo'. Sua missão é fazer com que a pessoa se sinta profundamente amada e protegida. Jamais use termos de Portugal (como 'si' ou 'tu'). Varie muito suas respostas para nunca parecer robótica ou IA. Mostre sensibilidade paranaense." 
             },
             { 
                 id: 'william', 
@@ -272,7 +272,7 @@
                 color: '#0ea5e9', 
                 icon: 'user-tie', 
                 welcome: (n) => `Olá, sou o Dr. William. É um prazer falar com você, ${n}. Como posso ajudar no seu processo de hoje?`, 
-                prompt: "Você é o Dr. William, terapeuta formal e focado em resiliência." 
+                prompt: "Você é o Dr. William, terapeuta formal e focado em resiliência. Você é direto, profissional e transmite segurança técnica." 
             },
             { 
                 id: 'fer', 
@@ -280,7 +280,7 @@
                 color: '#10b981', 
                 icon: 'address-book', 
                 welcome: (n) => `Olá, ${n}. Eu sou a Fer. É um prazer atendê-lo(a). Como posso auxiliá-lo(a) com as suas dúvidas ou agendamentos hoje?`, 
-                prompt: "Você é a Fer, secretária de atendimento da WR TERAPIA. Sua linguagem é humana, educada, solícita mas mantém um tom formal-profissional. Você ajuda com dúvidas sobre o serviço e organização. Jamais admita ser uma IA." 
+                prompt: "Você é a Fer (o apelido dela), secretária de atendimento da WR TERAPIA. Sua linguagem é humana, educada e prestativa, mas mantém um tom formal-profissional de secretária. Você é eficiente e organizada. Jamais admita ser uma IA e varie a forma de falar." 
             },
             { 
                 id: 'yara', 
@@ -288,7 +288,7 @@
                 color: '#6366f1', 
                 icon: 'moon', 
                 welcome: (n) => `Boa noite, sou a Yara. Como posso acalmar seu coração hoje, ${n}?`, 
-                prompt: "Suporte noturno sereno." 
+                prompt: "Suporte noturno sereno, tom calmo e poético. Brasileira." 
             }
         ];
 
@@ -299,18 +299,15 @@
             const error = document.getElementById('name-error');
             const name = input.value.trim();
             
-            // Validação de nome completo (pelo menos duas palavras)
             if (name.split(' ').length < 2) {
                 error.style.display = 'block';
                 return;
             }
             
             error.style.display = 'none';
-            clientName = name.toUpperCase(); // Força CAIXA ALTA
+            clientName = name.toUpperCase(); 
             document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
             showTab('home');
-            
-            // Inicia busca de sonhos assim que logar
             loadDreams();
         }
 
@@ -349,7 +346,7 @@
             
             if (id === 'william') {
                 setTimeout(() => {
-                    addMessage(`O Dr. William já o viu. Ele estará disponível para si em até 30 minutos. Por favor, aguarde aqui.`, "system");
+                    addMessage(`O Dr. William já te viu. Ele estará disponível para você em até 30 minutos. Por favor, aguarde aqui no chat.`, "system");
                 }, 1000);
             }
             showTab('chat');
@@ -384,17 +381,16 @@
         }
 
         async function fetchResponse(q) {
-            const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. WR TERAPIA. Humano sempre.`;
+            const sys = `${activeTherapist.prompt} Cliente chama-se ${clientName}. WR TERAPIA. Responda como um ser humano agora mesmo, com empatia. Nunca use a mesma frase inicial.`;
             try {
-                // CORREÇÃO: Removido o 'gener' extra na URL
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: q }] }], systemInstruction: { parts: [{ text: sys }] } })
                 });
                 const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Estou a ouvir, pode continuar...";
-            } catch (e) { return "Estou aqui consigo, conte-me mais."; }
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Me fale um pouco mais sobre o que você está sentindo...";
+            } catch (e) { return "Estou aqui com você, pode continuar."; }
         }
 
         // --- FIRESTORE PERSISTENCE ---
@@ -409,7 +405,6 @@
 
             try {
                 const userId = window.auth.currentUser.uid;
-                // Rule 1: Strict paths
                 const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
                 await window.addDoc(collectionRef, {
                     text: text,
@@ -433,52 +428,68 @@
             const userId = window.auth.currentUser.uid;
             const collectionRef = window.collection(window.db, 'artifacts', window.appId, 'users', userId, 'sonhos');
             
-            // Rule 2: Simple query (fetch all and sort in memory)
             window.onSnapshot(collectionRef, (snapshot) => {
                 const list = document.getElementById('dream-list');
                 const dreams = [];
                 snapshot.forEach(doc => dreams.push(doc.data()));
-                
-                // Sort in memory
                 dreams.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
                 if (dreams.length === 0) {
-                    list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Ainda não registou nenhum sonho.</p>';
+                    list.innerHTML = '<p class="text-center text-xs text-gray-400 py-10">Ainda não registrou nenhum sonho.</p>';
                     return;
                 }
 
                 list.innerHTML = dreams.map(d => `
                     <div class="p-4 bg-white rounded-2xl border border-blue-50 text-xs text-gray-600 shadow-sm">
-                        <p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-PT')}</p>
+                        <p class="font-bold text-blue-400 mb-1">${new Date(d.date).toLocaleString('pt-BR')}</p>
                         <p>${d.text}</p>
                     </div>
                 `).join('');
             }, (error) => console.error(error));
         }
 
-        const hopePhrases = ["Tudo passa.", "Respire fundo.", "Amanhã será melhor.", "Você é forte.", "Sua paz é prioridade."];
+        const hopePhrases = [
+            "Depois da chuva, o sol sempre volta a brilhar.",
+            "Respire fundo. Você é mais forte do que imagina.",
+            "Tudo bem ir devagar, contanto que não pare.",
+            "Amanhã é uma nova oportunidade para recomeçar.",
+            "Sua paz interior é o seu maior tesouro."
+        ];
+
         async function generateHope() {
             const loader = document.getElementById('hope-loader');
             const placeholder = document.getElementById('hope-placeholder');
             const content = document.getElementById('hope-content');
             const btn = document.getElementById('hope-btn');
+            
             btn.disabled = true;
             placeholder.classList.add('hidden');
             content.classList.add('hidden');
             loader.classList.remove('hidden');
+
             try {
+                // CORREÇÃO: Estrutura correta para o Imagen 4.0 predict
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instances: { prompt: "Atmospheric zen landscape" }, parameters: { sampleCount: 1 } })
+                    body: JSON.stringify({ 
+                        instances: [ { prompt: "Atmospheric zen landscape, serene nature, soft cinematic lighting, calming colors, ultra high quality" } ], 
+                        parameters: { sampleCount: 1 } 
+                    })
                 });
+                
                 const data = await response.json();
-                document.getElementById('hope-image').src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-                document.getElementById('hope-text').innerText = hopePhrases[Math.floor(Math.random()*hopePhrases.length)];
-                loader.classList.add('hidden');
-                content.classList.remove('hidden');
+                
+                if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+                    document.getElementById('hope-image').src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+                    document.getElementById('hope-text').innerText = hopePhrases[Math.floor(Math.random()*hopePhrases.length)];
+                    loader.classList.add('hidden');
+                    content.classList.remove('hidden');
+                } else {
+                    throw new Error("Erro na geração da imagem");
+                }
             } catch (e) {
-                document.getElementById('hope-text').innerText = "Respire. Você é luz.";
+                document.getElementById('hope-text').innerText = "Respire. Mesmo sem uma imagem agora, saiba que você é luz e tudo ficará bem.";
                 loader.classList.add('hidden');
                 content.classList.remove('hidden');
             } finally { btn.disabled = false; }
