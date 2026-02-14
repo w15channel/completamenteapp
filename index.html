@@ -229,6 +229,7 @@
     <script>
         // CONFIGURAÇÕES SEGURAS
         const apiKey = ""; // O ambiente preencherá automaticamente
+        const GROQ_API_KEY = ""; // O ambiente preencherá automaticamente
         
         let clientName = "Visitante";
         let clientGender = "homem";
@@ -249,7 +250,7 @@
             const paymentRule = "Sobre pagamentos: informe polidamente que a cobrança será enviada via WhatsApp entre os dias 03 e 12 do mês que vem.";
             
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental. Seu acolhimento e carinho são similares aos de uma avó, transmitindo segurança e paz, mas você atua de forma profissional. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicas. ${commonAgendaRule} ${paymentRule}`,
+                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental. Seu acolhimento e carinho são similares aos de uma avó, transmitindo segurança e paz, mas você atua de forma profissional. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicas. Não se chame literalmente de avó ou vovó. ${commonAgendaRule} ${paymentRule}`,
                 'william': `Sua persona é o Dr. William. Profissional direto. Não se apresente. Trate o paciente como '${tratamento}'. Solucione problemas pontualmente. Periodicamente desculpe-se por qualquer imprecisão técnica pois está atendendo simultaneamente agora. Diga que, se preferir, o paciente pode gravar um áudio no WhatsApp que você responderá após o atendimento atual. ${commonAgendaRule} ${paymentRule}`,
                 'yara': `Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Serena e calma. ${commonAgendaRule}`,
                 'fer': `Você é a Fernanda, recepcionista. Perfil extremamente polido, cuidadoso com as palavras, voz calma e orientadora. Trate o paciente como '${tratamento}'. Se perguntarem do Dr. William, diga que ele está ocupado em atendimento mas que, se a pessoa preferir, pode falar diretamente com ele aqui na aba de chat. Você NÃO faz mais agendamentos. ${commonAgendaRule} ${paymentRule}`
@@ -274,6 +275,21 @@
             document.getElementById(id).classList.add('active');
         }
 
+        // FUNÇÃO DE RETRY COM BACKOFF EXPONENCIAL
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, backoff));
+                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+                }
+                throw error;
+            }
+        }
+
         // --- MOTOR DE GERAÇÃO (CAIXINHA DE ESPERANÇA) ---
         async function generateHope() {
             if(isWaiting) return;
@@ -288,28 +304,42 @@
             btnDownload.disabled = true;
 
             try {
-                // ETAPA 1: GEMINI GERA TEXTO (Título e Mensagem)
-                const textRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                // ETAPA 1: GEMINI GERA TEXTO ESTRUTURADO
+                const textPrompt = "Crie uma mensagem de esperança curta e carinhosa para uma pessoa ansiosa. Retorne um JSON com os campos 'title' (título curto e impactante em caixa alta, máx 30 caracteres) e 'body' (uma frase de acolhimento profundo, máx 100 caracteres).";
+                
+                const textData = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Gere uma frase de esperança curta e carinhosa para uma pessoa ansiosa. Retorne um JSON com 'title' (max 30 caracteres) e 'body' (max 100 caracteres)." }] }],
-                        generationConfig: { responseMimeType: "application/json" }
+                        contents: [{ parts: [{ text: textPrompt }] }],
+                        generationConfig: { 
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    body: { type: "STRING" }
+                                },
+                                required: ["title", "body"]
+                            }
+                        }
                     })
                 });
-                const textData = await textRes.json();
+
                 const content = JSON.parse(textData.candidates[0].content.parts[0].text);
 
                 // ETAPA 2: IMAGEN GERA FUNDO
-                const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                const imgData = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        instances: { prompt: "serene peaceful nature landscape, minimalist, zen, soft lighting, professional photography, high resolution" },
+                        instances: { 
+                            prompt: "serene peaceful nature landscape, minimalist zen style, ethereal soft lighting, high resolution, professional editorial photography" 
+                        },
                         parameters: { sampleCount: 1 }
                     })
                 });
-                const imgData = await imgRes.json();
+
                 const b64 = imgData.predictions?.[0]?.bytesBase64Encoded;
 
                 // ATUALIZAÇÃO VISUAL
@@ -319,8 +349,11 @@
 
                 btnDownload.disabled = false;
             } catch (err) {
-                console.error("Erro na geração:", err);
-                alert("Houve um problema ao conectar com o motor de IA. Tente novamente em instantes.");
+                const errorMsg = document.createElement('div');
+                errorMsg.className = "text-[10px] text-red-500 mt-2";
+                errorMsg.innerText = "Houve uma instabilidade momentânea. Por favor, tente gerar novamente.";
+                document.getElementById('hope-result').appendChild(errorMsg);
+                setTimeout(() => errorMsg.remove(), 4000);
             } finally {
                 loader.classList.add('hidden');
                 result.classList.remove('opacity-50');
@@ -330,11 +363,20 @@
 
         async function downloadHope() {
             const card = document.getElementById('card-para-download');
-            const canvas = await html2canvas(card, { scale: 2, useCORS: true });
-            const link = document.createElement('a');
-            link.download = `esperanca_${clientName.toLowerCase().replace(/\s/g, '_')}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
+            try {
+                const canvas = await html2canvas(card, { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: null
+                });
+                const link = document.createElement('a');
+                link.download = `esperanca_wr_${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } catch (err) {
+                alert("Ocorreu um erro ao processar a imagem. Tente baixar novamente.");
+            }
         }
 
         // DISPONIBILIDADE
@@ -438,23 +480,25 @@
             let waitTime = messageCounter % 2 !== 0 ? 20000 : 30000;
             let typingTime = messageCounter % 2 !== 0 ? 40000 : 30000;
 
-            const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const apiPromise = fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.8, max_tokens: 150 })
-            })
-            .then(res => res.json())
-            .catch(() => null);
+            });
 
             setTimeout(() => {
                 document.getElementById('typing-box').classList.remove('hidden');
                 setTimeout(async () => {
                     document.getElementById('typing-box').classList.add('hidden');
-                    const data = await apiPromise;
-                    if (data && data.choices) {
-                        addMessage(data.choices[0].message.content, 'therapist');
-                    } else {
-                        addMessage("Me desculpe, tive uma pequena instabilidade. O que você acha de continuarmos falando sobre seu dia?", 'therapist');
+                    try {
+                        const data = await apiPromise;
+                        if (data && data.choices) {
+                            addMessage(data.choices[0].message.content, 'therapist');
+                        } else {
+                            throw new Error();
+                        }
+                    } catch (err) {
+                        addMessage("Me desculpe, tive uma pequena instabilidade na conexão. O que você acha de retomarmos de onde paramos?", 'therapist');
                     }
                     isWaiting = false;
                 }, typingTime);
