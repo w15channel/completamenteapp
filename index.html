@@ -2,200 +2,214 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
     <title>Harmonia Diária - WR TERAPIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
-        :root { --primary: #0ea5e9; --secondary: #10b981; }
+        :root { 
+            --bg-dark: #0f172a; 
+            --card-bg: #1e293b; 
+            --primary: #0ea5e9; 
+            --text-light: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+        
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
-            min-height: 100vh; 
-            color: #334155; 
+            background-color: var(--bg-dark);
+            height: 100vh;
+            width: 100vw;
+            color: var(--text-light); 
             margin: 0; padding: 0;
-            overflow-x: hidden;
+            overflow: hidden; /* Remove rolagem da janela principal */
+            display: flex;
+            flex-direction: column;
         }
+
         .heading-font { font-family: 'Quicksand', sans-serif; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 1.5rem;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        }
-        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
-        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
         
-        /* Chat */
-        .chat-container { height: calc(100vh - 380px); overflow-y: auto; scroll-behavior: smooth; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Tabs Logic */
+        .tab-content { 
+            display: none; 
+            height: 100%; 
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Chat Styles */
+        .chat-container { 
+            flex: 1;
+            overflow-y: auto; 
+            scroll-behavior: smooth; 
+            padding-bottom: 10px;
+        }
         .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px; }
         .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
-        .message.therapist { align-self: flex-start; background: white; color: #334155; border-bottom-left-radius: 0.2rem; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .message.audio-msg { font-style: italic; display: flex; items-center; gap: 8px; }
+        .message.therapist { align-self: flex-start; background: #334155; color: #e2e8f0; border-bottom-left-radius: 0.2rem; margin-right: auto; }
+        .message.audio-msg { font-style: italic; display: flex; items-center; gap: 8px; color: #cbd5e1; }
         
-        /* Status Dot */
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
-        .status-online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
-        .status-busy { background-color: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
-        .status-offline { background-color: #94a3b8; }
-
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* Mural Styles */
-        .mural-card {
-            background-color: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            font-size: 0.85rem;
-            color: #4b5563;
-        }
-
-        /* Memory Game Styles */
-        .memory-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            perspective: 1000px;
-        }
+        /* Game Styles */
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 1000px; }
         .memory-card {
-            background-color: white;
-            height: 70px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            border: 2px solid #e0f2fe;
+            background-color: #334155;
+            height: 60px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer;
+            border: 2px solid #475569;
             color: transparent;
             transition: all 0.3s ease;
             transform-style: preserve-3d;
         }
-        .memory-card.flipped, .memory-card.matched {
-            background-color: #fff;
-            border-color: #f472b6;
-            color: #333;
-            transform: rotateY(180deg);
-        }
-        .memory-card.matched {
-            background-color: #d1fae5;
-            border-color: #10b981;
-            cursor: default;
-        }
-        .memory-card i {
-            pointer-events: none;
-        }
+        .memory-card.flipped, .memory-card.matched { background-color: #f1f5f9; border-color: var(--primary); color: #333; transform: rotateY(180deg); }
+        .memory-card.matched { background-color: #10b981; border-color: #059669; color: white; cursor: default; }
+        
+        /* Scrollbar customizada para dark mode */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        /* Utilitários Gerais */
+        .btn-game { @apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95; }
+        input, select, textarea { background-color: #334155; color: white; border-color: #475569; }
+        input::placeholder, textarea::placeholder { color: #94a3b8; }
     </style>
 </head>
-<body class="pb-24">
+<body>
 
-    <header class="p-5 text-center sticky top-0 z-10 bg-white/30 backdrop-blur-md border-b border-white/20">
-        <h1 class="text-2xl font-bold text-sky-800 heading-font">Harmonia Diária</h1>
-        <p class="text-sky-600 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA</p>
+    <!-- Header Fixo -->
+    <header class="flex-none p-4 text-center bg-slate-900/90 backdrop-blur-md border-b border-slate-700 z-10">
+        <h1 class="text-xl font-bold text-sky-400 heading-font">Harmonia Diária</h1>
+        <p class="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA | NOITE</p>
     </header>
 
-    <main class="max-w-md mx-auto px-4 pt-4">
+    <!-- Área Principal (Flexível e com scroll interno apenas onde necessário) -->
+    <main class="flex-1 overflow-hidden relative w-full max-w-md mx-auto">
         
-        <section id="onboarding" class="tab-content active">
-            <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
-                <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="fas fa-fingerprint text-sky-500 text-3xl"></i>
+        <!-- ONBOARDING -->
+        <section id="onboarding" class="tab-content active p-6 justify-center">
+            <div class="glass-card p-8 text-center flex flex-col items-center justify-center h-full max-h-[500px] my-auto">
+                <div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 ring-2 ring-sky-500/50">
+                    <i class="fas fa-fingerprint text-sky-400 text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-sky-900 mb-2 heading-font">Bem-vindo(a)</h2>
-                <p class="text-sm text-gray-500 mb-8">Identifique-se para acessar seu espaço.</p>
-                <div class="w-full mb-4">
-                    <select id="user-gender" class="w-full p-4 mb-3 rounded-2xl border border-sky-100 bg-white/80 text-sm outline-none focus:ring-2 focus:ring-sky-200">
+                <h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2>
+                <p class="text-sm text-slate-400 mb-8">Identifique-se para acessar seu espaço seguro.</p>
+                <div class="w-full mb-4 space-y-3">
+                    <select id="user-gender" class="w-full p-4 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="homem">Sou Homem</option>
                         <option value="mulher">Sou Mulher</option>
                     </select>
-                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl border border-sky-100 bg-white/80 text-center uppercase font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-200">
+                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none focus:ring-2 focus:ring-sky-500">
                 </div>
-                <button onclick="login()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-600 transition-all">Entrar</button>
+                <button onclick="login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-500 transition-all">Entrar</button>
             </div>
         </section>
 
-        <section id="home" class="tab-content">
+        <!-- HOME -->
+        <section id="home" class="tab-content p-4 overflow-y-auto">
             <div class="glass-card p-6 mb-4">
-                <p class="text-xs text-gray-400">Olá,</p>
-                <h2 class="text-xl font-bold text-gray-800 heading-font mb-6 client-name">Visitante</h2>
+                <p class="text-xs text-slate-400">Boa noite,</p>
+                <h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="openChatSelection()" class="p-5 bg-white/80 rounded-2xl border border-sky-50 flex flex-col items-center gap-3 hover:bg-sky-50 shadow-sm transition-all"><i class="fas fa-comment-medical text-2xl text-sky-500"></i><span class="text-[10px] font-bold uppercase">Conversar</span></button>
-                    <button onclick="showTab('agenda')" class="p-5 bg-white/80 rounded-2xl border border-emerald-50 flex flex-col items-center gap-3 hover:bg-emerald-50 shadow-sm transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-500"></i><span class="text-[10px] font-bold uppercase">Agendar</span></button>
-                    <button onclick="showTab('mural')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-comments text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Mural</span></button>
-                    <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-lightbulb text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
+                    <button onclick="openChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button>
+                    <button onclick="showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span></button>
+                    <button onclick="showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button>
+                    <button onclick="showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha IA</span></button>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-4">
-                    <button onclick="showTab('relaxation')" class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-xl text-purple-500"></i><span class="text-[9px] font-bold uppercase text-purple-700">Relaxar</span></button>
-                    <button onclick="startGame()" class="p-4 bg-rose-50 rounded-2xl border border-rose-100 flex flex-col items-center gap-2 hover:bg-rose-100 shadow-sm transition-all"><i class="fas fa-puzzle-piece text-xl text-rose-500"></i><span class="text-[9px] font-bold uppercase text-rose-700">Descompressão</span></button>
+                    <button onclick="showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button>
+                    <button onclick="startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button>
                 </div>
             </div>
         </section>
 
-        <section id="agenda" class="tab-content">
-            <div class="glass-card p-6 h-[75vh] flex flex-col">
-                <div class="flex items-center gap-2 mb-4">
-                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
-                    <h2 class="font-bold text-sky-900 heading-font">Agendamento Automático</h2>
+        <!-- AGENDA -->
+        <section id="agenda" class="tab-content p-4 h-full">
+            <div class="glass-card p-4 h-full flex flex-col">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <h2 class="font-bold text-sky-400 heading-font">Agendamento</h2>
                 </div>
-                <div class="flex-1 rounded-xl overflow-hidden border border-sky-100">
+                <div class="flex-1 rounded-xl overflow-hidden border border-slate-600 bg-white">
                     <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 text-center italic">Caso não encontre um horário ideal, converse com a Dra. Lia no chat.</p>
+                <p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática. Dúvidas? Fale com a Dra. Lia.</p>
             </div>
         </section>
 
-        <section id="chat-selection" class="tab-content">
+        <!-- SELEÇÃO CHAT -->
+        <section id="chat-selection" class="tab-content p-4 overflow-y-auto">
             <div class="glass-card p-6">
-                <h2 class="text-lg font-bold text-sky-900 mb-4 text-center">Nossa Equipe</h2>
+                <h2 class="text-lg font-bold text-sky-400 mb-4 text-center">Nossa Equipe</h2>
                 <div id="therapist-list" class="space-y-3"></div>
-                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-gray-400 font-bold uppercase">Voltar</button>
+                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-slate-500 font-bold uppercase hover:text-slate-300">Voltar</button>
             </div>
         </section>
 
-        <section id="chat" class="tab-content">
-            <div class="glass-card flex flex-col h-[75vh]">
-                <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/40">
-                    <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
+        <!-- CHAT -->
+        <section id="chat" class="tab-content h-full flex flex-col">
+            <div class="glass-card flex flex-col h-full m-2 border-0 rounded-none bg-transparent shadow-none">
+                <!-- Chat Header -->
+                <div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/80 rounded-t-2xl">
+                    <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div>
                     <div class="flex-1">
-                        <p id="active-name" class="font-bold text-gray-800 text-sm"></p>
+                        <p id="active-name" class="font-bold text-white text-sm"></p>
                         <div class="flex items-center">
                             <span id="active-status-dot" class="status-dot"></span>
-                            <span id="active-status-text" class="text-[9px] uppercase font-bold text-gray-400">Status</span>
+                            <span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span>
                         </div>
                     </div>
-                    <button onclick="openChatSelection()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    <button onclick="openChatSelection()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
                 
-                <div id="chat-messages" class="chat-container p-4 flex flex-col"></div>
-                <div id="typing-box" class="px-4 hidden text-xs text-sky-500 italic mb-2 font-medium flex items-center gap-1">
+                <!-- Messages -->
+                <div id="chat-messages" class="chat-container p-4 bg-slate-900/50"></div>
+                
+                <!-- Typing Indicator -->
+                <div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/50">
                     Digitando <span class="animate-pulse">...</span>
                 </div>
                 
-                <div class="p-4 bg-white/50 rounded-b-[1.5rem] border-t border-sky-50">
+                <!-- Input Area -->
+                <div class="p-3 bg-slate-800 border-t border-slate-700 rounded-b-2xl">
                     <form id="chat-form" class="flex items-center gap-2">
-                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><i class="fas fa-microphone"></i></button>
-                        <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
-                        <button type="submit" class="w-10 h-10 bg-sky-500 text-white rounded-full shadow-md hover:bg-sky-600"><i class="fas fa-paper-plane"></i></button>
+                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors"><i class="fas fa-microphone"></i></button>
+                        <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400">
+                        <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
         </section>
 
-        <section id="relaxation" class="tab-content">
-            <div class="glass-card p-4 h-[75vh] overflow-y-auto">
-                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
-                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+        <!-- RELAXAMENTO -->
+        <section id="relaxation" class="tab-content p-4 h-full overflow-y-auto">
+            <div class="glass-card p-4 h-full flex flex-col">
+                <div class="flex items-center gap-3 mb-4 flex-none">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <h2 class="font-bold text-sky-400">Relaxamento</h2>
+                </div>
                 
-                <div class="mt-6 p-5 bg-white/70 rounded-2xl border border-purple-50 text-gray-700 leading-relaxed text-sm shadow-sm">
+                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600">
+                    <iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe>
+                </div>
+                
+                <div class="mt-4 p-5 bg-slate-800/80 rounded-2xl border border-slate-700 text-slate-300 leading-relaxed text-sm shadow-inner flex-1 overflow-y-auto">
                     <p class="mb-4">
                         Muitas vezes em nossas rotinas nos perdemos em pensamentos e sofrimentos, mas é fundamental parar, relaxar e deixar sentir a leveza da vida.
                     </p>
@@ -205,104 +219,107 @@
                     <p class="mb-6">
                         Abrace um travesseiro, feche os olhos e se reconstrua.
                     </p>
-                    <p class="text-right font-bold text-purple-800 font-heading">
+                    <p class="text-right font-bold text-sky-500 font-heading text-xs">
                         Att. William Ribeiro - O seu terapeuta ❤️
                     </p>
                 </div>
             </div>
         </section>
 
-        <section id="mural" class="tab-content">
-            <div class="glass-card p-5 h-[80vh] flex flex-col">
-                <div class="flex items-center gap-2 mb-4">
-                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
+        <!-- MURAL -->
+        <section id="mural" class="tab-content p-4 h-full">
+            <div class="glass-card p-5 h-full flex flex-col">
+                <div class="flex items-center gap-3 mb-4 flex-none">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <div>
-                        <h2 class="font-bold text-sky-900">Mural de Sentimentos</h2>
-                        <p class="text-[10px] text-gray-400">Compartilhe suas experiências anonimamente.</p>
+                        <h2 class="font-bold text-sky-400">Mural de Sentimentos</h2>
+                        <p class="text-[10px] text-slate-500">Compartilhe suas experiências anonimamente.</p>
                     </div>
                 </div>
                 
                 <div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1">
-                    <!-- Mensagens serão inseridas aqui -->
+                    <!-- Mensagens -->
                 </div>
 
-                <div class="mt-auto pt-4 border-t border-gray-100">
-                    <textarea id="mural-input" placeholder="Escreva algo transformador para quem ler..." class="w-full p-3 rounded-xl border border-sky-100 h-24 resize-none text-sm bg-white/60 mb-2 focus:ring-2 focus:ring-amber-200 outline-none"></textarea>
-                    <button onclick="saveMuralMessage()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-600 transition-all">
-                        <i class="fas fa-paper-plane mr-2"></i>Publicar no Mural
+                <div class="mt-auto pt-4 border-t border-slate-700 flex-none">
+                    <textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea>
+                    <button onclick="saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all">
+                        <i class="fas fa-paper-plane mr-2"></i>Publicar
                     </button>
                 </div>
             </div>
         </section>
 
-        <section id="game-section" class="tab-content">
-            <div class="glass-card p-5 h-[80vh] flex flex-col">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
-                        <h2 class="font-bold text-sky-900">Pares da Calma</h2>
-                    </div>
-                    <button onclick="initMemoryGame()" class="text-xs text-rose-500 font-bold uppercase"><i class="fas fa-redo"></i> Reiniciar</button>
+        <!-- CAIXINHA IA -->
+        <section id="hope" class="tab-content p-4 h-full overflow-y-auto">
+            <div class="glass-card p-6 text-center min-h-full flex flex-col justify-center">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <h2 class="font-bold text-lg text-yellow-400">Caixinha Emocional</h2>
+                    <div class="w-8"></div>
                 </div>
 
-                <div class="mb-4 bg-white/50 p-3 rounded-xl border border-rose-50">
-                    <p class="text-xs text-gray-600 text-center leading-relaxed">
-                        Este espaço serve para <b>brincar, relaxar e sair da rotina</b>. <br>
-                        Se estiver em crise, foque apenas em encontrar os pares. <br>
-                        Sem pressa, sem pontuação, no seu tempo.
-                    </p>
+                <div class="mb-8">
+                    <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600 shadow-lg animate-pulse">
+                        <i class="fas fa-gift text-yellow-400 text-4xl"></i>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-2">Toque para receber uma mensagem de luz para sua noite.</p>
                 </div>
-                
-                <div class="flex-1 flex items-center justify-center">
-                    <div id="memory-grid" class="memory-grid w-full">
-                        <!-- Cards inseridos via JS -->
+
+                <button onclick="gerarCaixinha()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50">
+                    <i class="fas fa-magic mr-2"></i>Gerar Experiência
+                </button>
+
+                <div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-4">
+                    <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/>
+                    <div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm">
+                        <p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed"></p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="hope" class="tab-content">
-            <div class="glass-card p-6 text-center h-[75vh] flex flex-col justify-center overflow-y-auto">
+        <!-- DESCOMPRESSÃO (5 JOGOS) -->
+        <section id="game-section" class="tab-content p-4 h-full overflow-y-auto">
+            <div class="glass-card p-5 min-h-full flex flex-col">
+                <div class="flex items-center justify-between mb-2 flex-none">
+                    <div class="flex items-center gap-2">
+                        <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                        <h2 class="font-bold text-rose-400">Descompressão</h2>
+                    </div>
+                    <span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/5</span>
+                </div>
+
+                <div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none">
+                    <p class="text-xs text-slate-400 text-center leading-relaxed">
+                        Este é um espaço seguro para brincar, relaxar e sair da rotina. <br>
+                        Se estiver em crise, foque apenas no jogo. <br>
+                        Treine seu raciocínio, memória e percepção.
+                    </p>
+                </div>
                 
-                <div class="flex justify-between items-center mb-4">
-                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
-                    <h2 class="font-bold text-lg text-sky-900">Caixinha Emocional IA</h2>
-                    <div class="w-4"></div> <!-- Spacer -->
+                <!-- Container dos Jogos -->
+                <div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative">
+                    <!-- O conteúdo do jogo será injetado aqui via JS -->
                 </div>
 
-                <div class="mb-6">
-                    <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                        <i class="fas fa-gift text-amber-500 text-3xl"></i>
-                    </div>
-                    <p class="text-sm text-gray-500 mb-2">Toque no botão abaixo para receber um presente aleatório para o seu dia.</p>
-                </div>
-
-                <!-- Botão centralizado e destacado -->
-                <button onclick="gerarCaixinha()" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-                    <i class="fas fa-magic mr-2"></i>Gerar Experiência
+                <!-- Botão Próximo (Oculto inicialmente) -->
+                <button id="next-game-btn" onclick="nextGame()" class="hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">
+                    Próximo Desafio <i class="fas fa-arrow-right ml-2"></i>
                 </button>
-
-                <div id="resultadoBox" class="mt-8 hidden animate-fade-in">
-                    <!-- Mantendo a proporção da imagem -->
-                    <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-gray-200"/>
-                    <div class="bg-white/80 p-4 rounded-xl border border-sky-50 shadow-sm">
-                        <p id="msgBox" class="italic text-gray-700 text-sm font-medium leading-relaxed"></p>
-                    </div>
-                </div>
-
             </div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-100 py-3 flex justify-around z-50">
-        <button onclick="showTab('home')" class="text-sky-500 flex flex-col items-center gap-1"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button>
-        <button onclick="openChatSelection()" class="text-gray-400 flex flex-col items-center gap-1"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button>
+    <!-- Nav Fixo -->
+    <nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50">
+        <button onclick="showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button>
+        <button onclick="openChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button>
     </nav>
 
     <script>
         const GROQ_API_KEY = "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";
-        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
         
         let clientName = "Visitante";
         let clientGender = "homem";
@@ -311,17 +328,18 @@
         let messageCounter = 0;
         let activeTherapist = null;
         
+        // --- CHAT SYSTEM ---
         const offlineResponses = {
-            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
-            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
-            'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
-            'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
+            'lia': ["Então querido, calma viu? Vovó tá aqui.", "Respira fundo, né? Vai passar.", "Me conta mais, filho."],
+            'william': ["Pois é, a gente entende.", "Então, foca no agora.", "Olha, é normal sentir isso."],
+            'yara': ["Sinta a paz da noite, amigo.", "Tudo vai se acalmar, querido.", "Estou aqui com você."],
+            'fer': ["Posso ajudar em algo mais?", "O sistema é bem simples.", "Qualquer dúvida, chame."]
         };
 
         const therapists = [
-            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart' },
+            { id: 'lia', name: 'Dra. Lia', color: '#ec4899', icon: 'heart' },
             { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie' },
-            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon' },
+            { id: 'yara', name: 'Dra. Yara', color: '#8b5cf6', icon: 'moon' },
             { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset' }
         ];
 
@@ -329,16 +347,16 @@
             const tratamento = clientGender === "homem" ? "querido" : "querida";
             const amigo = clientGender === "homem" ? "amigo" : "amiga";
             const formal = clientGender === "homem" ? "Sr." : "Sra.";
-            const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
+            const commonAgendaRule = "Sobre agendamentos: informe que a agenda é automática na tela inicial. Se não tiver horário, sugira falar com a Dra. Lia.";
             
+            // Instrução de estilo Paranaense
+            const estiloFala = "IMPORTANTE: Adote um tom de fala característico do Paraná (curitibano/interior). Use expressões como 'então', 'né?', 'viu', 'capaz', 'olha só', 'piazão' (se for homem e o contexto permitir intimidade), 'gurria' (se mulher e íntimo). Seja empático, converse como um amigo próximo, mas mantenha a postura profissional. Exemplo de estrutura: 'Então bruno, tudo bom amigo? É difícil mesmo né? Mas ó, a gente supera viu?'. Não seja robótico.";
+
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia, uma terapeuta muito experiente e acolhedora. Você conhece como ninguém as dificuldades humanas. Trate o paciente como '${tratamento}'. Respostas profundas, mas curtas. Demonstre preocupação genuína. ${commonAgendaRule}`,
-                
-                'william': `Sua persona é o Dr. William, um terapeuta jovem e dinâmico. Para você, cada cliente é único e merece personalização total. REGRA OBRIGATÓRIA: Sempre inicie suas frases usando o nome do paciente (${clientName}) antecedido por expressões como 'Pois é', 'Então' ou 'Olha'. Exemplo: 'Pois é ${clientName}...', 'Então ${clientName}...'. Seja direto mas empático. ${commonAgendaRule}`,
-                
-                'yara': `Sua persona é a Dra. Yara, terapeuta da madrugada (23h às 08h). Você é jovem e tem um jeito carinhoso. REGRA OBRIGATÓRIA: Chame o paciente de '${amigo}'. E quase sempre termine suas frases com '${tratamento}'. Exemplo: 'Conte comigo, ${amigo}... tudo vai passar, ${tratamento}'. ${commonAgendaRule}`,
-                
-                'fer': `Você é a Fernanda, recepcionista jovem, simpática e prestativa. REGRA OBRIGATÓRIA: Trate o paciente sempre por '${formal} ${clientName}'. Seja muito educada. Você NÃO faz agendamentos, apenas orienta sobre o sistema automático. ${commonAgendaRule}`
+                'lia': `Você é a Dra. Lia. Experiente, acolhedora, como uma avó sábia do Paraná. Trate como '${tratamento}'. ${estiloFala} ${commonAgendaRule}`,
+                'william': `Você é o Dr. William. Jovem, dinâmico, direto. Trate o paciente pelo NOME sempre, usando prefixos como 'Pois é', 'Então', 'Olha'. Ex: 'Pois é ${clientName}...'. ${estiloFala} ${commonAgendaRule}`,
+                'yara': `Você é a Dra. Yara, terapeuta da madrugada. Carinhosa e calma. Chame de '${amigo}' e termine frases com '${tratamento}'. ${estiloFala} ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, recepcionista. Educada e prestativa. Trate por '${formal} ${clientName}'. ${estiloFala} ${commonAgendaRule}`
             };
             return prompts[therapistId] || "";
         }
@@ -359,38 +377,16 @@
             document.getElementById(id).classList.add('active');
         }
 
-        function startGame() {
-            showTab('game-section');
-            initMemoryGame();
-        }
-
-        function checkAvailability() {
-            return therapists.map(t => {
-                return { ...t, status: 'online', label: 'Online' };
-            });
-        }
-
         function openChatSelection() {
             const list = document.getElementById('therapist-list');
             list.innerHTML = '';
-            const available = checkAvailability();
-            
-            available.forEach(t => {
+            therapists.forEach(t => {
                 const card = document.createElement('div');
-                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all mb-3 cursor-pointer hover:bg-sky-50`;
+                card.className = `flex items-center gap-4 p-4 bg-slate-800 rounded-xl border border-slate-700 shadow-sm transition-all mb-3 cursor-pointer hover:bg-slate-700`;
                 card.onclick = () => startChat(t.id);
-                
                 card.innerHTML = `
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white" style="background-color:${t.color}">
-                        <i class="fas fa-${t.icon}"></i>
-                    </div>
-                    <div class="flex-1">
-                        <span class="font-bold text-sm text-gray-700">${t.name}</span>
-                        <div class="flex items-center">
-                            <span class="status-dot status-${t.status}"></span>
-                            <span class="text-[8px] uppercase font-bold text-gray-400">${t.label}</span>
-                        </div>
-                    </div>
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${t.color}"><i class="fas fa-${t.icon}"></i></div>
+                    <div class="flex-1"><span class="font-bold text-sm text-slate-200">${t.name}</span><div class="flex items-center"><span class="status-dot status-online"></span><span class="text-[8px] uppercase font-bold text-slate-500">Online</span></div></div>
                 `;
                 list.appendChild(card);
             });
@@ -399,29 +395,20 @@
 
         function startChat(id) {
             activeTherapist = therapists.find(t => t.id === id);
-            const availability = checkAvailability().find(t => t.id === id);
-            const tratamento = clientGender === "homem" ? "querido" : "querida";
-            const amigo = clientGender === "homem" ? "amigo" : "amiga";
-            const formal = clientGender === "homem" ? "Sr." : "Sra.";
-            
             document.getElementById('active-name').innerText = activeTherapist.name;
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
             document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
-            
-            const dot = document.getElementById('active-status-dot');
-            dot.className = `status-dot status-${availability.status}`;
-            document.getElementById('active-status-text').innerText = availability.label;
-
+            document.getElementById('active-status-dot').className = `status-dot status-online`;
+            document.getElementById('active-status-text').innerText = "Online";
             document.getElementById('chat-messages').innerHTML = '';
             messageCounter = 0;
-            
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
-            let welcome = "";
-            if (id === 'lia') welcome = `Oi ${tratamento}, vovó Lia está aqui. Sinto que você tem algo a dizer. O que te traz hoje?`;
-            else if (id === 'william') welcome = `Então ${clientName}, vamos conversar. Sou o Dr. William, e estou aqui exclusivamente para você. O que está acontecendo?`;
-            else if (id === 'yara') welcome = `Olá ${amigo}. A noite é uma boa conselheira. Estou aqui com você, ${tratamento}.`;
-            else if (id === 'fer') welcome = `Olá, ${formal} ${clientName}. Sou a Fernanda. Como posso ajudar com suas dúvidas sobre o app hoje?`;
+            let welcome = "Olá! Como posso ajudar?"; // Default
+            if (id === 'lia') welcome = `Oi ${clientName}, tudo bem filho(a)? Vovó Lia tá aqui. O que tá pesando nesse coraçãozinho hoje, viu?`;
+            else if (id === 'william') welcome = `E aí ${clientName}, tudo certo? Sou o Dr. William. Então, me conta, o que tá pegando hoje?`;
+            else if (id === 'yara') welcome = `Oi amigo(a). A noite tá tranquila por aí? Pode desabafar, querido(a).`;
+            else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Tudo bom? Sou a Fernanda. Precisa de ajuda com o app?`;
 
             addMessage(welcome, 'therapist', false);
             showTab('chat');
@@ -430,320 +417,337 @@
         function addMessage(text, type, saveToHistory=true, isAudio=false) {
             const div = document.createElement('div');
             div.className = `message ${type}`;
-            
             if (isAudio && type === 'user') {
                 div.classList.add('audio-msg');
-                div.innerHTML = '<i class="fas fa-microphone-lines text-lg"></i> Mensagem de Voz Enviada';
+                div.innerHTML = '<i class="fas fa-microphone-lines text-lg text-sky-400"></i> <span class="text-xs">Áudio enviado para análise...</span>';
             } else {
                 div.innerHTML = text;
             }
-
             document.getElementById('chat-messages').appendChild(div);
             document.getElementById('chat-messages').scrollTop = 99999;
             if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
         }
 
-        // Variável global para armazenar texto de áudio temporariamente
         let tempAudioText = "";
-
         document.getElementById('chat-form').onsubmit = async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
             let text = input.value.trim();
             let isAudioMsg = false;
-
-            // Se veio do reconhecimento de voz (input preenchido e flag ativa ou detectada)
-            // Lógica simplificada: Se o input tem texto, enviamos.
-            // Para diferenciar visualmente se foi "Voz", verificamos se a função toggleMic preencheu.
-            
-            // Aqui, vamos assumir que se o usuário usou o microfone, ele clica em enviar ou o envio é automático.
-            // Para simplificar a UI pedida: vamos usar uma flag global setada pelo mic.
-            
             if(!text && !tempAudioText) return;
             if(isWaiting) return;
-
-            if (tempAudioText) {
-                text = tempAudioText;
-                isAudioMsg = true;
-                tempAudioText = ""; // Limpa
-            } else {
-                text = input.value.trim();
-            }
+            if (tempAudioText) { text = tempAudioText; isAudioMsg = true; tempAudioText = ""; }
+            else { text = input.value.trim(); }
             
-            // Adiciona mensagem do usuário (Visualmente ícone se for áudio, texto se não)
             addMessage(text, 'user', true, isAudioMsg);
-            
             input.value = '';
             isWaiting = true;
             messageCounter++;
 
-            // Dinâmica de Tempo
-            // Msg 1 (impar): espera 30s + digita 30s
-            // Msg 2 (par): espera 40s + digita 30s
             let waitTime = (messageCounter % 2 !== 0) ? 30000 : 40000;
-            let typingTime = 30000; 
-
-            // Para testes rápidos, pode-se reduzir estes valores, mas mantive conforme pedido.
-            // Se desejar testar mais rápido, altere 30000 para 3000.
+            let typingTime = 30000;
+            
+            // Para teste rápido, descomente:
+            // waitTime = 2000; typingTime = 2000;
 
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 200 })
-            })
-            .then(res => res.json())
-            .catch(() => null);
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 250 })
+            }).then(res => res.json()).catch(() => null);
 
             setTimeout(() => {
-                // Começa a animação de digitando após o tempo de espera inicial
                 document.getElementById('typing-box').classList.remove('hidden');
-                
                 setTimeout(async () => {
-                    // Finaliza animação e mostra mensagem
                     document.getElementById('typing-box').classList.add('hidden');
                     const data = await apiPromise;
-                    if (data && data.choices) {
-                        addMessage(data.choices[0].message.content, 'therapist');
-                    } else {
-                        const responses = offlineResponses[activeTherapist.id] || offlineResponses['generico'];
-                        addMessage(responses[Math.floor(Math.random() * responses.length)], 'therapist');
-                    }
+                    if (data && data.choices) addMessage(data.choices[0].message.content, 'therapist');
+                    else addMessage("Entendi... continua, tô te ouvindo viu.", 'therapist');
                     isWaiting = false;
                 }, typingTime);
             }, waitTime);
         };
 
-        // --- CAIXINHA EMOCIONAL IA (ALEATÓRIA & OCULTA) ---
+        // --- CAIXINHA EMOCIONAL ---
         async function gerarCaixinha() {
-            // Arrays ocultos para escolha aleatória
-            const temasDisponiveis = [
-                "acolhimento", "angustia", "emoções", "esperança", 
-                "felicidade", "nostalgia", "objetivos", "propósito", 
-                "recomeço", "sentimentos", "calma", "gratidão"
-            ];
+            const temas = ["acolhimento", "angustia", "emoções", "esperança", "calma", "gratidão"];
+            const paisagens = ["montanhas", "mar", "floresta", "chuva", "pôr do sol", "campo", "céu estrelado"];
+            const tema = temas[Math.floor(Math.random() * temas.length)];
+            const paisagem = paisagens[Math.floor(Math.random() * paisagens.length)];
             
-            const paisagensDisponiveis = [
-                "montanhas", "mar", "floresta", "chuva", 
-                "pôr do sol", "campo", "céu estrelado", "cachoeira", "jardim"
-            ];
-
-            // Sorteio aleatório
-            const tema = temasDisponiveis[Math.floor(Math.random() * temasDisponiveis.length)];
-            const paisagem = paisagensDisponiveis[Math.floor(Math.random() * paisagensDisponiveis.length)];
-
             const resBox = document.getElementById("resultadoBox");
             const imgBox = document.getElementById("imgBox");
             const msgBox = document.getElementById("msgBox");
-
+            
             resBox.classList.remove("hidden");
             msgBox.innerText = "Sintonizando energia...";
-            imgBox.src = ""; 
+            imgBox.src = "";
             
-            const traducoesPaisagem = {
-                "montanhas": "mountains",
-                "mar": "sea",
-                "floresta": "forest",
-                "chuva": "rain",
-                "pôr do sol": "sunset",
-                "campo": "meadow",
-                "céu estrelado": "starry night",
-                "cachoeira": "waterfall",
-                "jardim": "garden"
-            };
+            const traducoes = { "montanhas": "mountains", "mar": "sea", "floresta": "forest", "chuva": "rain", "pôr do sol": "sunset", "campo": "meadow", "céu estrelado": "starry night" };
+            const termo = traducoes[paisagem] || "nature";
+            imgBox.src = `https://loremflickr.com/800/600/${termo},nature?lock=${Math.floor(Math.random() * 1000)}`;
 
-            const termoIngles = traducoesPaisagem[paisagem.toLowerCase()] || "nature";
-
-            // Busca imagem real
-            const imgUrl = `https://loremflickr.com/800/600/${termoIngles},nature?lock=${Math.floor(Math.random() * 1000)}`;
-            imgBox.src = imgUrl;
-
-            // Prompt
-            const comandoIA = `
-            Crie uma mensagem terapêutica curta e emocionalmente acolhedora.
-            Tema central: ${tema}
-            Ambiente simbólico: ${paisagem}
-            Estilo:
-            - humano
-            - profundo
-            - regulador emocional
-            - linguagem acessível
-            - máximo 3 frases
-            `;
-
+            const comando = `Crie uma mensagem terapêutica curta (max 3 frases) estilo paranaense acolhedor sobre: ${tema} e ${paisagem}.`;
+            
             try {
-                const resposta = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${GROQ_API_KEY}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
-                        messages: [{ role: "system", content: comandoIA }],
-                        temperature: 0.9
-                    })
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { Authorization: `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role: "system", content: comando}], temperature: 0.9 })
                 });
-
-                const data = await resposta.json();
-                if (data.choices && data.choices[0]) {
-                    msgBox.innerText = data.choices[0].message.content;
-                } else {
-                    msgBox.innerText = "Respire fundo. A calma chegará em breve.";
-                }
-            } catch (error) {
-                console.error(error);
-                msgBox.innerText = "Sinta o abraço da natureza neste momento.";
-            }
+                const data = await res.json();
+                msgBox.innerText = data.choices ? data.choices[0].message.content : "Respire fundo, viu? Vai ficar tudo bem.";
+            } catch (e) { msgBox.innerText = "Sinta a paz deste momento."; }
         }
 
-        // --- MURAL LÓGICA ---
+        // --- MURAL ---
         function saveMuralMessage() {
             const txt = document.getElementById('mural-input').value;
             if(!txt) return;
-            
-            const messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
-            messages.unshift({d: new Date().toLocaleDateString(), t: txt});
-            localStorage.setItem('mural_data', JSON.stringify(messages));
-            
+            const msgs = JSON.parse(localStorage.getItem('mural_data') || '[]');
+            msgs.unshift({d: new Date().toLocaleDateString(), t: txt});
+            localStorage.setItem('mural_data', JSON.stringify(msgs));
             document.getElementById('mural-input').value = '';
             loadMural();
         }
-
         function loadMural() {
-            let messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
-            
-            if (messages.length === 0) {
-                const fakeMessages = [
-                    {d: 'hoje', t: 'Aprendi que respirar fundo muda tudo. A calma chega se a gente permitir.'},
-                    {d: 'ontem', t: 'Não tenha medo de recomeçar. Cada dia é uma nova chance de ser feliz.'},
-                    {d: 'ontem', t: 'A ansiedade mente para você. Você é mais forte do que imagina.'}
-                ];
-                const displayList = fakeMessages;
-                document.getElementById('mural-list').innerHTML = displayList.map(i => `
-                    <div class="mural-card">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-amber-600 text-xs uppercase">Anônimo</span>
-                            <span class="text-[10px] text-gray-400">${i.d}</span>
-                        </div>
-                        <p>${i.t}</p>
-                    </div>
-                `).join('');
+            let msgs = JSON.parse(localStorage.getItem('mural_data') || '[]');
+            if(msgs.length === 0) msgs = [{d: 'hoje', t: 'Aprendi que respirar fundo muda tudo.'}, {d: 'ontem', t: 'Não tenha medo de recomeçar.'}];
+            document.getElementById('mural-list').innerHTML = msgs.map(i => `
+                <div class="mural-card bg-slate-800 border-l-4 border-amber-500 p-3 rounded mb-3 shadow">
+                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-amber-500 text-xs uppercase">Anônimo</span><span class="text-[10px] text-slate-500">${i.d}</span></div>
+                    <p class="text-slate-300 text-sm">${i.t}</p>
+                </div>`).join('');
+        }
+
+        // --- SISTEMA DE DESCOMPRESSÃO (5 JOGOS) ---
+        let currentGameIndex = 0;
+        
+        function startDescompressao() {
+            showTab('game-section');
+            currentGameIndex = 0;
+            loadGame(currentGameIndex);
+        }
+
+        function nextGame() {
+            currentGameIndex++;
+            if(currentGameIndex < 5) {
+                loadGame(currentGameIndex);
             } else {
-                 document.getElementById('mural-list').innerHTML = messages.map(i => `
-                    <div class="mural-card">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-amber-600 text-xs uppercase">Anônimo</span>
-                            <span class="text-[10px] text-gray-400">${i.d}</span>
-                        </div>
-                        <p>${i.t}</p>
-                    </div>
-                `).join('');
+                finishDescompressao();
             }
         }
 
-        // --- MEMORY GAME (JOGO DA MEMÓRIA) ---
-        let cards = [];
-        let hasFlippedCard = false;
-        let lockBoard = false;
-        let firstCard, secondCard;
-        const icons = [
-            'leaf', 'cloud-sun', 'dove', 'heart', 
-            'moon', 'star', 'tree', 'feather'
-        ]; // 8 icons for 16 cards
+        function loadGame(index) {
+            document.getElementById('game-level-display').innerText = `Nível ${index + 1}/5`;
+            document.getElementById('next-game-btn').classList.add('hidden');
+            const container = document.getElementById('game-container');
+            container.innerHTML = ''; // Limpa
 
-        function initMemoryGame() {
-            const grid = document.getElementById('memory-grid');
-            grid.innerHTML = '';
-            cards = [...icons, ...icons]; // Duplicate for pairs
-            shuffle(cards);
+            switch(index) {
+                case 0: initMemoryGame(container); break;
+                case 1: initIntruderGame(container); break;
+                case 2: initMathGame(container); break;
+                case 3: initColorGame(container); break;
+                case 4: initSequenceGame(container); break;
+            }
+        }
+
+        function finishDescompressao() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = `
+                <div class="text-center animate-bounce">
+                    <i class="fas fa-trophy text-6xl text-yellow-400 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-white mb-2">Parabéns!</h2>
+                    <p class="text-slate-300">Você completou a descompressão.</p>
+                    <p class="text-slate-400 text-sm mt-2">Você exercitou raciocínio, memória e percepção.</p>
+                    <button onclick="startDescompressao()" class="mt-6 bg-sky-600 text-white px-6 py-2 rounded-xl font-bold">Jogar Novamente</button>
+                </div>
+            `;
+            document.getElementById('game-level-display').innerText = "Concluído";
+            document.getElementById('next-game-btn').classList.add('hidden');
+        }
+
+        function gameWin() {
+            // Efeito visual de vitória simples
+            const container = document.getElementById('game-container');
+            // Flash verde
+            container.style.boxShadow = "0 0 50px #10b981";
+            setTimeout(() => { container.style.boxShadow = "none"; }, 500);
             
-            hasFlippedCard = false;
-            lockBoard = false;
-            firstCard = null;
-            secondCard = null;
+            document.getElementById('next-game-btn').classList.remove('hidden');
+        }
+
+        // JOGO 1: MEMÓRIA
+        function initMemoryGame(container) {
+            container.innerHTML = '<div id="memory-grid" class="memory-grid w-full"></div>';
+            const grid = document.getElementById('memory-grid');
+            const icons = ['leaf', 'cloud', 'dove', 'heart', 'star', 'tree']; // 6 pares = 12 cartas (3x4)
+            let cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
+            let flipped = [], matched = 0;
 
             cards.forEach(icon => {
                 const card = document.createElement('div');
-                card.classList.add('memory-card');
-                card.dataset.icon = icon;
+                card.className = 'memory-card';
                 card.innerHTML = `<i class="fas fa-${icon}"></i>`;
-                card.addEventListener('click', flipCard);
+                card.onclick = function() {
+                    if (this.classList.contains('flipped') || this.classList.contains('matched') || flipped.length >= 2) return;
+                    this.classList.add('flipped');
+                    flipped.push(this);
+                    if (flipped.length === 2) {
+                        if (flipped[0].innerHTML === flipped[1].innerHTML) {
+                            flipped.forEach(c => c.classList.add('matched'));
+                            matched++;
+                            flipped = [];
+                            if (matched === icons.length) gameWin();
+                        } else {
+                            setTimeout(() => { flipped.forEach(c => c.classList.remove('flipped')); flipped = []; }, 800);
+                        }
+                    }
+                };
                 grid.appendChild(card);
             });
         }
 
-        function shuffle(array) {
-            array.sort(() => Math.random() - 0.5);
-        }
-
-        function flipCard() {
-            if (lockBoard) return;
-            if (this === firstCard) return;
-
-            this.classList.add('flipped');
-
-            if (!hasFlippedCard) {
-                // First click
-                hasFlippedCard = true;
-                firstCard = this;
-                return;
+        // JOGO 2: O INTRUSO (Percepção)
+        function initIntruderGame(container) {
+            container.innerHTML = `
+                <div class="text-center mb-4"><p class="text-white">Encontre o emoji diferente!</p></div>
+                <div class="grid grid-cols-4 gap-4" id="intruder-grid"></div>
+            `;
+            const grid = document.getElementById('intruder-grid');
+            const mainEmoji = "😊";
+            const intruderEmoji = "🙂"; // Sutil
+            const pos = Math.floor(Math.random() * 16);
+            
+            for(let i=0; i<16; i++) {
+                const btn = document.createElement('button');
+                btn.className = "text-3xl p-4 bg-slate-700 rounded-lg hover:bg-slate-600";
+                btn.innerText = (i === pos) ? intruderEmoji : mainEmoji;
+                btn.onclick = () => {
+                    if(i === pos) {
+                        btn.style.backgroundColor = "#10b981";
+                        gameWin();
+                    } else {
+                        btn.style.backgroundColor = "#ef4444";
+                        setTimeout(() => btn.style.backgroundColor = "", 300);
+                    }
+                };
+                grid.appendChild(btn);
             }
-
-            // Second click
-            secondCard = this;
-            checkForMatch();
         }
 
-        function checkForMatch() {
-            let isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
-            isMatch ? disableCards() : unflipCards();
-        }
+        // JOGO 3: CÁLCULO ZEN (Raciocínio)
+        function initMathGame(container) {
+            const n1 = Math.floor(Math.random() * 20) + 10;
+            const n2 = Math.floor(Math.random() * 10) + 5;
+            const res = n1 + n2;
+            const wrongs = [res + 2, res - 3, res + 5].sort(() => Math.random() - 0.5);
+            const options = [...wrongs.slice(0, 2), res].sort(() => Math.random() - 0.5);
 
-        function disableCards() {
-            firstCard.classList.add('matched');
-            secondCard.classList.add('matched');
-            resetBoard();
+            container.innerHTML = `
+                <div class="text-center w-full">
+                    <p class="text-slate-400 mb-2">Quanto é?</p>
+                    <h3 class="text-4xl text-white font-bold mb-8">${n1} + ${n2} = ?</h3>
+                    <div class="flex flex-col gap-3 w-full max-w-xs mx-auto">
+                        ${options.map(opt => `<button onclick="checkMath(this, ${opt}, ${res})" class="btn-game bg-slate-700 text-white hover:bg-slate-600">${opt}</button>`).join('')}
+                    </div>
+                </div>
+            `;
         }
+        window.checkMath = (btn, val, correct) => {
+            if(val === correct) {
+                btn.style.backgroundColor = "#10b981";
+                gameWin();
+            } else {
+                btn.style.backgroundColor = "#ef4444";
+            }
+        };
 
-        function unflipCards() {
-            lockBoard = true;
+        // JOGO 4: CORES E PALAVRAS (Atenção)
+        function initColorGame(container) {
+            const colors = [
+                { name: "VERMELHO", hex: "#ef4444" },
+                { name: "AZUL", hex: "#3b82f6" },
+                { name: "VERDE", hex: "#10b981" },
+                { name: "AMARELO", hex: "#eab308" }
+            ];
+            // Texto diz uma cor, tinta é outra
+            const textIdx = Math.floor(Math.random() * 4);
+            let colorIdx = Math.floor(Math.random() * 4);
+            while(colorIdx === textIdx) colorIdx = Math.floor(Math.random() * 4); // Garante diferente
+
+            const correctColorName = colors[colorIdx].name; // A resposta é a COR DA TINTA, não o texto escrito
+
+            container.innerHTML = `
+                <div class="text-center w-full">
+                    <p class="text-white mb-2">Qual a <b>COR</b> do texto abaixo? (Não leia a palavra)</p>
+                    <h3 class="text-5xl font-bold mb-8" style="color: ${colors[colorIdx].hex}">${colors[textIdx].name}</h3>
+                    <div class="grid grid-cols-2 gap-3 w-full">
+                        ${colors.map(c => `<button onclick="checkColor(this, '${c.name}', '${correctColorName}')" class="btn-game bg-slate-700 text-white border-2" style="border-color:${c.hex}">${c.name}</button>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        window.checkColor = (btn, val, correct) => {
+            if(val === correct) {
+                btn.style.backgroundColor = "#10b981";
+                gameWin();
+            } else {
+                btn.style.backgroundColor = "#ef4444";
+            }
+        };
+
+        // JOGO 5: SEQUÊNCIA ZEN (Memória)
+        function initSequenceGame(container) {
+            let seq = [];
+            for(let i=0; i<4; i++) seq.push(Math.floor(Math.random() * 9) + 1);
+            
+            container.innerHTML = `
+                <div class="text-center w-full">
+                    <p class="text-white mb-4">Memorize a sequência:</p>
+                    <div id="seq-display" class="text-4xl font-bold text-sky-400 tracking-widest mb-8 h-12">${seq.join(' ')}</div>
+                    
+                    <div id="seq-input" class="hidden grid grid-cols-3 gap-2 w-full max-w-xs mx-auto">
+                        ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="addSeq(${n})" class="p-4 bg-slate-700 rounded-lg text-xl font-bold hover:bg-slate-600">${n}</button>`).join('')}
+                    </div>
+                    <div id="user-seq" class="h-8 text-xl text-emerald-400 mt-4 tracking-widest"></div>
+                    <button onclick="checkSeq()" id="btn-check-seq" class="hidden w-full mt-4 bg-sky-600 text-white py-2 rounded-xl">Verificar</button>
+                </div>
+            `;
+
+            // Oculta após 3 segundos
             setTimeout(() => {
-                firstCard.classList.remove('flipped');
-                secondCard.classList.remove('flipped');
-                resetBoard();
-            }, 1000);
+                document.getElementById('seq-display').innerText = "????";
+                document.getElementById('seq-input').classList.remove('hidden');
+                document.getElementById('btn-check-seq').classList.remove('hidden');
+                window.targetSeq = seq;
+                window.currentSeq = [];
+            }, 3000);
         }
+        window.addSeq = (n) => {
+            window.currentSeq.push(n);
+            document.getElementById('user-seq').innerText = window.currentSeq.join(' ');
+        };
+        window.checkSeq = () => {
+            if(JSON.stringify(window.currentSeq) === JSON.stringify(window.targetSeq)) {
+                gameWin();
+            } else {
+                document.getElementById('user-seq').innerText = "Tente novamente...";
+                window.currentSeq = [];
+                setTimeout(() => document.getElementById('user-seq').innerText = "", 1000);
+            }
+        };
 
-        function resetBoard() {
-            [hasFlippedCard, lockBoard] = [false, false];
-            [firstCard, secondCard] = [null, null];
-        }
-        
+        // Voice Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
             rec.lang = 'pt-BR';
-            
-            // Quando tiver resultado, salva na variável temporária e envia o formulário automaticamente
-            rec.onresult = e => { 
-                tempAudioText = e.results[0][0].transcript;
-                toggleMic(); // Desliga o mic
-                document.getElementById('chat-form').dispatchEvent(new Event('submit')); // Envia automático
-            };
-            
+            rec.onresult = e => { tempAudioText = e.results[0][0].transcript; toggleMic(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); };
             window.toggleMic = () => {
                 const btn = document.getElementById('mic-btn');
-                if(btn.classList.contains('mic-active')) { 
-                    rec.stop(); 
-                    btn.classList.remove('mic-active'); 
-                    btn.classList.remove('bg-red-500', 'text-white');
-                    btn.classList.add('bg-gray-100', 'text-gray-500');
-                } else { 
-                    rec.start(); 
-                    btn.classList.add('mic-active'); 
-                    btn.classList.remove('bg-gray-100', 'text-gray-500');
-                    btn.classList.add('bg-red-500', 'text-white');
-                }
+                if(btn.classList.contains('mic-active')) { rec.stop(); btn.classList.remove('mic-active', 'bg-red-500', 'text-white'); btn.classList.add('bg-slate-700', 'text-slate-400'); }
+                else { rec.start(); btn.classList.add('mic-active', 'bg-red-500', 'text-white'); btn.classList.remove('bg-slate-700', 'text-slate-400'); }
             };
         }
     </script>
