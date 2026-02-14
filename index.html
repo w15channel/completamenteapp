@@ -6,21 +6,10 @@
     <title>Harmonia Diária - WR TERAPIA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Biblioteca para download da imagem -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Playfair+Display:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
-        :root { 
-            --primary: #0ea5e9; 
-            --secondary: #10b981; 
-            --accent: #c4a661; 
-            --deep: #020406;
-            --surface: #0a0c12;
-            --text-high: #f8fafc;
-            --safe-margin: 40px;
-        }
-
+        :root { --primary: #0ea5e9; --secondary: #10b981; }
         body { 
             font-family: 'Inter', sans-serif; 
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
@@ -52,24 +41,10 @@
         .status-busy { background-color: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
         .status-offline { background-color: #94a3b8; }
 
-        /* Loader */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* --- MOTOR DE GERAÇÃO (CAIXINHA) --- */
-        .card-imagem { 
-            width: 100%; 
-            aspect-ratio: 1/1; 
-            position: relative; 
-            overflow: hidden; 
-            background: #000; 
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        .fundo-ia { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; opacity: 0.5; }
-        .conteudo-texto { position: absolute; z-index: 2; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; box-sizing: border-box; color: white; text-align: center; }
-        .titulo-card { font-size: 26px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); font-family: 'Playfair Display', serif; }
-        .descricao-card { font-size: 16px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="pb-24">
@@ -81,7 +56,6 @@
 
     <main class="max-w-md mx-auto px-4 pt-4">
         
-        <!-- ONBOARDING -->
         <section id="onboarding" class="tab-content active">
             <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
                 <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
@@ -100,7 +74,6 @@
             </div>
         </section>
 
-        <!-- HOME -->
         <section id="home" class="tab-content">
             <div class="glass-card p-6 mb-4">
                 <p class="text-xs text-gray-400">Olá,</p>
@@ -115,54 +88,19 @@
             </div>
         </section>
 
-        <!-- CAIXINHA DE ESPERANÇA -->
-        <section id="hope" class="tab-content">
-            <div class="glass-card p-6 flex flex-col items-center min-h-[500px]">
-                <div class="w-full flex items-center gap-2 mb-4">
-                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
-                    <h2 class="font-bold text-sky-900">Caixinha de Esperança</h2>
-                </div>
-
-                <div id="hope-loading" class="hidden flex flex-col items-center py-20">
-                    <div class="loader mb-4"></div>
-                    <p class="text-xs text-sky-600 font-bold animate-pulse">GERANDO MENSAGEM...</p>
-                </div>
-
-                <div id="hope-result" class="w-full flex flex-col items-center">
-                    <div id="card-para-download" class="card-imagem mb-6">
-                        <img id="hope-bg" src="" class="fundo-ia" alt="Fundo IA">
-                        <div class="conteudo-texto">
-                            <div id="hope-title" class="titulo-card">PROJETO ESPERANÇA</div>
-                            <div id="hope-body" class="descricao-card">Sua dose diária de acolhimento está sendo preparada. Clique no botão abaixo para gerar.</div>
-                        </div>
-                    </div>
-
-                    <div class="w-full grid grid-cols-2 gap-3">
-                        <button onclick="generateHope()" class="bg-sky-500 text-white py-4 rounded-xl font-bold text-xs shadow-lg flex items-center justify-center gap-2">
-                            <i class="fas fa-sync-alt"></i> GERAR MENSAGEM
-                        </button>
-                        <button id="btn-download" onclick="downloadHope()" disabled class="bg-emerald-500 text-white py-4 rounded-xl font-bold text-xs shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-300">
-                            <i class="fas fa-download"></i> SALVAR PNG
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- AGENDA -->
         <section id="agenda" class="tab-content">
             <div class="glass-card p-6 h-[75vh] flex flex-col">
                 <div class="flex items-center gap-2 mb-4">
                     <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
-                    <h2 class="font-bold text-sky-900 heading-font">Agendamento Online</h2>
+                    <h2 class="font-bold text-sky-900 heading-font">Agendamento Automático</h2>
                 </div>
                 <div class="flex-1 rounded-xl overflow-hidden border border-sky-100">
                     <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
+                <p class="text-[10px] text-gray-400 mt-3 text-center italic">Caso não encontre um horário ideal, converse com a Dra. Lia no chat.</p>
             </div>
         </section>
 
-        <!-- SELEÇÃO CHAT -->
         <section id="chat-selection" class="tab-content">
             <div class="glass-card p-6">
                 <h2 class="text-lg font-bold text-sky-900 mb-4 text-center">Nossa Equipe</h2>
@@ -171,7 +109,6 @@
             </div>
         </section>
 
-        <!-- CHAT -->
         <section id="chat" class="tab-content">
             <div class="glass-card flex flex-col h-[75vh]">
                 <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/40">
@@ -201,7 +138,13 @@
             </div>
         </section>
 
-        <!-- DIÁRIO -->
+        <section id="relaxation" class="tab-content">
+            <div class="glass-card p-4">
+                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
+                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+            </div>
+        </section>
+
         <section id="dreams" class="tab-content">
             <div class="glass-card p-5">
                 <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Diário</h2></div>
@@ -211,11 +154,31 @@
             </div>
         </section>
 
-        <!-- RELAXAMENTO -->
-        <section id="relaxation" class="tab-content">
-            <div class="glass-card p-4">
-                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
-                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+        <section id="hope" class="tab-content">
+            <div class="glass-card p-6 text-center min-h-[450px] flex flex-col justify-center relative">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
+                    <span class="text-[10px] uppercase font-bold text-amber-500 tracking-widest">Caixinha Mágica</span>
+                </div>
+                <div id="hope-start">
+                    <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-amber-400 text-3xl"></i></div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Sua Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-6">Receba uma mensagem e uma imagem para o seu coração.</p>
+                    <button onclick="generateHopeGemini()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Abrir Presente</button>
+                </div>
+                <div id="hope-loading" class="hidden">
+                    <div class="loader mx-auto mb-4 border-t-amber-500"></div>
+                    <p class="text-[10px] text-amber-500 uppercase font-bold tracking-widest animate-pulse">Preparando surpresa...</p>
+                </div>
+                <div id="hope-result" class="hidden w-full flex-col items-center">
+                    <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4">
+                        <img id="hope-img" src="" class="w-full h-56 object-cover bg-gray-200" onerror="handleImageError(this)">
+                    </div>
+                    <div class="bg-white/80 p-5 rounded-xl border border-amber-100 shadow-sm w-full">
+                        <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
+                    </div>
+                    <button onclick="generateHopeGemini()" class="mt-6 text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                </div>
             </div>
         </section>
 
@@ -227,15 +190,22 @@
     </nav>
 
     <script>
-        // CONFIGURAÇÕES SEGURAS - O ambiente preenche automaticamente no Canvas
-        const apiKey = ""; 
+        const GROQ_API_KEY = "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";
+        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
         
         let clientName = "Visitante";
         let clientGender = "homem";
-        let chatHistory = []; // Para Gemini, usaremos o formato de mensagens direto
+        let chatHistory = [];
         let isWaiting = false;
         let messageCounter = 0;
         
+        const offlineResponses = {
+            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
+            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
+            'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
+            'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
+        };
+
         const therapists = [
             { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart' },
             { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie' },
@@ -245,19 +215,17 @@
 
         function getSystemPrompt(therapistId) {
             const tratamento = clientGender === "homem" ? "querido" : "querida";
-            const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação comportamental.";
-            const paymentRule = "Sobre pagamentos: informe polidamente que a cobrança será enviada via WhatsApp entre os dias 03 e 12 do mês que vem.";
+            const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
             
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental. Seu acolhimento e carinho são similares aos de uma avó, transmitindo segurança e paz, mas você atua de forma profissional. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicas. Não se chame literalmente de avó ou vovó. ${commonAgendaRule} ${paymentRule}`,
-                'william': `Sua persona é o Dr. William. Profissional direto. Não se apresente. Trate o paciente como '${tratamento}'. Solucione problemas pontualmente. Periodicamente desculpe-se por qualquer imprecisão técnica pois está atendendo simultaneamente agora. Diga que, se preferir, o paciente pode gravar um áudio no WhatsApp que você responderá após o atendimento atual. ${commonAgendaRule} ${paymentRule}`,
-                'yara': `Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Serena e calma. ${commonAgendaRule}`,
-                'fer': `Você é a Fernanda, recepcionista. Perfil extremamente polido, cuidadoso com as palavras, voz calma e orientadora. Trate o paciente como '${tratamento}'. Se perguntarem do Dr. William, diga que ele está ocupado em atendimento mas que, se a pessoa preferir, pode falar diretamente com ele aqui na aba de chat. Você NÃO faz mais agendamentos. ${commonAgendaRule} ${paymentRule}`
+                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó. ${commonAgendaRule}`,
+                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo agora, às vezes não consegue responder certinho. Periodicamente pergunte se está conseguindo atender bem dessa maneira e peça desculpas por essa imprecisão. Se o usuário preferir, diga que ele pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule}`,
+                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, secretária. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica, nunca robótica. Você NÃO faz mais agendamentos e NÃO tem acesso à agenda. Diga ao usuário que a agenda agora é automática e está na página inicial. Se o horário desejado não estiver lá, sugira falar com a Dra. Lia aqui no chat. Cada vez que responder sobre isso, mude as palavras para não parecer um bot.`
             };
             return prompts[therapistId] || "";
         }
 
-        // LOGIN E NAVEGAÇÃO
         function login() {
             const name = document.getElementById('user-name-input').value.trim();
             clientGender = document.getElementById('user-gender').value;
@@ -274,111 +242,6 @@
             document.getElementById(id).classList.add('active');
         }
 
-        // FUNÇÃO DE RETRY COM BACKOFF EXPONENCIAL
-        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, backoff));
-                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
-                }
-                throw error;
-            }
-        }
-
-        // --- MOTOR DE GERAÇÃO (CAIXINHA DE ESPERANÇA) ---
-        async function generateHope() {
-            if(isWaiting) return;
-            isWaiting = true;
-            
-            const loader = document.getElementById('hope-loading');
-            const result = document.getElementById('hope-result');
-            const btnDownload = document.getElementById('btn-download');
-
-            loader.classList.remove('hidden');
-            result.classList.add('opacity-50');
-            btnDownload.disabled = true;
-
-            try {
-                // ETAPA 1: GEMINI GERA TEXTO ESTRUTURADO
-                const textPrompt = "Crie uma mensagem de esperança curta e carinhosa para uma pessoa ansiosa. Retorne um JSON com os campos 'title' (título curto e impactante em caixa alta, máx 30 caracteres) e 'body' (uma frase de acolhimento profundo, máx 100 caracteres).";
-                
-                const textData = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: textPrompt }] }],
-                        generationConfig: { 
-                            responseMimeType: "application/json",
-                            responseSchema: {
-                                type: "OBJECT",
-                                properties: {
-                                    title: { type: "STRING" },
-                                    body: { type: "STRING" }
-                                },
-                                required: ["title", "body"]
-                            }
-                        }
-                    })
-                });
-
-                const content = JSON.parse(textData.candidates[0].content.parts[0].text);
-
-                // ETAPA 2: IMAGEN GERA FUNDO
-                const imgData = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        instances: { 
-                            prompt: "serene peaceful nature landscape, minimalist zen style, ethereal soft lighting, high resolution, professional editorial photography" 
-                        },
-                        parameters: { sampleCount: 1 }
-                    })
-                });
-
-                const b64 = imgData.predictions?.[0]?.bytesBase64Encoded;
-
-                // ATUALIZAÇÃO VISUAL
-                document.getElementById('hope-bg').src = `data:image/png;base64,${b64}`;
-                document.getElementById('hope-title').innerText = content.title.toUpperCase();
-                document.getElementById('hope-body').innerText = content.body;
-
-                btnDownload.disabled = false;
-            } catch (err) {
-                const errorMsg = document.createElement('div');
-                errorMsg.className = "text-[10px] text-red-500 mt-2";
-                errorMsg.innerText = "Houve uma instabilidade momentânea. Por favor, tente gerar novamente.";
-                document.getElementById('hope-result').appendChild(errorMsg);
-                setTimeout(() => errorMsg.remove(), 4000);
-            } finally {
-                loader.classList.add('hidden');
-                result.classList.remove('opacity-50');
-                isWaiting = false;
-            }
-        }
-
-        async function downloadHope() {
-            const card = document.getElementById('card-para-download');
-            try {
-                const canvas = await html2canvas(card, { 
-                    scale: 2, 
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: null
-                });
-                const link = document.createElement('a');
-                link.download = `esperanca_wr_${Date.now()}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            } catch (err) {
-                alert("Ocorreu um erro ao processar a imagem. Tente baixar novamente.");
-            }
-        }
-
-        // DISPONIBILIDADE
         function checkAvailability() {
             const hour = new Date().getHours();
             const min = new Date().getMinutes();
@@ -405,7 +268,7 @@
             
             available.forEach(t => {
                 const card = document.createElement('div');
-                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm mb-3 ${t.status === 'offline' ? 'opacity-50 grayscale' : 'cursor-pointer hover:bg-sky-50 transition-all'}`;
+                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all mb-3 ${t.status === 'offline' ? 'opacity-50 grayscale' : 'cursor-pointer hover:bg-sky-50'}`;
                 if (t.status !== 'offline') card.onclick = () => startChat(t.id);
                 
                 card.innerHTML = `
@@ -434,23 +297,21 @@
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
             document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
             
-            document.getElementById('active-status-dot').className = `status-dot status-${availability.status}`;
+            const dot = document.getElementById('active-status-dot');
+            dot.className = `status-dot status-${availability.status}`;
             document.getElementById('active-status-text').innerText = availability.label;
 
             document.getElementById('chat-messages').innerHTML = '';
             messageCounter = 0;
             
-            // Inicia o histórico com o prompt do sistema
-            chatHistory = [{ role: "user", parts: [{ text: `INSTRUÇÃO DE SISTEMA: ${getSystemPrompt(id)} Paciente: ${clientName}.` }] }];
+            chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
             if (id === 'william') {
-                addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta.", 'therapist');
+                addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'system');
             }
             
-            const welcome = id === 'lia' ? `Oi ${tratamento}, sou a Dra. Lia. Estou aqui para te ouvir.` : `Olá ${clientName}, em que posso ser útil?`;
+            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
-            // Salva a mensagem inicial como do modelo no histórico para Gemini
-            chatHistory.push({ role: "model", parts: [{ text: welcome }] });
             showTab('chat');
         }
 
@@ -460,9 +321,7 @@
             div.innerHTML = text;
             document.getElementById('chat-messages').appendChild(div);
             document.getElementById('chat-messages').scrollTop = 99999;
-            if(saveToHistory) {
-                chatHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text: text }] });
-            }
+            if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
         }
 
         document.getElementById('chat-form').onsubmit = async (e) => {
@@ -481,41 +340,85 @@
                 document.getElementById('active-status-text').innerText = "Online";
             }
 
-            // Tempos de espera variados solicitados anteriormente
             let waitTime = messageCounter % 2 !== 0 ? 20000 : 30000;
             let typingTime = messageCounter % 2 !== 0 ? 40000 : 30000;
 
-            // Chamada para Gemini
-            const apiPromise = fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+            const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: chatHistory,
-                    systemInstruction: { parts: [{ text: getSystemPrompt(activeTherapist.id) }] }
-                })
-            });
+                headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.8, max_tokens: 150 })
+            })
+            .then(res => res.json())
+            .catch(() => null);
 
             setTimeout(() => {
                 document.getElementById('typing-box').classList.remove('hidden');
                 setTimeout(async () => {
                     document.getElementById('typing-box').classList.add('hidden');
-                    try {
-                        const data = await apiPromise;
-                        if (data && data.candidates && data.candidates[0].content) {
-                            const responseText = data.candidates[0].content.parts[0].text;
-                            addMessage(responseText, 'therapist');
-                        } else {
-                            throw new Error();
-                        }
-                    } catch (err) {
-                        addMessage("Me desculpe, tive uma pequena instabilidade na conexão. O que você acha de retomarmos de onde paramos?", 'therapist');
+                    const data = await apiPromise;
+                    if (data && data.choices) {
+                        addMessage(data.choices[0].message.content, 'therapist');
+                    } else {
+                        const responses = offlineResponses[activeTherapist.id] || offlineResponses['generico'];
+                        addMessage(responses[Math.floor(Math.random() * responses.length)], 'therapist');
                     }
                     isWaiting = false;
                 }, typingTime);
             }, waitTime);
         };
 
-        // DIÁRIO
+        async function generateHopeGemini() {
+            if(isWaiting) return;
+            isWaiting = true;
+            document.getElementById('hope-start').classList.add('hidden');
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-loading').classList.remove('hidden');
+            
+            let frase = "Respire... tudo vai ficar bem.";
+
+            try {
+                const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. Responda apenas com a frase." }] }]
+                    })
+                });
+                const dataText = await resText.json();
+                frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
+
+                const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: { prompt: `serene peaceful nature landscape, soft sunlight, high resolution, professional photography, seed ${Math.random()}` },
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const dataImg = await resImg.json();
+                if (dataImg.predictions?.[0]?.bytesBase64Encoded) {
+                    document.getElementById('hope-img').src = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    handleImageError(document.getElementById('hope-img'));
+                }
+            } catch(e) {
+                handleImageError(document.getElementById('hope-img'));
+            }
+
+            document.getElementById('hope-msg').innerText = frase;
+            
+            setTimeout(() => {
+                document.getElementById('hope-loading').classList.add('hidden');
+                document.getElementById('hope-result').classList.remove('hidden');
+                document.getElementById('hope-result').style.display = 'flex';
+                isWaiting = false;
+            }, 1000);
+        }
+
+        function handleImageError(img) {
+            img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
+        }
+
         function saveDream() {
             const txt = document.getElementById('dream-input').value;
             if(!txt) return;
@@ -530,7 +433,6 @@
             document.getElementById('dream-list').innerHTML = d.map(i => `<div class="bg-white p-3 rounded-lg border text-xs mb-2"><b>${i.d}</b><p>${i.t}</p></div>`).join('');
         }
         
-        // VOZ
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
