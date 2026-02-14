@@ -27,7 +27,6 @@
             background-color: var(--bg-dark);
             color: var(--text-light); 
             margin: 0; padding: 0;
-            /* Fixa o corpo na tela inteira, impedindo rolagem global indesejada */
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             display: flex;
@@ -43,24 +42,21 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
-        /* Área Principal de Conteúdo */
         main {
-            flex: 1; /* Ocupa todo espaço entre header e footer */
-            position: relative; /* Necessário para posicionamento absoluto dos filhos */
+            flex: 1;
+            position: relative;
             width: 100%;
-            max-width: 480px; /* Limita largura em telas grandes */
+            max-width: 480px;
             margin: 0 auto;
         }
 
-        /* Conteúdo das Abas */
         .tab-content { 
             display: none; 
-            /* Ocupa exatamente o espaço do main e permite rolagem interna */
             position: absolute;
             inset: 0;
             padding: 1rem;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+            -webkit-overflow-scrolling: touch;
         }
         
         .tab-content.active { 
@@ -71,26 +67,11 @@
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Estilo Específico para Chat (Para fixar o input no fundo) */
-        #chat.tab-content {
-            padding: 0; /* Remove padding para o chat ocupar tudo */
-            overflow: hidden; /* Chat gerencia sua própria rolagem */
-        }
+        #chat.tab-content { padding: 0; overflow: hidden; }
 
-        .chat-layout {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+        .chat-layout { display: flex; flex-direction: column; height: 100%; }
+        .chat-messages-area { flex: 1; overflow-y: auto; padding: 1rem; background: rgba(15, 23, 42, 0.5); }
 
-        .chat-messages-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            background: rgba(15, 23, 42, 0.5);
-        }
-
-        /* Mensagens */
         .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px; }
         .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
         .message.therapist { align-self: flex-start; background: #334155; color: #e2e8f0; border-bottom-left-radius: 0.2rem; margin-right: auto; }
@@ -99,20 +80,23 @@
         /* Jogos */
         .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 1000px; }
         .memory-card {
-            background-color: #334155;
-            height: 60px;
-            border-radius: 8px;
+            background-color: #334155; height: 60px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; cursor: pointer;
-            border: 2px solid #475569;
-            color: transparent;
-            transition: all 0.3s ease;
-            transform-style: preserve-3d;
+            font-size: 20px; cursor: pointer; border: 2px solid #475569;
+            color: transparent; transition: all 0.3s ease; transform-style: preserve-3d;
         }
         .memory-card.flipped, .memory-card.matched { background-color: #f1f5f9; border-color: var(--primary); color: #333; transform: rotateY(180deg); }
         .memory-card.matched { background-color: #10b981; border-color: #059669; color: white; cursor: default; }
+
+        /* Puzzle Deslizante */
+        .puzzle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; aspect-ratio: 1; background: #334155; padding: 4px; border-radius: 8px; }
+        .puzzle-tile {
+            background: var(--primary); color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: bold; cursor: pointer; border-radius: 4px;
+            user-select: none; transition: transform 0.2s;
+        }
+        .puzzle-tile.empty { background: transparent; cursor: default; }
         
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
@@ -126,8 +110,7 @@
 
     <!-- Header Fixo -->
     <header class="flex-none p-4 text-center bg-slate-900/95 backdrop-blur-md border-b border-slate-700 z-20">
-        <h1 class="text-xl font-bold text-sky-400 heading-font">Harmonia Diária</h1>
-        <p class="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA | NOITE</p>
+        <h1 class="text-xl font-bold text-sky-400 heading-font">Espaço | WR Terapia®</h1>
     </header>
 
     <!-- Container Principal -->
@@ -190,6 +173,11 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Créditos Rodapé -->
+            <div class="mt-auto pt-8 pb-4 text-center">
+                <p class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Desenvolvido por WR-TECNOLOGIA | William Ribeiro</p>
+            </div>
         </section>
 
         <!-- AGENDA -->
@@ -245,6 +233,10 @@
                         <form id="chat-form" class="flex items-center gap-2">
                             <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button>
                             <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400">
+                            
+                            <!-- Botão WhatsApp (Dr. William) -->
+                            <button type="button" id="wa-btn" onclick="sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md hover:bg-emerald-500 transition-colors flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button>
+                            
                             <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
                         </form>
                     </div>
@@ -342,7 +334,7 @@
                         <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                         <h2 class="font-bold text-rose-400">Descompressão</h2>
                     </div>
-                    <span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/5</span>
+                    <span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/6</span>
                 </div>
 
                 <div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none">
@@ -402,12 +394,12 @@
             const amigo = clientGender === "homem" ? "amigo" : "amiga";
             const formal = clientGender === "homem" ? "Sr." : "Sra.";
             
-            // LINGUAGEM NEUTRA E ACOLHEDORA (SEM SOTAQUE)
-            const estilo = "Use linguagem culta, leve, calorosa e empática. Evite gírias ou regionalismos. Foco total em acolhimento e escuta ativa.";
+            // LINGUAGEM NEUTRA E ACOLHEDORA (SEM SOTAQUE) + Dinâmica de tamanho + Início Objetivo
+            const estilo = "IMPORTANTE: Responda de forma dinâmica, variando entre respostas curtas, médias e um pouco mais longas, mas NUNCA ultrapasse 500 caracteres. No início da conversa, seja MAIS OBJETIVO e faça perguntas curtas para estimular o cliente a falar mais. Use linguagem culta, leve, calorosa e empática. Evite gírias ou regionalismos. Foco total em acolhimento e escuta ativa.";
 
             const prompts = {
                 'lia': `Você é a Dra. Lia, uma terapeuta muito experiente e maternal (mas profissional). Seu foco é acolhimento profundo. Trate de forma gentil e valida os sentimentos. ${estilo}`,
-                'william': `Você é o Dr. William. Jovem, dinâmico e focado em personalização. Chame o paciente pelo NOME frequentemente. Use frases como 'Entendo, ${clientName}', 'Veja bem, ${clientName}'. ${estilo}`,
+                'william': `Você é o Dr. William. Jovem, dinâmico e focado em personalização. Chame o paciente pelo NOME frequentemente. Ex: 'Entendo, ${clientName}'. ${estilo}`,
                 'yara': `Você é a Dra. Yara, terapeuta da madrugada. Voz serena e calma. Chame de '${amigo}' e ocasionalmente use '${tratamento}'. ${estilo}`,
                 'fer': `Você é a Fernanda, recepcionista. Educada e eficiente. Trate por '${formal} ${clientName}'. Ajude com dúvidas do app. ${estilo}`
             };
@@ -457,15 +449,35 @@
             messageCounter = 0;
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
+            // Botão WhatsApp visível apenas para Dr. William
+            const waBtn = document.getElementById('wa-btn');
+            if(id === 'william') {
+                waBtn.classList.remove('hidden');
+            } else {
+                waBtn.classList.add('hidden');
+            }
+            
             let welcome = "Olá! Como posso ajudar?";
             // Boas-vindas sem sugestão de agenda para Lia
-            if (id === 'lia') welcome = `Olá ${clientName}. Que bom que você veio conversar. Sou a Dra. Lia. Estou aqui para te ouvir com todo carinho. Como você está se sentindo?`;
-            else if (id === 'william') welcome = `Oi ${clientName}, tudo bem? Sou o Dr. William. Estou inteiramente à sua disposição. O que gostaria de compartilhar hoje?`;
+            if (id === 'lia') welcome = `Olá ${clientName}. Que bom ter você aqui. Sou a Dra. Lia. Como você está se sentindo hoje?`;
+            else if (id === 'william') welcome = `Oi ${clientName}, tudo bem? Sou o Dr. William. Estou inteiramente à sua disposição. O que gostaria de compartilhar?`;
             else if (id === 'yara') welcome = `Olá, amigo(a). A noite é um momento de reflexão. Estou aqui ao seu lado, querido(a).`;
             else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Sou a Fernanda. Como posso auxiliar você com o uso do aplicativo?`;
 
             addMessage(welcome, 'therapist', false);
             showTab('chat');
+        }
+
+        function sendToWhatsapp() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            const phone = "5541992531598";
+            
+            let msg = `Olá Dr. William, sou ${clientName}. Vim pelo App Harmonia Diária.`;
+            if(text) msg += ` Gostaria de falar sobre: ${text}`;
+            
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
         }
 
         function addMessage(text, type, saveToHistory=true, isAudio=false) {
@@ -505,7 +517,7 @@
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 250 })
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 300 }) // Ajustado tokens para resposta média
             }).then(res => res.json()).catch(() => null);
 
             setTimeout(() => {
@@ -571,7 +583,7 @@
                 </div>`).join('');
         }
 
-        // --- SISTEMA DE DESCOMPRESSÃO (5 JOGOS) ---
+        // --- SISTEMA DE DESCOMPRESSÃO (6 JOGOS) ---
         let currentGameIndex = 0;
         
         function startDescompressao() {
@@ -582,7 +594,7 @@
 
         function nextGame() {
             currentGameIndex++;
-            if(currentGameIndex < 5) {
+            if(currentGameIndex < 6) {
                 loadGame(currentGameIndex);
             } else {
                 finishDescompressao();
@@ -590,7 +602,7 @@
         }
 
         function loadGame(index) {
-            document.getElementById('game-level-display').innerText = `Nível ${index + 1}/5`;
+            document.getElementById('game-level-display').innerText = `Nível ${index + 1}/6`;
             document.getElementById('next-game-btn').classList.add('hidden');
             const container = document.getElementById('game-container');
             container.innerHTML = ''; 
@@ -598,9 +610,10 @@
             switch(index) {
                 case 0: initMemoryGame(container); break;
                 case 1: initIntruderGame(container); break;
-                case 2: initMathGame(container); break;
-                case 3: initColorGame(container); break;
-                case 4: initSequenceGame(container); break;
+                case 2: initSlidingPuzzle(container); break; // Novo Jogo
+                case 3: initMathGame(container); break;
+                case 4: initColorGame(container); break;
+                case 5: initSequenceGame(container); break;
             }
         }
 
@@ -626,7 +639,7 @@
             document.getElementById('next-game-btn').classList.remove('hidden');
         }
 
-        // JOGOS IMPLEMENTAÇÃO
+        // JOGO 1: MEMÓRIA
         function initMemoryGame(container) {
             container.innerHTML = '<div id="memory-grid" class="memory-grid w-full"></div>';
             const grid = document.getElementById('memory-grid');
@@ -650,29 +663,95 @@
                 grid.appendChild(card);
             });
         }
+
+        // JOGO 2: O INTRUSO (DIFÍCIL)
         function initIntruderGame(container) {
-            container.innerHTML = `<div class="text-center mb-4"><p class="text-white">Encontre o diferente!</p></div><div class="grid grid-cols-4 gap-4" id="intruder-grid"></div>`;
+            container.innerHTML = `<div class="text-center mb-4"><p class="text-white">Encontre o diferente!</p></div><div class="grid grid-cols-5 gap-2" id="intruder-grid"></div>`;
             const grid = document.getElementById('intruder-grid');
-            const main = "😊"; const intruder = "🙂"; const pos = Math.floor(Math.random() * 16);
-            for(let i=0; i<16; i++) {
-                const btn = document.createElement('button'); btn.className = "text-3xl p-4 bg-slate-700 rounded-lg";
-                btn.innerText = (i === pos) ? intruder : main;
+            // Pares confusos para dificultar
+            const pairs = [
+                {m: "😐", i: "😑"}, {m: "😠", i: "😡"}, {m: "😺", i: "😸"}, 
+                {m: "🌑", i: "🌒"}, {m: "🍀", i: "☘️"}, {m: "🏠", i: "🏡"}
+            ];
+            const pair = pairs[Math.floor(Math.random() * pairs.length)];
+            const pos = Math.floor(Math.random() * 25);
+            
+            for(let i=0; i<25; i++) {
+                const btn = document.createElement('button'); btn.className = "text-2xl p-2 bg-slate-700 rounded-lg";
+                btn.innerText = (i === pos) ? pair.i : pair.m;
                 btn.onclick = () => { if(i===pos){btn.style.bg="#10b981"; gameWin();} else {btn.style.bg="#ef4444"; setTimeout(()=>btn.style.bg="",300);} };
                 grid.appendChild(btn);
             }
         }
+
+        // JOGO 3: PUZZLE DESLIZANTE (NOVO)
+        function initSlidingPuzzle(container) {
+            container.innerHTML = `
+                <div class="text-center mb-4"><p class="text-white">Ordene de 1 a 8</p></div>
+                <div class="puzzle-grid" id="puzzle-grid"></div>
+            `;
+            const grid = document.getElementById('puzzle-grid');
+            let tiles = [1,2,3,4,5,6,7,8,null];
+            
+            // Embaralhar (garantindo que seja resolvível ou apenas randomizando movimentos válidos)
+            // Método simples: fazer movimentos aleatórios a partir do resolvido
+            for(let i=0; i<100; i++) {
+                const emptyIdx = tiles.indexOf(null);
+                const neighbors = [];
+                if(emptyIdx % 3 > 0) neighbors.push(emptyIdx - 1);
+                if(emptyIdx % 3 < 2) neighbors.push(emptyIdx + 1);
+                if(emptyIdx >= 3) neighbors.push(emptyIdx - 3);
+                if(emptyIdx < 6) neighbors.push(emptyIdx + 3);
+                const swapIdx = neighbors[Math.floor(Math.random() * neighbors.length)];
+                [tiles[emptyIdx], tiles[swapIdx]] = [tiles[swapIdx], tiles[emptyIdx]];
+            }
+
+            const render = () => {
+                grid.innerHTML = '';
+                tiles.forEach((tile, idx) => {
+                    const el = document.createElement('div');
+                    el.className = `puzzle-tile ${tile === null ? 'empty' : ''}`;
+                    if(tile) el.innerText = tile;
+                    el.onclick = () => moveTile(idx);
+                    grid.appendChild(el);
+                });
+                checkWin();
+            };
+
+            const moveTile = (idx) => {
+                const emptyIdx = tiles.indexOf(null);
+                const diff = Math.abs(idx - emptyIdx);
+                if (diff === 3 || (diff === 1 && Math.floor(idx/3) === Math.floor(emptyIdx/3))) {
+                    [tiles[idx], tiles[emptyIdx]] = [tiles[emptyIdx], tiles[idx]];
+                    render();
+                }
+            };
+
+            const checkWin = () => {
+                const winState = [1,2,3,4,5,6,7,8,null];
+                if(JSON.stringify(tiles) === JSON.stringify(winState)) gameWin();
+            };
+
+            render();
+        }
+
+        // JOGO 4: CÁLCULO ZEN
         function initMathGame(container) {
             const n1 = Math.floor(Math.random()*20)+10; const n2 = Math.floor(Math.random()*10)+5; const res = n1+n2;
             const wrongs = [res+2, res-3, res+5].sort(()=>Math.random()-0.5); const opts = [...wrongs.slice(0,2), res].sort(()=>Math.random()-0.5);
             container.innerHTML = `<div class="text-center w-full"><h3 class="text-4xl text-white font-bold mb-8">${n1} + ${n2} = ?</h3><div class="flex flex-col gap-3 max-w-xs mx-auto">${opts.map(o=>`<button onclick="checkMath(this,${o},${res})" class="btn-game bg-slate-700 text-white">${o}</button>`).join('')}</div></div>`;
         }
         window.checkMath = (btn,v,c) => { if(v===c){btn.style.backgroundColor="#10b981"; gameWin();} else btn.style.backgroundColor="#ef4444"; };
+        
+        // JOGO 5: CORES
         function initColorGame(container) {
             const cols = [{n:"VERMELHO",h:"#ef4444"},{n:"AZUL",h:"#3b82f6"},{n:"VERDE",h:"#10b981"},{n:"AMARELO",h:"#eab308"}];
             const tIdx = Math.floor(Math.random()*4); let cIdx = Math.floor(Math.random()*4); while(cIdx===tIdx) cIdx=Math.floor(Math.random()*4);
             container.innerHTML = `<div class="text-center w-full"><p class="text-white mb-2">Qual a <b>COR</b>?</p><h3 class="text-5xl font-bold mb-8" style="color:${cols[cIdx].h}">${cols[tIdx].n}</h3><div class="grid grid-cols-2 gap-3 w-full">${cols.map(c=>`<button onclick="checkColor(this,'${c.n}','${cols[cIdx].n}')" class="btn-game bg-slate-700 text-white border-2" style="border-color:${c.h}">${c.n}</button>`).join('')}</div></div>`;
         }
         window.checkColor = (btn,v,c) => { if(v===c){btn.style.backgroundColor="#10b981"; gameWin();} else btn.style.backgroundColor="#ef4444"; };
+        
+        // JOGO 6: SEQUÊNCIA
         function initSequenceGame(container) {
             let seq=[]; for(let i=0;i<4;i++) seq.push(Math.floor(Math.random()*9)+1);
             container.innerHTML = `<div class="text-center w-full"><p class="text-white mb-4">Memorize:</p><div id="seq-disp" class="text-4xl font-bold text-sky-400 tracking-widest mb-8 h-12">${seq.join(' ')}</div><div id="seq-inp" class="hidden grid grid-cols-3 gap-2 max-w-xs mx-auto">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="addSeq(${n})" class="p-4 bg-slate-700 rounded-lg text-xl font-bold">${n}</button>`).join('')}</div><div id="u-seq" class="h-8 text-xl text-emerald-400 mt-4 tracking-widest"></div><button onclick="checkSeq()" id="btn-chk" class="hidden w-full mt-4 bg-sky-600 text-white py-2 rounded-xl">Verificar</button></div>`;
