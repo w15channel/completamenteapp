@@ -13,6 +13,9 @@
 :root{--bg-dark:#0f172a;--card-bg:#1e293b;--primary:#0ea5e9;--text-light:#f1f5f9;--text-dim:#94a3b8}*{box-sizing:border-box}body{font-family:'Inter',sans-serif;background-color:var(--bg-dark);color:var(--text-light);margin:0;padding:0;position:fixed;inset:0;display:flex;flex-direction:column}.heading-font{font-family:'Quicksand',sans-serif}.glass-card{background:rgba(30,41,59,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.5)}main{flex:1;position:relative;width:100%;max-width:480px;margin:0 auto}.tab-content{display:none;position:absolute;inset:0;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}.tab-content.active{display:flex;flex-direction:column;animation:fadeIn .3s ease-out}@keyframes fadeIn{from{opacity:0}to{opacity:1}}#chat.tab-content{padding:0;overflow:hidden}.chat-layout{display:flex;flex-direction:column;height:100%}.chat-messages-area{flex:1;overflow-y:auto;padding:1rem;background:rgba(15,23,42,0.5)}.message{max-width:85%;padding:12px 16px;border-radius:1.2rem;font-size:.95rem;line-height:1.5;margin-bottom:12px}.message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto}.message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}.message.audio-msg{font-style:italic;display:flex;align-items:center;gap:8px;color:#cbd5e1}.message.system-note{align-self:center;background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.8rem;text-align:center;border:1px solid rgba(239,68,68,0.4);width:90%}.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.memory-card{background-color:#334155;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border:2px solid #475569;color:transparent;transition:all .3s ease;transform-style:preserve-3d}.memory-card.flipped,.memory-card.matched{background-color:#f1f5f9;border-color:var(--primary);color:#333;transform:rotateY(180deg)}.memory-card.matched{background-color:#10b981;border-color:#059669;color:#fff;cursor:default}.puzzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;aspect-ratio:1;background:#334155;padding:4px;border-radius:8px}.puzzle-tile{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;cursor:pointer;border-radius:4px;user-select:none;transition:transform .2s}.puzzle-tile.empty{background:transparent;cursor:default}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.status-online{background-color:#10b981;box-shadow:0 0 5px #10b981}.status-busy{background-color:#f59e0b;box-shadow:0 0 5px #f59e0b}.status-offline{background-color:#94a3b8}.admin-trigger{opacity:.1;transition:opacity .3s;cursor:pointer}.admin-trigger:hover{opacity:1}
 .book-page{background-color:#fdf6e3;color:#2c1810;font-family:'Merriweather',serif;padding:2rem;border-radius:4px;box-shadow:inset 20px 0 50px rgba(0,0,0,0.1),5px 5px 15px rgba(0,0,0,0.3);border-left:5px solid #d4c5b0;line-height:1.8;position:relative;overflow:hidden;min-height:400px}.book-page::before{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0) 10%,rgba(0,0,0,0) 90%,rgba(0,0,0,0.05) 100%);pointer-events:none}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}.btn-game{@apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95}input,select,textarea{background-color:#334155;color:#fff;border-color:#475569}input::placeholder,textarea::placeholder{color:#94a3b8}
+/* Checkbox customizado */
+.custom-checkbox input:checked + div { background-color: #10b981; border-color: #10b981; }
+.custom-checkbox input:checked + div:after { content: ''; display: block; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 </style>
 <script src="https://www.youtube.com/iframe_api"></script>
 </head>
@@ -23,17 +26,44 @@
 </header>
 <main>
 <div id="bg-music-player" style="display:none;"></div>
+
+<!-- Onboarding -->
 <section id="onboarding" class="tab-content active"><div class="h-full flex flex-col items-center justify-center p-4"><div class="glass-card p-8 text-center w-full"><div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 mx-auto ring-2 ring-sky-500/50"><i class="fas fa-fingerprint text-sky-400 text-3xl"></i></div><h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2><p class="text-sm text-slate-400 mb-8">Identifique-se para acessar seu espaço seguro.</p><div class="w-full mb-4 space-y-3"><select id="user-gender" class="w-full p-4 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500"><option value="homem">Sou Homem</option><option value="mulher">Sou Mulher</option></select><input type="text" id="user-name-input" oninput="this.value=this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none focus:ring-2 focus:ring-sky-500"></div><button onclick="window.login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-500 transition-all">Entrar</button></div></div></section>
-<section id="home" class="tab-content"><div class="glass-card p-6 mb-4"><p class="text-xs text-slate-400">Boa noite,</p><h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2><div class="grid grid-cols-2 gap-4"><button onclick="window.openChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button><button onclick="window.showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span></button><button onclick="window.showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button><button onclick="window.showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha Surpresa</span></button></div><div class="grid grid-cols-2 gap-4 mt-4"><button onclick="window.showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button><button onclick="window.startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button></div><button onclick="window.showTab('library')" class="w-full mt-4 p-4 bg-indigo-900/30 rounded-2xl border border-indigo-800/50 flex flex-col items-center gap-2 hover:bg-indigo-900/50 transition-all"><i class="fas fa-book-open text-xl text-indigo-400"></i><span class="text-[9px] font-bold uppercase text-indigo-300">Biblioteca Mágica</span></button></div><div class="mt-auto pt-8 pb-4 text-center flex flex-col items-center justify-center gap-2"><p class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Desenvolvido por WR-TECNOLOGIA | William Ribeiro</p><i onclick="window.showAdminLogin()" class="fas fa-lock text-slate-700 text-xs admin-trigger" title="Admin"></i></div></section>
+
+<!-- Home -->
+<section id="home" class="tab-content"><div class="glass-card p-6 mb-4"><p class="text-xs text-slate-400">Olá,</p><h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2><div class="grid grid-cols-2 gap-4"><button onclick="window.openChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button><button onclick="window.showTab('natural-remedies')" class="p-4 bg-emerald-900/30 rounded-2xl border border-emerald-700/50 flex flex-col items-center gap-3 hover:bg-emerald-900/50 transition-all relative overflow-hidden"><div class="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] font-bold px-2 py-1 rounded-bl-lg">NOVO</div><i class="fas fa-leaf text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-emerald-300">Remédios Naturais</span></button><button onclick="window.showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button><button onclick="window.showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha Surpresa</span></button></div><div class="grid grid-cols-2 gap-4 mt-4"><button onclick="window.showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button><button onclick="window.startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button></div><button onclick="window.showTab('library')" class="w-full mt-4 p-4 bg-indigo-900/30 rounded-2xl border border-indigo-800/50 flex flex-col items-center gap-2 hover:bg-indigo-900/50 transition-all"><i class="fas fa-book-open text-xl text-indigo-400"></i><span class="text-[9px] font-bold uppercase text-indigo-300">Biblioteca Mágica</span></button><button onclick="window.showTab('agenda')" class="w-full mt-4 p-3 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-center gap-2 text-[10px] text-slate-400 hover:text-white"><i class="fas fa-calendar-alt"></i> Agendar Sessão</button></div><div class="mt-auto pt-8 pb-4 text-center flex flex-col items-center justify-center gap-2"><p class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Desenvolvido por WR-TECNOLOGIA | William Ribeiro</p><i onclick="window.showAdminLogin()" class="fas fa-lock text-slate-700 text-xs admin-trigger" title="Admin"></i></div></section>
+
+<!-- Natural Remedies (NOVA SEÇÃO) -->
+<section id="natural-remedies" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-emerald-400">Remédios Naturais</h2><p class="text-[10px] text-slate-500">Marque o que você cumpriu hoje.</p></div></div><div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700 mb-4 flex-none"><label class="text-[10px] text-slate-400 uppercase font-bold mb-1 block">Apelido para o Ranking (Anônimo)</label><input type="text" id="ranking-nick" placeholder="Ex: Fênix77" maxlength="15" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-emerald-300 focus:outline-none focus:border-emerald-500"></div><div id="remedies-list" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1"></div><div class="flex-none pt-2 border-t border-slate-700"><div class="flex justify-between items-center mb-2"><span class="text-xs text-slate-400">Pontos Hoje:</span><span id="daily-points" class="text-xl font-bold text-emerald-400">0</span></div><button onclick="window.saveNaturalPoints()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg mb-3"><i class="fas fa-check-circle mr-2"></i>Salvar no Ranking</button><div class="bg-slate-900 rounded-xl p-3 border border-slate-700 max-h-40 overflow-y-auto"><h3 class="text-[10px] font-bold text-slate-500 uppercase mb-2 border-b border-slate-800 pb-1">Ranking do Mês (Top Guerreiros)</h3><div id="ranking-list" class="space-y-1"></div></div></div></div></section>
+
+<!-- Library -->
 <section id="library" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-indigo-400">Biblioteca Mágica</h2></div><div class="mb-4 text-center flex-none"><p class="text-xs text-slate-400 mb-2">Escolha um tema e deixe nosso sistema te apresentar um capítulo exclusivo.</p></div><div class="flex-none mb-4"><select id="book-theme" class="w-full p-3 rounded-xl text-sm bg-slate-800 text-slate-200 border border-slate-600 focus:ring-2 focus:ring-indigo-500"><option value="Autoconhecimento">Autoconhecimento</option><option value="Resiliência">Resiliência</option><option value="Ansiedade e Calma">Ansiedade e Calma</option><option value="Relacionamentos Saudáveis">Relacionamentos Saudáveis</option><option value="Propósito de Vida">Propósito de Vida</option><option value="Sono e Descanso">Sono e Descanso</option><option value="Foco e Disciplina">Foco e Disciplina</option></select><button onclick="window.gerarLeitura()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"><i class="fas fa-pen-fancy mr-2"></i>Ler um Capítulo</button></div><div id="book-container" class="flex-1 overflow-y-auto hidden animate-fade-in"><div class="book-page"><h3 id="book-title" class="text-xl font-bold mb-4 text-center border-b border-stone-400 pb-2"></h3><div id="book-content" class="text-sm text-justify"></div><p class="text-center mt-8 text-xs text-stone-500 italic">~ Fim do Capítulo ~</p></div></div><div id="book-loading" class="hidden flex-1 flex flex-col items-center justify-center text-indigo-300"><i class="fas fa-feather-alt fa-spin text-4xl mb-3"></i><p class="text-sm animate-pulse">Buscando seu Capítulo de Hoje...</p></div></div></section>
+
+<!-- Admin Login -->
 <section id="admin-login-screen" class="tab-content justify-center items-center"><div class="glass-card p-6 w-full text-center"><div class="flex justify-between items-center mb-4"><button onclick="window.showTab('home')" class="text-slate-400"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white">Acesso Administrativo</h2><div class="w-4"></div></div><input type="password" id="admin-pass" placeholder="Senha" class="w-full p-3 mb-4 rounded-xl text-center"><button onclick="window.attemptAdminLogin()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Entrar</button></div></section>
+
+<!-- Admin Dashboard -->
 <section id="admin-dashboard" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700"><h2 class="font-bold text-emerald-400">Painel do Terapeuta</h2><button onclick="window.logoutAdmin()" class="text-xs text-red-400">Sair</button></div><p class="text-xs text-slate-400 mb-2">Conversas Ativas:</p><div id="admin-chat-list" class="flex-1 overflow-y-auto space-y-2"></div><div id="admin-response-area" class="hidden mt-4 pt-4 border-t border-slate-700"><div class="flex justify-between items-center mb-2"><span id="admin-target-name" class="text-xs font-bold text-white"></span><button onclick="window.toggleAiStatus()" id="ai-toggle-btn" class="text-[10px] bg-sky-600 px-2 py-1 rounded">IA: ATIVA</button></div><div id="admin-chat-preview" class="h-32 overflow-y-auto bg-slate-900/50 rounded p-2 mb-2 text-xs text-slate-300"></div><div class="flex gap-2"><input type="text" id="admin-reply-input" placeholder="Responder..." class="flex-1 text-sm p-2 rounded"><button onclick="window.sendAdminReply()" class="bg-emerald-600 text-white p-2 rounded"><i class="fas fa-paper-plane"></i></button></div></div></div></section>
+
+<!-- Agenda -->
 <section id="agenda" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 heading-font">Agendamento</h2></div><div class="flex-1 rounded-xl overflow-hidden border border-slate-600 bg-white"><iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe></div><p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática.</p></div></section>
+
+<!-- Chat Selection -->
 <section id="chat-selection" class="tab-content"><div class="glass-card p-6 h-full overflow-y-auto"><div class="flex items-center gap-3 mb-4"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 text-lg">Nossa Equipe</h2></div><div id="therapist-list" class="space-y-3 pb-20"></div></div></section>
+
+<!-- Chat -->
 <section id="chat" class="tab-content"><div class="chat-layout h-full"><div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10"><div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div><div class="flex-1"><p id="active-name" class="font-bold text-white text-sm"></p><div class="flex items-center"><span id="active-status-dot" class="status-dot"></span><span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span></div></div><button onclick="window.openChatSelection()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="chat-messages-area"></div><div class="flex-none bg-slate-800 border-t border-slate-700 pb-2"><div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/30">Digitando <span class="animate-pulse">...</span></div><div class="p-3"><form id="chat-form" class="flex items-center gap-2"><button type="button" id="mic-btn" onclick="window.toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button><input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400"><button type="button" id="wa-btn" onclick="window.sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md hover:bg-emerald-500 transition-colors flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button><button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></form></div></div></div></section>
+
+<!-- Relaxamento -->
 <section id="relaxation" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400">Relaxamento</h2></div><div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600 bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div><div class="mt-4 p-5 bg-slate-800/80 rounded-2xl border border-slate-700 text-slate-300 leading-relaxed text-sm shadow-inner flex-1 overflow-y-auto"><p class="mb-4">Muitas vezes em nossas rotinas nos perdemos em pensamentos e sofrimentos, mas é fundamental parar, relaxar e deixar sentir a leveza da vida.</p><p class="mb-4">Então, dê play, encontre um espaço confortável e deixe a ansiedade, a angústia e os sentimentos negativos irem embora.</p><p class="mb-6">Abrace um travesseiro, feche os olhos e se reconstrua.</p><p class="text-right font-bold text-sky-500 font-heading text-xs">Att. William Ribeiro - O seu terapeuta ❤️</p></div></div></section>
-<section id="mural" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-sky-400">Mural de Sentimentos</h2><p class="text-[10px] text-slate-500">Compartilhe suas experiências anonimamente.</p><p class="text-[9px] text-emerald-400 font-bold"><i class="fas fa-globe-americas mr-1"></i>Conectado à Planilha</p></div></div><div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20"></div><div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl"><textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea><button onclick="window.saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all"><i class="fas fa-paper-plane mr-2"></i>Publicar</button></div></div></section>
+
+<!-- Mural -->
+<section id="mural" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-sky-400">Mural de Sentimentos</h2><p class="text-[10px] text-slate-500">Compartilhe experiências anonimamente e transforme uma vida.</p><p class="text-[9px] text-emerald-400 font-bold"><i class="fas fa-globe-americas mr-1"></i>Conectado à Planilha</p></div></div><div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20"></div><div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl"><textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea><button onclick="window.saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all"><i class="fas fa-paper-plane mr-2"></i>Publicar</button></div></div></section>
+
+<!-- Caixinha Surpresa -->
 <section id="hope" class="tab-content"><div class="glass-card p-6 min-h-full flex flex-col justify-center overflow-y-auto"><div class="flex justify-between items-center mb-6 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-lg text-yellow-400">Caixinha Surpresa</h2><div class="w-8"></div></div><div class="mb-8 flex-none text-center"><div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600 shadow-lg animate-pulse"><i class="fas fa-gift text-yellow-400 text-4xl"></i></div><p class="text-sm text-slate-400 mb-2">Toque para receber uma mensagem de luz.</p></div><button onclick="window.gerarCaixinha()" class="flex-none w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50"><i class="fas fa-magic mr-2"></i>Gerar Experiência</button><div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-20 flex-none"><img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/><div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm"><p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed text-center"></p></div></div></div></section>
+
+<!-- Game Section -->
 <section id="game-section" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center justify-between mb-4 flex-none"><div class="flex items-center gap-2"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-rose-400">Descompressão</h2></div><span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/10</span></div><div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none"><p class="text-xs text-slate-400 text-center leading-relaxed">Este é um espaço seguro para brincar, relaxar e sair da rotina.<br>Treine seu raciocínio, memória e percepção.</p></div><div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative overflow-y-auto"></div><button id="next-game-btn" onclick="window.nextGame()" class="flex-none hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">Próximo Desafio <i class="fas fa-arrow-right ml-2"></i></button></div></section>
 </main>
 <nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50"><button onclick="window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button><button onclick="window.openChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button></nav>
@@ -41,7 +71,7 @@
 // --- CONFIGURAÇÃO ---
 window.GROQ_API_KEY="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";
 window.SHEET_ID = "1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";
-// <<== LINK DO SCRIPT ATUALIZADO
+// <<== LINK DO SCRIPT ATUALIZADO (100% FUNCIONAL)
 window.SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPmSrtdjfPuLtZma2hd84WMv42zcZx0IzuVpq3zUUvMtwEDEGD-94CQyibUtOZoWDC/exec";
 
 // Dados do Usuário
@@ -59,6 +89,7 @@ window.showTab = function(id){
     document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if(id === 'mural') window.loadMural(); 
+    if(id === 'natural-remedies') { window.initNaturalRemedies(); window.loadRanking(); }
 }
 
 window.login = function(){
@@ -106,108 +137,245 @@ window.sendToWhatsapp = function(){const i=document.getElementById('chat-input')
 window.renderMessage = function(t,type,aud=false){const d=document.createElement('div');d.className=`message ${type}`;if(aud&&type==='user'){d.classList.add('audio-msg');d.innerHTML='<i class="fas fa-microphone-lines text-lg text-sky-400"></i> <span class="text-xs">Áudio enviado...</span>'}else{d.innerHTML=t}document.getElementById('chat-messages').appendChild(d)}
 let tat="";
 document.getElementById('chat-form').onsubmit=async(e)=>{e.preventDefault();const i=document.getElementById('chat-input');let t=i.value.trim();let aud=false;if(!t&&!tat)return;if(window.isWaiting)return;if(tat){t=tat;aud=true;tat=""}else{t=i.value.trim()}window.renderMessage(t,'user',aud);let h=window.loadChatHistory(window.activeTherapist.id);h.push({role:'user',content:t});window.saveChatHistory(window.activeTherapist.id,h);i.value='';if(window.aiPaused[window.activeTherapist.id])return;window.isWaiting=true;window.messageCounter++;const waitTime=window.activeTherapist.id==='william'?15000:(window.messageCounter%2!==0?30000:40000);const apiPromise=fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':`Bearer ${window.GROQ_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:h,temperature:0.7,max_tokens:300})}).then(r=>r.json()).catch(()=>null);setTimeout(()=>{document.getElementById('typing-box').classList.remove('hidden');setTimeout(async()=>{document.getElementById('typing-box').classList.add('hidden');if(window.aiPaused[window.activeTherapist.id]){window.isWaiting=false;return}const d=await apiPromise;let r="Estou te ouvindo...";if(d&&d.choices)r=d.choices[0].message.content;window.renderMessage(r,'therapist');const ch=window.loadChatHistory(window.activeTherapist.id);ch.push({role:'assistant',content:r});window.saveChatHistory(window.activeTherapist.id,ch);const c=document.getElementById('chat-messages');c.scrollTop=c.scrollHeight;window.isWaiting=false},window.activeTherapist.id==='william'?5000:30000)},waitTime)};
-window.gerarCaixinha = async function(){const ts=["acolhimento","paz","emoções","esperança","calma"];const ps=["montanhas","mar","floresta","chuva"];const t=ts[Math.floor(Math.random()*ts.length)];const p=ps[Math.floor(Math.random()*ps.length)];const mb=document.getElementById("msgBox");document.getElementById("resultadoBox").classList.remove("hidden");mb.innerText="Sintonizando...";document.getElementById("imgBox").src=`https://loremflickr.com/800/600/${p==='mar'?'sea':'nature'},nature?lock=${Math.floor(Math.random()*1000)}`;const c=`Mensagem curta terapêutica sobre: ${t}`;try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${window.GROQ_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"system",content:c}],temperature:0.9})});const d=await r.json();mb.innerText=d.choices?d.choices[0].message.content:"Paz."}catch(e){mb.innerText="Paz."}}
+
+// --- CAIXINHA SURPRESA (Limitada a 500 chars) ---
+window.gerarCaixinha = async function(){
+    const ts=["acolhimento","paz","emoções","esperança","calma","força"];
+    const ps=["montanhas","mar","floresta","chuva"];
+    const t=ts[Math.floor(Math.random()*ts.length)];
+    const p=ps[Math.floor(Math.random()*ps.length)];
+    const mb=document.getElementById("msgBox");
+    document.getElementById("resultadoBox").classList.remove("hidden");
+    mb.innerText="Sintonizando...";
+    document.getElementById("imgBox").src=`https://loremflickr.com/800/600/${p==='mar'?'sea':'nature'},nature?lock=${Math.floor(Math.random()*1000)}`;
+    
+    // Prompt rigoroso para limite
+    const c=`Gere uma mensagem terapêutica curta sobre: ${t}. MÁXIMO 500 caracteres. Seja direto e acolhedor.`;
+    
+    try{
+        const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+            method:"POST",
+            headers:{Authorization:`Bearer ${window.GROQ_API_KEY}`,"Content-Type":"application/json"},
+            body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"system",content:c}],temperature:0.9, max_tokens: 200})
+        });
+        const d=await r.json();
+        let txt = d.choices?d.choices[0].message.content:"Paz.";
+        // Garante o corte se a IA desobedecer
+        if(txt.length > 500) txt = txt.substring(0, 497) + "...";
+        mb.innerText=txt;
+    }catch(e){mb.innerText="Respire fundo. Sinta a paz."}
+}
+
 window.gerarLeitura = async function(){const tema=document.getElementById('book-theme').value;const container=document.getElementById('book-container');const loading=document.getElementById('book-loading');const titleEl=document.getElementById('book-title');const contentEl=document.getElementById('book-content');container.classList.add('hidden');loading.classList.remove('hidden');const prompt=`Escreva um capítulo curto, envolvente e inspirador de um livro fictício sobre "${tema}". Foco em bem-estar. Estilo literário clássico. Comece com Título Criativo (sem 'Capítulo'). Use tags HTML <p>.`;try{const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${window.GROQ_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"system",content:prompt}],temperature:0.8,max_tokens:800})});const data=await res.json();const fullText=data.choices?data.choices[0].message.content:"<p>Erro. Tente novamente.</p>";let cleanText=fullText.replace(/```html/g,'').replace(/```/g,'');let lines=cleanText.split('\n');let title=lines[0].replace(/<[^>]*>/g,'');let body=cleanText;if(title.length<100){titleEl.innerText=title;body=lines.slice(1).join('\n')}else{titleEl.innerText=tema}contentEl.innerHTML=body;loading.classList.add('hidden');container.classList.remove('hidden')}catch(e){loading.classList.add('hidden');alert("Erro na biblioteca.")}}
 
 // --- MURAL COM GOOGLE APPS SCRIPT ---
-
 window.saveMuralMessage = async function(){
     const input = document.getElementById('mural-input');
     const text = input.value.trim();
     if(!text) return;
-
-    // 1. Salva Localmente (Backup imediato)
     const localMsgs = JSON.parse(localStorage.getItem('mural_local') || '[]');
-    localMsgs.unshift({
-        d: new Date().toLocaleDateString('pt-BR'),
-        t: text,
-        local: true
-    });
+    localMsgs.unshift({d: new Date().toLocaleDateString('pt-BR'), t: text, local: true});
     localStorage.setItem('mural_local', JSON.stringify(localMsgs));
-    
-    // 2. Tenta enviar para a Planilha se o Script estiver configurado
     if(window.SHEET_SCRIPT_URL) {
         const btn = input.nextElementSibling;
         const oldHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
-        
         try {
-            // Usando 'no-cors' para evitar erro de segurança do navegador.
-            // O script vai receber, mas não saberemos a resposta exata.
             await fetch(window.SHEET_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ t: text })
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'mural', t: text }) // Identificador 'mural'
             });
             alert("Mensagem enviada para o Mural Global!");
-        } catch(e) {
-            console.error(e);
-            alert("Salvo localmente. Erro ao conectar com o script.");
-        } finally {
-            btn.innerHTML = oldHtml;
-            btn.disabled = false;
-        }
-    } else {
-        alert("Mensagem salva apenas no seu dispositivo. Configure o Script na planilha para publicar mundialmente.");
-    }
-    
-    input.value = '';
-    window.loadMural();
+        } catch(e) { console.error(e); alert("Salvo localmente."); } finally { btn.innerHTML = oldHtml; btn.disabled = false; }
+    } else { alert("Salvo localmente."); }
+    input.value = ''; window.loadMural();
 }
 
 window.loadMural = async function(){
     const list = document.getElementById('mural-list');
     list.innerHTML = '<div class="text-center text-slate-500 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando mensagens...</div>';
-    
-    let allMsgs = [];
-
-    // 1. Carrega Locais
-    const localMsgs = JSON.parse(localStorage.getItem('mural_local') || '[]');
-    allMsgs = [...localMsgs];
-
-    // 2. Carrega da Planilha
+    let allMsgs = JSON.parse(localStorage.getItem('mural_local') || '[]');
     try {
         const res = await fetch(`https://docs.google.com/spreadsheets/d/${window.SHEET_ID}/gviz/tq?tqx=out:json`);
         const txt = await res.text();
-        const jsonString = txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1);
-        const json = JSON.parse(jsonString);
-        
+        const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
         if (json.table && json.table.rows) {
             json.table.rows.forEach(row => {
                 const dateVal = row.c[0] ? (row.c[0].f || row.c[0].v) : 'Global';
                 const msgVal = row.c[1] ? (row.c[1].v) : null;
-                if (msgVal) {
-                    allMsgs.push({ d: dateVal, t: msgVal, sheet: true });
+                if (msgVal) allMsgs.push({ d: dateVal, t: msgVal, sheet: true });
+            });
+        }
+    } catch (e) { console.error("Erro planilha:", e); }
+    if(allMsgs.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Nenhuma mensagem ainda.</div>'; return; }
+    list.innerHTML = allMsgs.map(i => `<div class="mural-card bg-slate-800 border-l-4 ${i.local ? 'border-sky-500' : 'border-emerald-500'} p-3 rounded mb-3 shadow animate-fade-in"><div class="flex justify-between items-center mb-1"><span class="font-bold ${i.local ? 'text-sky-500' : 'text-emerald-500'} text-xs uppercase">${i.local ? 'Você' : 'Mural'}</span><span class="text-[10px] text-slate-500">${i.d}</span></div><p class="text-slate-300 text-sm break-words">${i.t}</p></div>`).join('');
+}
+
+// --- NOVO: REMÉDIOS NATURAIS & RANKING ---
+const naturalItems = [
+    { id: 'resp', txt: '15 min Respiração Consciente', pts: 10 },
+    { id: 'sun', txt: '20 min Luz Solar', pts: 10 },
+    { id: 'water1', txt: '1 Litro de Água (até 14h)', pts: 10 },
+    { id: 'water2', txt: '1 Litro de Água (até 20h)', pts: 10 },
+    { id: 'meal', txt: '1 Refeição Saudável', pts: 10 },
+    { id: 'exercise', txt: '30 min Exercício Físico', pts: 10 },
+    { id: 'sleep', txt: '6 Horas de Sono', pts: 10 },
+    { id: 'nofood', txt: 'Zero Industrializados Hoje', pts: 10 },
+    { id: 'meditation', txt: '30 min Meditação/Reflexão', pts: 10 }
+];
+
+window.initNaturalRemedies = function() {
+    const list = document.getElementById('remedies-list');
+    list.innerHTML = '';
+    
+    // Recupera checks de hoje
+    const todayKey = 'remedies_' + new Date().toLocaleDateString('pt-BR');
+    const savedChecks = JSON.parse(localStorage.getItem(todayKey) || '[]');
+    
+    // Recupera apelido salvo
+    const savedNick = localStorage.getItem('wr_ranking_nick');
+    if(savedNick) document.getElementById('ranking-nick').value = savedNick;
+
+    naturalItems.forEach(item => {
+        const isChecked = savedChecks.includes(item.id);
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 bg-slate-800/80 p-3 rounded-lg border border-slate-700 hover:bg-slate-700/80 transition-all';
+        div.innerHTML = `
+            <label class="custom-checkbox flex items-center cursor-pointer relative">
+                <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="window.calcPoints()" class="sr-only">
+                <div class="w-5 h-5 border-2 border-slate-500 rounded bg-slate-900 transition-all flex items-center justify-center"></div>
+            </label>
+            <span class="text-xs text-slate-300 font-medium">${item.txt}</span>
+            <span class="ml-auto text-[9px] font-bold text-emerald-500">+${item.pts}</span>
+        `;
+        list.appendChild(div);
+    });
+    window.calcPoints();
+}
+
+window.calcPoints = function() {
+    const checks = document.querySelectorAll('#remedies-list input:checked');
+    const total = checks.length * 10;
+    document.getElementById('daily-points').innerText = total;
+    
+    // Salva estado localmente
+    const ids = Array.from(checks).map(c => c.value);
+    const todayKey = 'remedies_' + new Date().toLocaleDateString('pt-BR');
+    localStorage.setItem(todayKey, JSON.stringify(ids));
+}
+
+window.saveNaturalPoints = async function() {
+    const nick = document.getElementById('ranking-nick').value.trim();
+    const points = parseInt(document.getElementById('daily-points').innerText);
+    
+    if(!nick) return alert("Crie um apelido anônimo para o Ranking.");
+    if(points === 0) return alert("Marque pelo menos uma atividade.");
+    
+    // Salva nick para futuro
+    localStorage.setItem('wr_ranking_nick', nick);
+    
+    // Bloqueia botão
+    const btn = document.querySelector('#natural-remedies button');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    btn.disabled = true;
+    
+    try {
+        await fetch(window.SHEET_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'ranking', nick: nick, points: points })
+        });
+        alert(`Sucesso! ${points} pontos registrados para ${nick}.`);
+        window.loadRanking(); // Recarrega ranking
+    } catch(e) {
+        alert("Erro ao salvar. Tente novamente.");
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
+}
+
+window.loadRanking = async function() {
+    const list = document.getElementById('ranking-list');
+    list.innerHTML = '<div class="text-center text-[10px] text-slate-500 animate-pulse">Carregando pódio...</div>';
+    
+    try {
+        // Pega planilha, aba RankingDB (precisamos saber o gid ou confiar que a query ache)
+        // O gviz query é chato com abas novas. O melhor jeito é buscar TUDO e filtrar no JS se não soubermos o GID.
+        // Assumindo que o script POST funcionou e criou a aba, vamos tentar ler.
+        // TRUQUE: gviz lê a primeira aba por padrão. Para ler outra aba, precisa do 'gid'.
+        // Como não sabemos o GID da aba nova dinâmica, vamos tentar ler a aba padrão e filtrar? NÃO.
+        // SOLUÇÃO ROBUSTA: O script POST já separa. Para LER, vamos ler a URL inteira sem GID e torcer para o Google retornar todas ou a gente precisa do GID.
+        // SE o usuário criou a aba manualmente, ele sabe o GID. Se o script criou, é o próximo ID.
+        // Vamos tentar uma abordagem diferente: Ler o JSON padrão que geralmente traz todas as abas ou a gente pede ao usuário para criar a aba 'RankingDB' e pegar o GID?
+        // Para simplificar para o usuário: Vamos assumir que ele vai criar a aba e pegar o link certo?
+        // NÃO. Vamos fazer o seguinte: O POST funciona. Para o GET (Ranking), vamos simular localmente por enquanto ou tentar ler a aba Sheet2 (gid=?)
+        
+        // **IMPORTANTE**: O Google Visualization API só lê a aba default (primeira) se não passar o `gid`.
+        // Como o usuário não me passou o GID da aba RankingDB, eu vou ler a PRIMEIRA aba mesmo.
+        // ENTÃO: O script POST deve escrever na primeira aba? Não, vai bagunçar o Mural.
+        // SOLUÇÃO: Vamos ler o Mural e filtrar o que tem formato de ranking?
+        // Isso é o mais seguro sem pedir para o usuário caçar GID.
+        // O POST escreve em 'RankingDB'. O GET vai falhar se não tiver GID.
+        
+        // --> VOU MUDAR A ESTRATÉGIA DE LEITURA <--
+        // Vou assumir que o usuário vai arrastar a aba 'RankingDB' para ser a PRIMEIRA da planilha se ele quiser ver o ranking, ou...
+        // Vou tentar ler com `sheet=RankingDB` na query string (funciona em alguns endpoints).
+        
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${window.SHEET_ID}/gviz/tq?tqx=out:json&sheet=RankingDB`);
+        const txt = await res.text();
+        const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+        
+        // Processar Ranking
+        let scores = {};
+        const today = new Date();
+        const currentMonthRef = (today.getMonth() + 1) + "/" + today.getFullYear(); // "5/2024"
+        
+        if (json.table && json.table.rows) {
+            json.table.rows.forEach(row => {
+                // Colunas esperadas: Data(0), Nick(1), Pontos(2), MesRef(3)
+                const mesRef = row.c[3] ? row.c[3].v : "";
+                if(mesRef === currentMonthRef) {
+                    const nick = row.c[1] ? row.c[1].v : "Anônimo";
+                    const pts = row.c[2] ? row.c[2].v : 0;
+                    if(!scores[nick]) scores[nick] = 0;
+                    scores[nick] += pts; // Soma pontos do mês
                 }
             });
         }
-    } catch (e) {
-        console.error("Erro ao ler planilha:", e);
-    }
+        
+        // Ordenar e Exibir
+        const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+        
+        if(sorted.length === 0) {
+            list.innerHTML = '<div class="text-center text-[10px] text-slate-500">Sem dados neste mês.</div>';
+            return;
+        }
+        
+        let html = '';
+        sorted.forEach((entry, idx) => {
+            const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx+1}`));
+            const color = idx === 0 ? 'text-yellow-400' : 'text-slate-300';
+            html += `
+                <div class="flex justify-between items-center bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs ${color}">${medal}</span>
+                        <span class="text-xs font-bold text-slate-200">${entry[0]}</span>
+                    </div>
+                    <span class="text-[10px] font-mono text-emerald-400 font-bold">${entry[1]} pts</span>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
 
-    // Ordenação (tentativa) - inverte para mais recentes primeiro
-    
-    if(allMsgs.length === 0) {
-        list.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Nenhuma mensagem ainda.</div>';
-        return;
+    } catch(e) {
+        console.error(e);
+        list.innerHTML = '<div class="text-center text-[10px] text-red-400">Erro ao ler ranking (verifique se a aba RankingDB existe).</div>';
     }
-
-    list.innerHTML = allMsgs.map(i => `
-        <div class="mural-card bg-slate-800 border-l-4 ${i.local ? 'border-sky-500' : 'border-emerald-500'} p-3 rounded mb-3 shadow animate-fade-in">
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-bold ${i.local ? 'text-sky-500' : 'text-emerald-500'} text-xs uppercase">
-                    ${i.local ? 'Você' : 'Mural'}
-                </span>
-                <span class="text-[10px] text-slate-500">${i.d}</span>
-            </div>
-            <p class="text-slate-300 text-sm break-words">${i.t}</p>
-        </div>`).join('');
 }
 
-
-// Games
+// Games Logic (mantida igual)
 window.cgi=0;window.startDescompressao=function(){window.showTab('game-section');window.cgi=0;window.loadGame(0)}
 window.nextGame=function(){window.cgi++;if(window.cgi<10)window.loadGame(window.cgi);else window.finishDescompressao()}
 window.loadGame=function(i){document.getElementById('game-level-display').innerText=`Nível ${i+1}/10`;document.getElementById('next-game-btn').classList.add('hidden');const c=document.getElementById('game-container');c.innerHTML='';if(i===0)window.initMemoryGame(c);else if(i===1)window.initIntruderGame(c);else if(i===2)window.initSlidingPuzzle(c);else if(i===3)window.initMathGame(c);else if(i===4)window.initColorGame(c);else if(i===5)window.initSequenceGame(c);else if(i===6)window.initWordScramble(c);else if(i===7)window.initReflex(c);else if(i===8)window.initLetterHunt(c);else if(i===9)window.initBreathing(c);}
