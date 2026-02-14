@@ -190,8 +190,8 @@
     </nav>
 
     <script>
-        const GROQ_API_KEY = "";
-        const GEMINI_API_KEY = "";
+        const GROQ_API_KEY = "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";
+        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
         
         let clientName = "Visitante";
         let clientGender = "homem";
@@ -200,7 +200,7 @@
         let messageCounter = 0;
         
         const offlineResponses = {
-            'lia': ["Querido, estou te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
+            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
             'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
             'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
             'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
@@ -215,13 +215,12 @@
 
         function getSystemPrompt(therapistId) {
             const tratamento = clientGender === "homem" ? "querido" : "querida";
-            const amigoAmiga = clientGender === "homem" ? "amigo" : "amiga";
             const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
             
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental com um senso materno de carinho e acolhimento (estilo carinho de avó), transmitindo segurança e paz. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicos. Você é a terapeuta dele, não a avó real. ${commonAgendaRule}`,
+                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó. ${commonAgendaRule}`,
                 'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo agora, às vezes não consegue responder certinho. Periodicamente pergunte se está conseguindo atender bem dessa maneira e peça desculpas por essa imprecisão. Se o usuário preferir, diga que ele pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule}`,
-                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Seja serena e calma. Alterne a forma de chamar o usuário: em uma mensagem chame pelo nome '${clientName}', e na seguinte chame de '${amigoAmiga}'. Exemplo: 'Pois é ${clientName}...' ou 'Então ${amigoAmiga}...'. Nunca use os dois na mesma mensagem. ${commonAgendaRule}`,
+                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
                 'fer': `Você é a Fernanda, secretária. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica, nunca robótica. Você NÃO faz mais agendamentos e NÃO tem acesso à agenda. Diga ao usuário que a agenda agora é automática e está na página inicial. Se o horário desejado não estiver lá, sugira falar com a Dra. Lia aqui no chat. Cada vez que responder sobre isso, mude as palavras para não parecer um bot.`
             };
             return prompts[therapistId] || "";
@@ -293,7 +292,6 @@
             activeTherapist = therapists.find(t => t.id === id);
             const availability = checkAvailability().find(t => t.id === id);
             const tratamento = clientGender === "homem" ? "querido" : "querida";
-            const amigoAmiga = clientGender === "homem" ? "amigo" : "amiga";
             
             document.getElementById('active-name').innerText = activeTherapist.name;
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
@@ -312,10 +310,7 @@
                 addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'system');
             }
             
-            let welcome = `Olá ${clientName}, em que posso ser útil?`;
-            if (id === 'lia') welcome = `Oi ${tratamento}, sou a Dra. Lia. Estou aqui para te ouvir. O que te traz hoje?`;
-            if (id === 'yara') welcome = `Boa noite, ${clientName}. Sinta a calma destas horas... como você está?`;
-            
+            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
