@@ -227,13 +227,12 @@
     </nav>
 
     <script>
-        // CONFIGURAÇÕES SEGURAS
-        const apiKey = ""; // O ambiente preencherá automaticamente
-        const GROQ_API_KEY = ""; // O ambiente preencherá automaticamente
+        // CONFIGURAÇÕES SEGURAS - O ambiente preenche automaticamente no Canvas
+        const apiKey = ""; 
         
         let clientName = "Visitante";
         let clientGender = "homem";
-        let chatHistory = [];
+        let chatHistory = []; // Para Gemini, usaremos o formato de mensagens direto
         let isWaiting = false;
         let messageCounter = 0;
         
@@ -441,7 +440,8 @@
             document.getElementById('chat-messages').innerHTML = '';
             messageCounter = 0;
             
-            chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
+            // Inicia o histórico com o prompt do sistema
+            chatHistory = [{ role: "user", parts: [{ text: `INSTRUÇÃO DE SISTEMA: ${getSystemPrompt(id)} Paciente: ${clientName}.` }] }];
             
             if (id === 'william') {
                 addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta.", 'therapist');
@@ -449,6 +449,8 @@
             
             const welcome = id === 'lia' ? `Oi ${tratamento}, sou a Dra. Lia. Estou aqui para te ouvir.` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
+            // Salva a mensagem inicial como do modelo no histórico para Gemini
+            chatHistory.push({ role: "model", parts: [{ text: welcome }] });
             showTab('chat');
         }
 
@@ -458,7 +460,9 @@
             div.innerHTML = text;
             document.getElementById('chat-messages').appendChild(div);
             document.getElementById('chat-messages').scrollTop = 99999;
-            if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
+            if(saveToHistory) {
+                chatHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text: text }] });
+            }
         }
 
         document.getElementById('chat-form').onsubmit = async (e) => {
@@ -477,13 +481,18 @@
                 document.getElementById('active-status-text').innerText = "Online";
             }
 
+            // Tempos de espera variados solicitados anteriormente
             let waitTime = messageCounter % 2 !== 0 ? 20000 : 30000;
             let typingTime = messageCounter % 2 !== 0 ? 40000 : 30000;
 
-            const apiPromise = fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
+            // Chamada para Gemini
+            const apiPromise = fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.8, max_tokens: 150 })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: chatHistory,
+                    systemInstruction: { parts: [{ text: getSystemPrompt(activeTherapist.id) }] }
+                })
             });
 
             setTimeout(() => {
@@ -492,8 +501,9 @@
                     document.getElementById('typing-box').classList.add('hidden');
                     try {
                         const data = await apiPromise;
-                        if (data && data.choices) {
-                            addMessage(data.choices[0].message.content, 'therapist');
+                        if (data && data.candidates && data.candidates[0].content) {
+                            const responseText = data.candidates[0].content.parts[0].text;
+                            addMessage(responseText, 'therapist');
                         } else {
                             throw new Error();
                         }
