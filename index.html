@@ -27,7 +27,7 @@
             width: 100vw;
             color: var(--text-light); 
             margin: 0; padding: 0;
-            overflow: hidden; /* Remove rolagem da janela principal */
+            overflow: hidden; /* Evita rolagem da janela inteira */
             display: flex;
             flex-direction: column;
         }
@@ -35,7 +35,7 @@
         .heading-font { font-family: 'Quicksand', sans-serif; }
         
         .glass-card {
-            background: rgba(30, 41, 59, 0.95);
+            background: rgba(30, 41, 59, 0.98); /* Mais opaco para garantir leitura */
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 1.5rem;
@@ -47,10 +47,10 @@
             display: none; 
             height: 100%; 
             flex-direction: column;
-            animation: fadeIn 0.3s ease;
+            width: 100%;
         }
-        .tab-content.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
         /* Chat Styles */
         .chat-container { 
@@ -80,12 +80,11 @@
         .memory-card.flipped, .memory-card.matched { background-color: #f1f5f9; border-color: var(--primary); color: #333; transform: rotateY(180deg); }
         .memory-card.matched { background-color: #10b981; border-color: #059669; color: white; cursor: default; }
         
-        /* Scrollbar customizada para dark mode */
+        /* Scrollbar customizada */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
 
-        /* Utilitários Gerais */
         .btn-game { @apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95; }
         input, select, textarea { background-color: #334155; color: white; border-color: #475569; }
         input::placeholder, textarea::placeholder { color: #94a3b8; }
@@ -94,13 +93,13 @@
 <body>
 
     <!-- Header Fixo -->
-    <header class="flex-none p-4 text-center bg-slate-900/90 backdrop-blur-md border-b border-slate-700 z-10">
+    <header class="flex-none p-4 text-center bg-slate-900/95 backdrop-blur-md border-b border-slate-700 z-20">
         <h1 class="text-xl font-bold text-sky-400 heading-font">Harmonia Diária</h1>
         <p class="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA | NOITE</p>
     </header>
 
-    <!-- Área Principal (Flexível e com scroll interno apenas onde necessário) -->
-    <main class="flex-1 overflow-hidden relative w-full max-w-md mx-auto">
+    <!-- Área Principal -->
+    <main class="flex-1 overflow-hidden relative w-full max-w-md mx-auto bg-slate-900">
         
         <!-- ONBOARDING -->
         <section id="onboarding" class="tab-content active p-6 justify-center">
@@ -142,23 +141,23 @@
         <!-- AGENDA -->
         <section id="agenda" class="tab-content p-4 h-full">
             <div class="glass-card p-4 h-full flex flex-col">
-                <div class="flex items-center gap-3 mb-4">
-                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                <div class="flex items-center gap-3 mb-4 flex-none">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <h2 class="font-bold text-sky-400 heading-font">Agendamento</h2>
                 </div>
                 <div class="flex-1 rounded-xl overflow-hidden border border-slate-600 bg-white">
                     <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
-                <p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática. Dúvidas? Fale com a Dra. Lia.</p>
+                <p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática.</p>
             </div>
         </section>
 
         <!-- SELEÇÃO CHAT -->
         <section id="chat-selection" class="tab-content p-4 overflow-y-auto">
-            <div class="glass-card p-6">
+            <div class="glass-card p-6 min-h-full">
                 <h2 class="text-lg font-bold text-sky-400 mb-4 text-center">Nossa Equipe</h2>
                 <div id="therapist-list" class="space-y-3"></div>
-                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-slate-500 font-bold uppercase hover:text-slate-300">Voltar</button>
+                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-slate-500 font-bold uppercase hover:text-slate-300">Voltar para Início</button>
             </div>
         </section>
 
@@ -166,7 +165,7 @@
         <section id="chat" class="tab-content h-full flex flex-col">
             <div class="glass-card flex flex-col h-full m-2 border-0 rounded-none bg-transparent shadow-none">
                 <!-- Chat Header -->
-                <div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/80 rounded-t-2xl">
+                <div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/90 rounded-t-2xl">
                     <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div>
                     <div class="flex-1">
                         <p id="active-name" class="font-bold text-white text-sm"></p>
@@ -175,7 +174,8 @@
                             <span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span>
                         </div>
                     </div>
-                    <button onclick="openChatSelection()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+                    <!-- Botão Fechar Chat (X) - Leva para Seleção -->
+                    <button onclick="openChatSelection()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button>
                 </div>
                 
                 <!-- Messages -->
@@ -189,9 +189,9 @@
                 <!-- Input Area -->
                 <div class="p-3 bg-slate-800 border-t border-slate-700 rounded-b-2xl">
                     <form id="chat-form" class="flex items-center gap-2">
-                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors"><i class="fas fa-microphone"></i></button>
+                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button>
                         <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400">
-                        <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors"><i class="fas fa-paper-plane"></i></button>
+                        <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
@@ -201,7 +201,7 @@
         <section id="relaxation" class="tab-content p-4 h-full overflow-y-auto">
             <div class="glass-card p-4 h-full flex flex-col">
                 <div class="flex items-center gap-3 mb-4 flex-none">
-                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <h2 class="font-bold text-sky-400">Relaxamento</h2>
                 </div>
                 
@@ -230,7 +230,7 @@
         <section id="mural" class="tab-content p-4 h-full">
             <div class="glass-card p-5 h-full flex flex-col">
                 <div class="flex items-center gap-3 mb-4 flex-none">
-                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <div>
                         <h2 class="font-bold text-sky-400">Mural de Sentimentos</h2>
                         <p class="text-[10px] text-slate-500">Compartilhe suas experiências anonimamente.</p>
@@ -254,7 +254,7 @@
         <section id="hope" class="tab-content p-4 h-full overflow-y-auto">
             <div class="glass-card p-6 text-center min-h-full flex flex-col justify-center">
                 <div class="flex justify-between items-center mb-6">
-                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <h2 class="font-bold text-lg text-yellow-400">Caixinha Emocional</h2>
                     <div class="w-8"></div>
                 </div>
@@ -284,7 +284,7 @@
             <div class="glass-card p-5 min-h-full flex flex-col">
                 <div class="flex items-center justify-between mb-2 flex-none">
                     <div class="flex items-center gap-2">
-                        <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                        <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                         <h2 class="font-bold text-rose-400">Descompressão</h2>
                     </div>
                     <span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/5</span>
@@ -330,10 +330,10 @@
         
         // --- CHAT SYSTEM ---
         const offlineResponses = {
-            'lia': ["Então querido, calma viu? Vovó tá aqui.", "Respira fundo, né? Vai passar.", "Me conta mais, filho."],
-            'william': ["Pois é, a gente entende.", "Então, foca no agora.", "Olha, é normal sentir isso."],
-            'yara': ["Sinta a paz da noite, amigo.", "Tudo vai se acalmar, querido.", "Estou aqui com você."],
-            'fer': ["Posso ajudar em algo mais?", "O sistema é bem simples.", "Qualquer dúvida, chame."]
+            'lia': ["Conte comigo para o que precisar.", "Respire fundo, estou te ouvindo.", "Seu sentimento é importante."],
+            'william': ["Estou aqui para te ouvir.", "Vamos entender isso juntos.", "Pode falar, estou atento."],
+            'yara': ["A noite traz calma, conte comigo.", "Estou aqui por você.", "Pode desabafar tranquilamente."],
+            'fer': ["Posso ajudar em algo mais?", "O sistema é simples, estou à disposição.", "Qualquer dúvida, é só chamar."]
         };
 
         const therapists = [
@@ -347,16 +347,16 @@
             const tratamento = clientGender === "homem" ? "querido" : "querida";
             const amigo = clientGender === "homem" ? "amigo" : "amiga";
             const formal = clientGender === "homem" ? "Sr." : "Sra.";
-            const commonAgendaRule = "Sobre agendamentos: informe que a agenda é automática na tela inicial. Se não tiver horário, sugira falar com a Dra. Lia.";
+            const commonAgendaRule = "Sobre agendamentos: informe que a agenda é automática na tela inicial. Se não tiver horário, sugira continuar a conversa aqui para apoio emocional.";
             
-            // Instrução de estilo Paranaense
-            const estiloFala = "IMPORTANTE: Adote um tom de fala característico do Paraná (curitibano/interior). Use expressões como 'então', 'né?', 'viu', 'capaz', 'olha só', 'piazão' (se for homem e o contexto permitir intimidade), 'gurria' (se mulher e íntimo). Seja empático, converse como um amigo próximo, mas mantenha a postura profissional. Exemplo de estrutura: 'Então bruno, tudo bom amigo? É difícil mesmo né? Mas ó, a gente supera viu?'. Não seja robótico.";
+            // Estilo de fala: Leve, acolhedor, sem sotaque regional
+            const estiloLeve = "Use uma linguagem leve, empática, acolhedora e culta. Sem gírias ou sotaques regionais. Seja humano e caloroso.";
 
             const prompts = {
-                'lia': `Você é a Dra. Lia. Experiente, acolhedora, como uma avó sábia do Paraná. Trate como '${tratamento}'. ${estiloFala} ${commonAgendaRule}`,
-                'william': `Você é o Dr. William. Jovem, dinâmico, direto. Trate o paciente pelo NOME sempre, usando prefixos como 'Pois é', 'Então', 'Olha'. Ex: 'Pois é ${clientName}...'. ${estiloFala} ${commonAgendaRule}`,
-                'yara': `Você é a Dra. Yara, terapeuta da madrugada. Carinhosa e calma. Chame de '${amigo}' e termine frases com '${tratamento}'. ${estiloFala} ${commonAgendaRule}`,
-                'fer': `Você é a Fernanda, recepcionista. Educada e prestativa. Trate por '${formal} ${clientName}'. ${estiloFala} ${commonAgendaRule}`
+                'lia': `Você é a Dra. Lia. Uma terapeuta experiente e com acolhimento materno (mas não aja como uma avó estereotipada, seja uma profissional calorosa). Seu foco é acolher e validar sentimentos. Trate o paciente de forma gentil. ${estiloLeve} ${commonAgendaRule}`,
+                'william': `Você é o Dr. William. Jovem, dinâmico e empático. Trate o paciente pelo NOME sempre que possível, de forma natural. Ex: 'Entendo, ${clientName}...'. Foco na personalização do atendimento. ${estiloLeve} ${commonAgendaRule}`,
+                'yara': `Você é a Dra. Yara, terapeuta da madrugada. Sua voz é calma e serena. Chame de '${amigo}' e termine frases com '${tratamento}' ocasionalmente para gerar conforto. ${estiloLeve} ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, recepcionista. Profissional, simpática e prestativa. Trate por '${formal} ${clientName}'. Ajude com dúvidas sobre o app. ${estiloLeve} ${commonAgendaRule}`
             };
             return prompts[therapistId] || "";
         }
@@ -373,8 +373,15 @@
         }
 
         function showTab(id) {
+            // Esconde todas as abas
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            // Mostra a aba desejada
+            const tab = document.getElementById(id);
+            if(tab) {
+                tab.classList.add('active');
+            } else {
+                console.error("Tab not found:", id);
+            }
         }
 
         function openChatSelection() {
@@ -404,11 +411,12 @@
             messageCounter = 0;
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
-            let welcome = "Olá! Como posso ajudar?"; // Default
-            if (id === 'lia') welcome = `Oi ${clientName}, tudo bem filho(a)? Vovó Lia tá aqui. O que tá pesando nesse coraçãozinho hoje, viu?`;
-            else if (id === 'william') welcome = `E aí ${clientName}, tudo certo? Sou o Dr. William. Então, me conta, o que tá pegando hoje?`;
-            else if (id === 'yara') welcome = `Oi amigo(a). A noite tá tranquila por aí? Pode desabafar, querido(a).`;
-            else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Tudo bom? Sou a Fernanda. Precisa de ajuda com o app?`;
+            let welcome = "Olá! Como posso ajudar?";
+            // Mensagens de boas-vindas ajustadas
+            if (id === 'lia') welcome = `Olá ${clientName}, que bom ter você aqui. Sou a Dra. Lia. Sinta-se acolhido(a). Como você está se sentindo hoje?`;
+            else if (id === 'william') welcome = `Oi ${clientName}, tudo bem? Sou o Dr. William. Estou aqui para te ouvir. O que está acontecendo?`;
+            else if (id === 'yara') welcome = `Olá, amigo(a). A noite é um momento de paz. Estou aqui com você, querido(a).`;
+            else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Sou a Fernanda. Como posso auxiliar com o aplicativo?`;
 
             addMessage(welcome, 'therapist', false);
             showTab('chat');
@@ -447,8 +455,8 @@
             let waitTime = (messageCounter % 2 !== 0) ? 30000 : 40000;
             let typingTime = 30000;
             
-            // Para teste rápido, descomente:
-            // waitTime = 2000; typingTime = 2000;
+            // Para testes:
+            // waitTime = 1000; typingTime = 1000;
 
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -462,7 +470,7 @@
                     document.getElementById('typing-box').classList.add('hidden');
                     const data = await apiPromise;
                     if (data && data.choices) addMessage(data.choices[0].message.content, 'therapist');
-                    else addMessage("Entendi... continua, tô te ouvindo viu.", 'therapist');
+                    else addMessage("Estou te ouvindo, pode continuar...", 'therapist');
                     isWaiting = false;
                 }, typingTime);
             }, waitTime);
@@ -487,7 +495,7 @@
             const termo = traducoes[paisagem] || "nature";
             imgBox.src = `https://loremflickr.com/800/600/${termo},nature?lock=${Math.floor(Math.random() * 1000)}`;
 
-            const comando = `Crie uma mensagem terapêutica curta (max 3 frases) estilo paranaense acolhedor sobre: ${tema} e ${paisagem}.`;
+            const comando = `Crie uma mensagem terapêutica curta (max 3 frases), leve e acolhedora sobre: ${tema} e ${paisagem}.`;
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -495,7 +503,7 @@
                     body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role: "system", content: comando}], temperature: 0.9 })
                 });
                 const data = await res.json();
-                msgBox.innerText = data.choices ? data.choices[0].message.content : "Respire fundo, viu? Vai ficar tudo bem.";
+                msgBox.innerText = data.choices ? data.choices[0].message.content : "Respire fundo. Vai ficar tudo bem.";
             } catch (e) { msgBox.innerText = "Sinta a paz deste momento."; }
         }
 
@@ -568,12 +576,9 @@
         }
 
         function gameWin() {
-            // Efeito visual de vitória simples
             const container = document.getElementById('game-container');
-            // Flash verde
             container.style.boxShadow = "0 0 50px #10b981";
             setTimeout(() => { container.style.boxShadow = "none"; }, 500);
-            
             document.getElementById('next-game-btn').classList.remove('hidden');
         }
 
@@ -581,7 +586,7 @@
         function initMemoryGame(container) {
             container.innerHTML = '<div id="memory-grid" class="memory-grid w-full"></div>';
             const grid = document.getElementById('memory-grid');
-            const icons = ['leaf', 'cloud', 'dove', 'heart', 'star', 'tree']; // 6 pares = 12 cartas (3x4)
+            const icons = ['leaf', 'cloud', 'dove', 'heart', 'star', 'tree'];
             let cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
             let flipped = [], matched = 0;
 
@@ -608,7 +613,7 @@
             });
         }
 
-        // JOGO 2: O INTRUSO (Percepção)
+        // JOGO 2: O INTRUSO
         function initIntruderGame(container) {
             container.innerHTML = `
                 <div class="text-center mb-4"><p class="text-white">Encontre o emoji diferente!</p></div>
@@ -616,34 +621,27 @@
             `;
             const grid = document.getElementById('intruder-grid');
             const mainEmoji = "😊";
-            const intruderEmoji = "🙂"; // Sutil
+            const intruderEmoji = "🙂"; 
             const pos = Math.floor(Math.random() * 16);
-            
             for(let i=0; i<16; i++) {
                 const btn = document.createElement('button');
                 btn.className = "text-3xl p-4 bg-slate-700 rounded-lg hover:bg-slate-600";
                 btn.innerText = (i === pos) ? intruderEmoji : mainEmoji;
                 btn.onclick = () => {
-                    if(i === pos) {
-                        btn.style.backgroundColor = "#10b981";
-                        gameWin();
-                    } else {
-                        btn.style.backgroundColor = "#ef4444";
-                        setTimeout(() => btn.style.backgroundColor = "", 300);
-                    }
+                    if(i === pos) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
+                    else { btn.style.backgroundColor = "#ef4444"; setTimeout(() => btn.style.backgroundColor = "", 300); }
                 };
                 grid.appendChild(btn);
             }
         }
 
-        // JOGO 3: CÁLCULO ZEN (Raciocínio)
+        // JOGO 3: CÁLCULO ZEN
         function initMathGame(container) {
             const n1 = Math.floor(Math.random() * 20) + 10;
             const n2 = Math.floor(Math.random() * 10) + 5;
             const res = n1 + n2;
             const wrongs = [res + 2, res - 3, res + 5].sort(() => Math.random() - 0.5);
             const options = [...wrongs.slice(0, 2), res].sort(() => Math.random() - 0.5);
-
             container.innerHTML = `
                 <div class="text-center w-full">
                     <p class="text-slate-400 mb-2">Quanto é?</p>
@@ -655,32 +653,20 @@
             `;
         }
         window.checkMath = (btn, val, correct) => {
-            if(val === correct) {
-                btn.style.backgroundColor = "#10b981";
-                gameWin();
-            } else {
-                btn.style.backgroundColor = "#ef4444";
-            }
+            if(val === correct) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
+            else { btn.style.backgroundColor = "#ef4444"; }
         };
 
-        // JOGO 4: CORES E PALAVRAS (Atenção)
+        // JOGO 4: CORES
         function initColorGame(container) {
-            const colors = [
-                { name: "VERMELHO", hex: "#ef4444" },
-                { name: "AZUL", hex: "#3b82f6" },
-                { name: "VERDE", hex: "#10b981" },
-                { name: "AMARELO", hex: "#eab308" }
-            ];
-            // Texto diz uma cor, tinta é outra
+            const colors = [{ name: "VERMELHO", hex: "#ef4444" }, { name: "AZUL", hex: "#3b82f6" }, { name: "VERDE", hex: "#10b981" }, { name: "AMARELO", hex: "#eab308" }];
             const textIdx = Math.floor(Math.random() * 4);
             let colorIdx = Math.floor(Math.random() * 4);
-            while(colorIdx === textIdx) colorIdx = Math.floor(Math.random() * 4); // Garante diferente
-
-            const correctColorName = colors[colorIdx].name; // A resposta é a COR DA TINTA, não o texto escrito
-
+            while(colorIdx === textIdx) colorIdx = Math.floor(Math.random() * 4); 
+            const correctColorName = colors[colorIdx].name; 
             container.innerHTML = `
                 <div class="text-center w-full">
-                    <p class="text-white mb-2">Qual a <b>COR</b> do texto abaixo? (Não leia a palavra)</p>
+                    <p class="text-white mb-2">Qual a <b>COR</b> do texto? (Ignore o que está escrito)</p>
                     <h3 class="text-5xl font-bold mb-8" style="color: ${colors[colorIdx].hex}">${colors[textIdx].name}</h3>
                     <div class="grid grid-cols-2 gap-3 w-full">
                         ${colors.map(c => `<button onclick="checkColor(this, '${c.name}', '${correctColorName}')" class="btn-game bg-slate-700 text-white border-2" style="border-color:${c.hex}">${c.name}</button>`).join('')}
@@ -689,24 +675,18 @@
             `;
         }
         window.checkColor = (btn, val, correct) => {
-            if(val === correct) {
-                btn.style.backgroundColor = "#10b981";
-                gameWin();
-            } else {
-                btn.style.backgroundColor = "#ef4444";
-            }
+            if(val === correct) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
+            else { btn.style.backgroundColor = "#ef4444"; }
         };
 
-        // JOGO 5: SEQUÊNCIA ZEN (Memória)
+        // JOGO 5: SEQUÊNCIA
         function initSequenceGame(container) {
             let seq = [];
             for(let i=0; i<4; i++) seq.push(Math.floor(Math.random() * 9) + 1);
-            
             container.innerHTML = `
                 <div class="text-center w-full">
                     <p class="text-white mb-4">Memorize a sequência:</p>
                     <div id="seq-display" class="text-4xl font-bold text-sky-400 tracking-widest mb-8 h-12">${seq.join(' ')}</div>
-                    
                     <div id="seq-input" class="hidden grid grid-cols-3 gap-2 w-full max-w-xs mx-auto">
                         ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="addSeq(${n})" class="p-4 bg-slate-700 rounded-lg text-xl font-bold hover:bg-slate-600">${n}</button>`).join('')}
                     </div>
@@ -714,8 +694,6 @@
                     <button onclick="checkSeq()" id="btn-check-seq" class="hidden w-full mt-4 bg-sky-600 text-white py-2 rounded-xl">Verificar</button>
                 </div>
             `;
-
-            // Oculta após 3 segundos
             setTimeout(() => {
                 document.getElementById('seq-display').innerText = "????";
                 document.getElementById('seq-input').classList.remove('hidden');
@@ -724,21 +702,12 @@
                 window.currentSeq = [];
             }, 3000);
         }
-        window.addSeq = (n) => {
-            window.currentSeq.push(n);
-            document.getElementById('user-seq').innerText = window.currentSeq.join(' ');
-        };
+        window.addSeq = (n) => { window.currentSeq.push(n); document.getElementById('user-seq').innerText = window.currentSeq.join(' '); };
         window.checkSeq = () => {
-            if(JSON.stringify(window.currentSeq) === JSON.stringify(window.targetSeq)) {
-                gameWin();
-            } else {
-                document.getElementById('user-seq').innerText = "Tente novamente...";
-                window.currentSeq = [];
-                setTimeout(() => document.getElementById('user-seq').innerText = "", 1000);
-            }
+            if(JSON.stringify(window.currentSeq) === JSON.stringify(window.targetSeq)) { gameWin(); } 
+            else { document.getElementById('user-seq').innerText = "Tente novamente..."; window.currentSeq = []; setTimeout(() => document.getElementById('user-seq').innerText = "", 1000); }
         };
 
-        // Voice Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
