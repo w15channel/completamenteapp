@@ -250,7 +250,8 @@
                 </button>
 
                 <div id="resultadoBox" class="mt-5 hidden animate-fade-in">
-                    <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover"/>
+                    <!-- Mantendo a proporção da imagem -->
+                    <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-gray-200"/>
                     <div class="bg-white/80 p-4 rounded-xl border border-sky-50">
                         <p id="msgBox" class="italic text-gray-700 text-sm"></p>
                     </div>
@@ -426,7 +427,7 @@
             }, waitTime);
         };
 
-        // --- CAIXINHA EMOCIONAL IA (NOVA LÓGICA) ---
+        // --- CAIXINHA EMOCIONAL IA (LÓGICA ATUALIZADA - LOREMFLICKR) ---
         async function gerarCaixinha() {
             const paisagem = document.getElementById("paisagem").value;
             const tema = document.getElementById("tema").value;
@@ -435,14 +436,30 @@
             const msgBox = document.getElementById("msgBox");
 
             resBox.classList.remove("hidden");
-            msgBox.innerText = "Gerando reflexão...";
+            msgBox.innerText = "Sintonizando energia...";
+            imgBox.src = ""; // Limpa a imagem anterior enquanto carrega
             
-            // Imagem via Pollinations AI (substituindo source.unsplash.com que foi descontinuado)
-            // Gera uma imagem AI baseada no prompt, garantindo que sempre funcione.
-            const imgUrl = `https://image.pollinations.ai/prompt/paisagem de ${paisagem} com sentimento de ${tema} style realistic nature photography?width=900&height=600&nologo=true&seed=${Math.random()}`;
+            // Dicionário de tradução para garantir que o buscador encontre boas imagens
+            const traducoesPaisagem = {
+                "montanhas": "mountains",
+                "mar": "sea",
+                "floresta": "forest",
+                "chuva": "rain",
+                "pôr do sol": "sunset",
+                "campo": "meadow",
+                "céu estrelado": "starry night"
+            };
+
+            const termoIngles = traducoesPaisagem[paisagem.toLowerCase()] || "nature";
+
+            // URL do LoremFlickr (Buscador de imagens reais do Flickr)
+            // Formato: /width/height/keywords
+            // Adicionamos um timestamp aleatório para evitar cache e trazer novas fotos
+            const imgUrl = `https://loremflickr.com/800/600/${termoIngles},nature?lock=${Math.floor(Math.random() * 1000)}`;
+            
             imgBox.src = imgUrl;
 
-            // Prompt para IA (Texto)
+            // Prompt para IA (Texto) - Mantém Groq como solicitado para o texto
             const comandoIA = `
             Crie uma mensagem terapêutica curta e emocionalmente acolhedora.
             Tema central: ${tema}
