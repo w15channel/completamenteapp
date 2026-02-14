@@ -80,10 +80,24 @@
                 <h2 class="text-xl font-bold text-gray-800 heading-font mb-6 client-name">Visitante</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="openChatSelection()" class="p-5 bg-white/80 rounded-2xl border border-sky-50 flex flex-col items-center gap-3 hover:bg-sky-50 shadow-sm transition-all"><i class="fas fa-comment-medical text-2xl text-sky-500"></i><span class="text-[10px] font-bold uppercase">Conversar</span></button>
-                    <button onclick="showTab('relaxation')" class="p-5 bg-white/80 rounded-2xl border border-purple-50 flex flex-col items-center gap-3 hover:bg-purple-50 shadow-sm transition-all"><i class="fas fa-spa text-2xl text-purple-500"></i><span class="text-[10px] font-bold uppercase">Relaxar</span></button>
+                    <button onclick="showTab('agenda')" class="p-5 bg-white/80 rounded-2xl border border-emerald-50 flex flex-col items-center gap-3 hover:bg-emerald-50 shadow-sm transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-500"></i><span class="text-[10px] font-bold uppercase">Agendar</span></button>
                     <button onclick="showTab('dreams')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-book-open text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Diário</span></button>
                     <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-lightbulb text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
                 </div>
+                <button onclick="showTab('relaxation')" class="w-full mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-3 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Espaço Relaxamento</span></button>
+            </div>
+        </section>
+
+        <section id="agenda" class="tab-content">
+            <div class="glass-card p-6 h-[75vh] flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
+                    <h2 class="font-bold text-sky-900 heading-font">Agendamento Automático</h2>
+                </div>
+                <div class="flex-1 rounded-xl overflow-hidden border border-sky-100">
+                    <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-3 text-center italic">Caso não encontre um horário ideal, converse com a Dra. Lia no chat.</p>
             </div>
         </section>
 
@@ -186,26 +200,28 @@
         let messageCounter = 0;
         
         const offlineResponses = {
-            'lia': ["Querido, sem problema estou te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
-            'william': ["Ah, entendi, vamos analisar. O que resolvemos agora?", "Analise esses fatos. O que você acha de tentarmos isso?"],
+            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
+            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
             'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
             'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
         };
 
         const therapists = [
-            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart', prompt: "" },
-            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie', prompt: "" },
-            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon', prompt: "" },
-            { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset', prompt: "" }
+            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart' },
+            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie' },
+            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon' },
+            { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset' }
         ];
 
         function getSystemPrompt(therapistId) {
             const tratamento = clientGender === "homem" ? "querido" : "querida";
+            const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
+            
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Suas respostas devem ser curtas, pontuais e demonstrar preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó.`,
-                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente, vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual e peça a opinião do paciente sobre as reflexões técnicas que você propor.`,
-                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma.`,
-                'fer': `Você é a Fernanda, secretária eficiente. Trate o paciente como '${tratamento}'. Auxilie nos agendamentos.`
+                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó. ${commonAgendaRule}`,
+                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo agora, às vezes não consegue responder certinho. Periodicamente pergunte se está conseguindo atender bem dessa maneira e peça desculpas por essa imprecisão. Se o usuário preferir, diga que ele pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule}`,
+                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, secretária. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica, nunca robótica. Você NÃO faz mais agendamentos e NÃO tem acesso à agenda. Diga ao usuário que a agenda agora é automática e está na página inicial. Se o horário desejado não estiver lá, sugira falar com a Dra. Lia aqui no chat. Cada vez que responder sobre isso, mude as palavras para não parecer um bot.`
             };
             return prompts[therapistId] || "";
         }
@@ -294,7 +310,7 @@
                 addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'system');
             }
             
-            const welcome = id === 'lia' ? `Oi ${tratamento}, essa mensagem é fixa, me chamo Lia, já te respondo. O que te traz aqui hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
@@ -351,7 +367,6 @@
             }, waitTime);
         };
 
-        // --- CAIXINHA VIA GEMINI (TEXTO E IMAGEM) ---
         async function generateHopeGemini() {
             if(isWaiting) return;
             isWaiting = true;
@@ -360,10 +375,8 @@
             document.getElementById('hope-loading').classList.remove('hidden');
             
             let frase = "Respire... tudo vai ficar bem.";
-            let promptImagem = "peaceful zen garden nature high resolution";
 
             try {
-                // 1. Gera o texto da frase pelo Gemini
                 const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -374,7 +387,6 @@
                 const dataText = await resText.json();
                 frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
 
-                // 2. Gera a imagem pelo Gemini Imagen
                 const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -390,7 +402,6 @@
                     handleImageError(document.getElementById('hope-img'));
                 }
             } catch(e) {
-                console.error("Erro Gemini:", e);
                 handleImageError(document.getElementById('hope-img'));
             }
 
