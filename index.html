@@ -42,101 +42,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Init Firebase
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// === UI FUNCTION DEFINITIONS (RUN FIRST) ===
+// Explicitly attaching to window to ensure HTML buttons work immediately
 
-// Init Auth Logic
-const initAuth = async () => {
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-    } catch (error) {
-        console.error("Auth Failed:", error);
-    }
-};
-
-initAuth();
-
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        setupMuralListener();
-    }
-});
-
-function setupMuralListener() {
-    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
-    onSnapshot(colRef, (snapshot) => {
-        const msgs = [];
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            if(!d.d) d.d = 'Recentemente';
-            msgs.push(d);
-        });
-        // Sort descending locally
-        msgs.sort((a, b) => {
-            const ta = a.timestamp?.seconds || 0;
-            const tb = b.timestamp?.seconds || 0;
-            return tb - ta;
-        });
-        renderMural(msgs);
-    }, (err) => console.error("Mural Error:", err));
-}
-
-function renderMural(msgs) {
-    if(msgs.length === 0) msgs = [{d: 'Sistema', t: 'Seja o primeiro a compartilhar luz!'}];
-    document.getElementById('mural-list').innerHTML = msgs.map(i => `
-        <div class="mural-card bg-slate-800 border-l-4 border-amber-500 p-3 rounded mb-3 shadow animate-fade-in">
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-amber-500 text-xs uppercase">Anônimo</span>
-                <span class="text-[10px] text-slate-500">${i.d}</span>
-            </div>
-            <p class="text-slate-300 text-sm break-words">${i.t}</p>
-        </div>`).join('');
-}
-
-window.saveMuralMessage = async function() {
-    const input = document.getElementById('mural-input');
-    const text = input.value.trim();
-    if(!text) return;
-    
-    // UI Feedback
-    const btn = input.nextElementSibling;
-    const oldHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled = true;
-
-    try {
-        if(!auth.currentUser) {
-           // Wait for auth if not ready
-           console.log("Waiting for auth...");
-           return;
-        }
-        
-        const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
-        await addDoc(colRef, {
-            t: text,
-            d: new Date().toLocaleDateString('pt-BR'),
-            timestamp: serverTimestamp()
-        });
-        
-        input.value = '';
-    } catch(e) {
-        console.error(e);
-        alert("Erro ao conectar. Tente novamente.");
-    } finally {
-        btn.innerHTML = oldHtml;
-        btn.disabled = false;
-    }
-}
-
-// Logic exposed to Window
 window.GROQ_API_KEY="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";
 window.clientName=localStorage.getItem('wr_client_name')||"Visitante";
 window.clientGender=localStorage.getItem('wr_client_gender')||"homem";
@@ -145,9 +53,31 @@ window.messageCounter=0;
 window.activeTherapist=null;
 window.adminTargetTherapist=null;
 window.aiPaused={};
-
-// Audio
 window.player = null;
+
+window.showTab = function(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+window.login = function(){
+    const n=document.getElementById('user-name-input').value.trim();
+    window.clientGender=document.getElementById('user-gender').value;
+    if(n){
+        window.clientName=n;
+        localStorage.setItem('wr_client_name',n);
+        localStorage.setItem('wr_client_gender',window.clientGender);
+        document.querySelectorAll('.client-name').forEach(el=>el.innerText=n);
+        window.showTab('home');
+        if(window.player){
+            window.player.playVideo();
+            window.player.unMute();
+            window.player.setVolume(30);
+            document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";
+        }
+    }else alert("Digite seu nome.");
+}
+
 window.onYouTubeIframeAPIReady = function(){window.player=new YT.Player('bg-music-player',{height:'0',width:'0',videoId:'Cg0dAc4-UCY',playerVars:{'autoplay':0,'controls':0,'loop':1,'playlist':'Cg0dAc4-UCY'},events:{'onReady':onPlayerReady}})}
 function onPlayerReady(e){e.target.setVolume(30)}
 window.toggleMusic = function(){if(!window.player)return;const btn=document.getElementById('music-icon');if(window.player.isMuted()){window.player.unMute();window.player.setVolume(30);btn.className="fas fa-volume-up text-sky-400"}else{window.player.mute();btn.className="fas fa-volume-mute text-slate-400"}}
@@ -158,8 +88,7 @@ window.loadChatHistory = function(id){if(!window.clientName)return[];return JSON
 const therapists=[{id:'lia',name:'Dra. Lia',color:'#ec4899',icon:'heart'},{id:'william',name:'William',color:'#0ea5e9',icon:'user-tie'},{id:'yara',name:'Dra. Yara',color:'#8b5cf6',icon:'moon'}];
 window.checkAvailability = function(id){const h=new Date().getHours();const d=h>=8&&h<22;if(id==='william')return d?{s:'busy',t:'Ocupado',c:'#f59e0b'}:{s:'offline',t:'Offline',c:'#94a3b8'};if(id==='yara')return!d?{s:'online',t:'Online',c:'#10b981'}:{s:'offline',t:'Offline',c:'#94a3b8'};if(id==='lia')return d?{s:'online',t:'Online',c:'#10b981'}:{s:'offline',t:'Offline',c:'#94a3b8'};return{s:'offline',t:'Offline',c:'#94a3b8'}}
 window.getSystemPrompt = function(id){const t=window.clientGender==="homem"?"querido":"querida";const a=window.clientGender==="homem"?"amigo":"amiga";const e="IMPORTANTE: Responda dinamicamente, máx 500 chars. Início OBJETIVO.";const p={'lia':`Você é a Dra. Lia. Acolha. ${e}`,'william':`Você é o William. Em atendimento, desvie burocracias para Fernanda no Zap. Acolha naturalmente. ${e}`,'yara':`Você é a Dra. Yara (madrugada). Chame de '${a}'. ${e}`};return p[id]||""}
-window.login = function(){const n=document.getElementById('user-name-input').value.trim();window.clientGender=document.getElementById('user-gender').value;if(n){window.clientName=n;localStorage.setItem('wr_client_name',n);localStorage.setItem('wr_client_gender',window.clientGender);document.querySelectorAll('.client-name').forEach(el=>el.innerText=n);window.showTab('home');if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400"}}else alert("Digite seu nome.")}
-window.showTab = function(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
 window.showAdminLogin = function(){window.showTab('admin-login-screen')}
 window.attemptAdminLogin = function(){const p=document.getElementById('admin-pass').value;if(p==="admin"){window.showTab('admin-dashboard');window.loadAdminDashboard()}else alert("Senha incorreta")}
 window.logoutAdmin = function(){window.showTab('home')}
@@ -192,6 +121,114 @@ window.initReflex=function(c){c.innerHTML=`<div class="text-center text-white"><
 window.initLetterHunt=function(c){c.innerHTML=`<div class="text-center text-white mb-2">Ache a letra 'Q'</div><div class="grid grid-cols-6 gap-2" id="lh"></div>`;const g=document.getElementById('lh');const pos=Math.floor(Math.random()*36);for(let i=0;i<36;i++){const b=document.createElement('button');b.innerText=(i===pos)?'Q':'O';b.className="p-2 bg-slate-700 rounded text-xl";b.onclick=()=>{if(i===pos){b.style.bg="#10b981";window.gameWin()}else b.style.bg="#ef4444"};g.appendChild(b)}}
 window.initBreathing=function(c){c.innerHTML=`<div class="text-center text-white"><p>Inspire... e clique ao final</p><div id="br-circle" class="w-20 h-20 bg-sky-400 rounded-full mx-auto mt-8 transition-all duration-[3000ms]"></div></div>`;setTimeout(()=>{const b=document.getElementById('br-circle');b.style.transform="scale(2.5)";setTimeout(()=>{b.innerHTML='<span class="text-xs text-black flex h-full items-center justify-center">Clique</span>';b.onclick=()=>window.gameWin()},3000)},100)}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='pt-BR';r.onresult=e=>{tat=e.results[0][0].transcript;window.toggleMic();document.getElementById('chat-form').dispatchEvent(new Event('submit'))};window.toggleMic=()=>{const b=document.getElementById('mic-btn');if(b.classList.contains('mic-active')){r.stop();b.classList.remove('mic-active','bg-red-500','text-white');b.classList.add('bg-slate-700','text-slate-400')}else{r.start();b.classList.add('mic-active','bg-red-500','text-white');b.classList.remove('bg-slate-700','text-slate-400')}}}
+
+// === FIREBASE LOGIC (TRY/CATCH WRAPPED) ===
+// Safe initialization block for Firebase functionality
+let auth, db, appId;
+
+(async function initFirebaseSafe() {
+    try {
+        if (typeof __firebase_config === 'undefined') {
+            console.warn("Firebase config not available. Running in offline mode.");
+            return;
+        }
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Auth Flow
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (authError) {
+            console.error("Firebase Auth failed:", authError);
+            return; // Stop here if auth fails, but UI is already active
+        }
+
+        // Setup Listeners if Auth succeeds
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setupMuralListener();
+            }
+        });
+
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+    }
+})();
+
+function setupMuralListener() {
+    if (!db) return;
+    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
+    onSnapshot(colRef, (snapshot) => {
+        const msgs = [];
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            if(!d.d) d.d = 'Recentemente';
+            msgs.push(d);
+        });
+        msgs.sort((a, b) => {
+            const ta = a.timestamp?.seconds || 0;
+            const tb = b.timestamp?.seconds || 0;
+            return tb - ta;
+        });
+        renderMural(msgs);
+    }, (err) => console.error("Mural Listen Error:", err));
+}
+
+function renderMural(msgs) {
+    if(msgs.length === 0) msgs = [{d: 'Sistema', t: 'Seja o primeiro a compartilhar luz!'}];
+    document.getElementById('mural-list').innerHTML = msgs.map(i => `
+        <div class="mural-card bg-slate-800 border-l-4 border-amber-500 p-3 rounded mb-3 shadow animate-fade-in">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-amber-500 text-xs uppercase">Anônimo</span>
+                <span class="text-[10px] text-slate-500">${i.d}</span>
+            </div>
+            <p class="text-slate-300 text-sm break-words">${i.t}</p>
+        </div>`).join('');
+}
+
+window.saveMuralMessage = async function() {
+    const input = document.getElementById('mural-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    // UI Feedback
+    const btn = input.nextElementSibling;
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        if (!auth || !db) throw new Error("Firebase unavailable");
+        
+        if(!auth.currentUser) {
+           console.log("Waiting for auth...");
+           return;
+        }
+        
+        const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
+        await addDoc(colRef, {
+            t: text,
+            d: new Date().toLocaleDateString('pt-BR'),
+            timestamp: serverTimestamp()
+        });
+        
+        input.value = '';
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao conectar ao mural. Verifique sua conexão.");
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
+}
 </script>
 </body>
 </html>
