@@ -1,277 +1,498 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonia Diária - WR TERAPIA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
-<title>Harmonia Diária - WR TERAPIA</title>
+        :root { --primary: #0ea5e9; --secondary: #10b981; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
+            min-height: 100vh; 
+            color: #334155; 
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+        .heading-font { font-family: 'Quicksand', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        /* Chat */
+        .chat-container { height: calc(100vh - 380px); overflow-y: auto; scroll-behavior: smooth; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px; }
+        .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
+        .message.therapist { align-self: flex-start; background: white; color: #334155; border-bottom-left-radius: 0.2rem; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Status Dot */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        .status-online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
+        .status-busy { background-color: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
+        .status-offline { background-color: #94a3b8; }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-<style>
-body{
-font-family:'Inter',sans-serif;
-background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);
-min-height:100vh;
-color:#334155;
-margin:0;
-}
-
-.glass-card{
-background:rgba(255,255,255,0.9);
-backdrop-filter:blur(12px);
-border-radius:1.5rem;
-box-shadow:0 8px 32px rgba(31,38,135,0.05);
-}
-
-.tab-content{display:none}
-.tab-content.active{display:block}
-
-.message{
-max-width:85%;
-padding:12px 16px;
-border-radius:1.2rem;
-margin-bottom:10px;
-font-size:0.95rem;
-}
-
-.user{
-background:#0ea5e9;
-color:white;
-margin-left:auto;
-}
-
-.therapist{
-background:white;
-}
-
-</style>
+        /* Mural Styles */
+        .mural-card {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+    </style>
 </head>
+<body class="pb-24">
 
-<body>
+    <header class="p-5 text-center sticky top-0 z-10 bg-white/30 backdrop-blur-md border-b border-white/20">
+        <h1 class="text-2xl font-bold text-sky-800 heading-font">Harmonia Diária</h1>
+        <p class="text-sky-600 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA</p>
+    </header>
 
-<header class="p-4 text-center bg-white shadow">
-<h1 class="text-xl font-bold text-sky-700">Harmonia Diária</h1>
-<p class="text-xs text-sky-500">WR TERAPIA</p>
-</header>
+    <main class="max-w-md mx-auto px-4 pt-4">
+        
+        <section id="onboarding" class="tab-content active">
+            <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
+                <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-fingerprint text-sky-500 text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-sky-900 mb-2 heading-font">Bem-vindo(a)</h2>
+                <p class="text-sm text-gray-500 mb-8">Identifique-se para acessar seu espaço.</p>
+                <div class="w-full mb-4">
+                    <select id="user-gender" class="w-full p-4 mb-3 rounded-2xl border border-sky-100 bg-white/80 text-sm outline-none focus:ring-2 focus:ring-sky-200">
+                        <option value="homem">Sou Homem</option>
+                        <option value="mulher">Sou Mulher</option>
+                    </select>
+                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl border border-sky-100 bg-white/80 text-center uppercase font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-200">
+                </div>
+                <button onclick="login()" class="w-full bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-600 transition-all">Entrar</button>
+            </div>
+        </section>
 
-<main class="max-w-md mx-auto p-4">
+        <section id="home" class="tab-content">
+            <div class="glass-card p-6 mb-4">
+                <p class="text-xs text-gray-400">Olá,</p>
+                <h2 class="text-xl font-bold text-gray-800 heading-font mb-6 client-name">Visitante</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="openChatSelection()" class="p-5 bg-white/80 rounded-2xl border border-sky-50 flex flex-col items-center gap-3 hover:bg-sky-50 shadow-sm transition-all"><i class="fas fa-comment-medical text-2xl text-sky-500"></i><span class="text-[10px] font-bold uppercase">Conversar</span></button>
+                    <button onclick="showTab('agenda')" class="p-5 bg-white/80 rounded-2xl border border-emerald-50 flex flex-col items-center gap-3 hover:bg-emerald-50 shadow-sm transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-500"></i><span class="text-[10px] font-bold uppercase">Agendar</span></button>
+                    <button onclick="showTab('mural')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-comments text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Mural</span></button>
+                    <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-lightbulb text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
+                </div>
+                <button onclick="showTab('relaxation')" class="w-full mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-3 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Espaço Relaxamento</span></button>
+            </div>
+        </section>
 
-<!-- HOME -->
-<section id="home" class="tab-content active">
-<div class="glass-card p-6">
-<h2 class="text-lg font-bold mb-4">Menu</h2>
+        <section id="agenda" class="tab-content">
+            <div class="glass-card p-6 h-[75vh] flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
+                    <h2 class="font-bold text-sky-900 heading-font">Agendamento Automático</h2>
+                </div>
+                <div class="flex-1 rounded-xl overflow-hidden border border-sky-100">
+                    <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-3 text-center italic">Caso não encontre um horário ideal, converse com a Dra. Lia no chat.</p>
+            </div>
+        </section>
 
-<div class="grid grid-cols-2 gap-3">
+        <section id="chat-selection" class="tab-content">
+            <div class="glass-card p-6">
+                <h2 class="text-lg font-bold text-sky-900 mb-4 text-center">Nossa Equipe</h2>
+                <div id="therapist-list" class="space-y-3"></div>
+                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-gray-400 font-bold uppercase">Voltar</button>
+            </div>
+        </section>
 
-<button onclick="showTab('chat')" class="p-4 bg-white rounded-xl shadow">
-Conversar
-</button>
+        <section id="chat" class="tab-content">
+            <div class="glass-card flex flex-col h-[75vh]">
+                <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/40">
+                    <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
+                    <div class="flex-1">
+                        <p id="active-name" class="font-bold text-gray-800 text-sm"></p>
+                        <div class="flex items-center">
+                            <span id="active-status-dot" class="status-dot"></span>
+                            <span id="active-status-text" class="text-[9px] uppercase font-bold text-gray-400">Status</span>
+                        </div>
+                    </div>
+                    <button onclick="openChatSelection()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div id="chat-messages" class="chat-container p-4 flex flex-col"></div>
+                <div id="typing-box" class="px-4 hidden text-xs text-sky-500 italic mb-2 font-medium flex items-center gap-1">
+                    Digitando <span class="animate-pulse">...</span>
+                </div>
+                
+                <div class="p-4 bg-white/50 rounded-b-[1.5rem] border-t border-sky-50">
+                    <form id="chat-form" class="flex items-center gap-2">
+                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><i class="fas fa-microphone"></i></button>
+                        <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400">
+                        <button type="submit" class="w-10 h-10 bg-sky-500 text-white rounded-full shadow-md hover:bg-sky-600"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
-<button onclick="showTab('hope')" class="p-4 bg-white rounded-xl shadow">
-Caixinha IA
-</button>
+        <section id="relaxation" class="tab-content">
+            <div class="glass-card p-4">
+                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
+                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+            </div>
+        </section>
 
-<button onclick="showTab('mural')" class="p-4 bg-white rounded-xl shadow">
-Mural
-</button>
+        <section id="mural" class="tab-content">
+            <div class="glass-card p-5 h-[80vh] flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button>
+                    <div>
+                        <h2 class="font-bold text-sky-900">Mural de Sentimentos</h2>
+                        <p class="text-[10px] text-gray-400">Compartilhe suas experiências anonimamente.</p>
+                    </div>
+                </div>
+                
+                <div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1">
+                    <!-- Mensagens serão inseridas aqui -->
+                </div>
 
-<button onclick="showTab('alivio')" class="p-4 bg-white rounded-xl shadow">
-Espaço do Alívio
-</button>
+                <div class="mt-auto pt-4 border-t border-gray-100">
+                    <textarea id="mural-input" placeholder="Escreva algo transformador para quem ler..." class="w-full p-3 rounded-xl border border-sky-100 h-24 resize-none text-sm bg-white/60 mb-2 focus:ring-2 focus:ring-amber-200 outline-none"></textarea>
+                    <button onclick="saveMuralMessage()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-600 transition-all">
+                        <i class="fas fa-paper-plane mr-2"></i>Publicar no Mural
+                    </button>
+                </div>
+            </div>
+        </section>
 
-</div>
-</div>
-</section>
+        <section id="hope" class="tab-content">
+            <div class="glass-card p-6 text-center min-h-[450px] flex flex-col justify-center relative">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4">
+                    <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
+                    <span class="text-[10px] uppercase font-bold text-blue-500 tracking-widest">Caixinha Mágica</span>
+                </div>
+                <div id="hope-start">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-blue-400 text-3xl"></i></div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Sua Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-6">Receba uma mensagem e uma imagem para o seu coração.</p>
+                    <button onclick="generateHopeGemini()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600">Abrir Presente</button>
+                </div>
+                <div id="hope-loading" class="hidden">
+                    <div class="loader mx-auto mb-4 border-t-blue-500"></div>
+                    <p class="text-[10px] text-blue-500 uppercase font-bold tracking-widest animate-pulse">Preparando surpresa...</p>
+                </div>
+                <div id="hope-result" class="hidden w-full flex-col items-center">
+                    <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4">
+                        <img id="hope-img" class="w-full h-56 object-cover bg-gray-200" onerror="handleImageError(this)">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    </div>
+                    <div class="bg-white/90 p-5 rounded-xl border border-blue-100 shadow-sm w-full">
+                        <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
+                    </div>
+                    <button onclick="generateHopeGemini()" class="mt-6 text-xs text-blue-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                </div>
+            </div>
+        </section>
 
-<!-- CHAT -->
-<section id="chat" class="tab-content">
-<div class="glass-card p-4">
+    </main>
 
-<div id="messages"></div>
+    <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-100 py-3 flex justify-around z-50">
+        <button onclick="showTab('home')" class="text-sky-500 flex flex-col items-center gap-1"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button>
+        <button onclick="openChatSelection()" class="text-gray-400 flex flex-col items-center gap-1"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button>
+    </nav>
 
-<input id="chatInput" class="w-full border rounded p-2 mt-3" placeholder="Digite..." />
-
-<button onclick="sendMsg()" class="mt-2 w-full bg-sky-500 text-white p-2 rounded">
-Enviar
-</button>
-
-<button onclick="showTab('home')" class="mt-2 text-xs">Voltar</button>
-</div>
-</section>
-
-<!-- HOPE IA -->
-<section id="hope" class="tab-content">
-<div class="glass-card p-6 text-center">
-
-<img id="hopeImg" class="rounded-xl mb-4"/>
-
-<p id="hopeTxt" class="italic mb-4"></p>
-
-<button onclick="gerarEsperanca()" class="bg-amber-500 text-white px-4 py-2 rounded">
-Gerar
-</button>
-
-<button onclick="showTab('home')" class="block mt-3 text-xs">
-Voltar
-</button>
-
-</div>
-</section>
-
-<!-- MURAL -->
-<section id="mural" class="tab-content">
-<div class="glass-card p-5">
-
-<textarea id="muralInput" class="w-full border rounded p-3" placeholder="Deixe uma mensagem..."></textarea>
-
-<button onclick="postMural()" class="w-full bg-green-500 text-white p-2 rounded mt-2">
-Publicar
-</button>
-
-<div id="muralList" class="mt-4"></div>
-
-<button onclick="showTab('home')" class="mt-3 text-xs">
-Voltar
-</button>
-
-</div>
-</section>
-
-<!-- ALIVIO -->
-<section id="alivio" class="tab-content">
-<div class="glass-card p-5">
-
-<p class="mb-3 text-sm">
-Procure um local confortável.
-Ajuste sua postura.
-Respire lentamente.
-
-Imagine histórias agradáveis,
-ambientes seguros e tranquilos.
-Permita que o som da chuva
-acalma sua mente.
-</p>
-
-<div class="aspect-video">
-<iframe width="100%" height="100%"
-src="https://www.youtube.com/embed/sF80I-TQiW0"
-allowfullscreen></iframe>
-</div>
-
-<button onclick="showTab('home')" class="mt-3 text-xs">
-Voltar
-</button>
-
-</div>
-</section>
-
-</main>
-
-<script>
-
-/*************** COLE SUA CHAVE AQUI ***************/
-const GROQ_API_KEY = "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";
+    <script>
+        const GROQ_API_KEY = "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";
         const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
-/**************************************************/
+        
+        let clientName = "Visitante";
+        let clientGender = "homem";
+        let chatHistory = [];
+        let isWaiting = false;
+        let messageCounter = 0;
+        
+        const offlineResponses = {
+            'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
+            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
+            'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
+            'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
+        };
 
-function showTab(id){
-document.querySelectorAll('.tab-content')
-.forEach(t=>t.classList.remove('active'));
+        const therapists = [
+            { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart' },
+            { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie' },
+            { id: 'yara', name: 'Dra. Yara', color: '#6366f1', icon: 'moon' },
+            { id: 'fer', name: 'Fernanda', color: '#10b981', icon: 'headset' }
+        ];
 
-document.getElementById(id).classList.add('active');
-}
+        function getSystemPrompt(therapistId) {
+            const tratamento = clientGender === "homem" ? "querido" : "querida";
+            const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
+            
+            const prompts = {
+                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó. ${commonAgendaRule}`,
+                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo agora, às vezes não consegue responder certinho. Periodicamente pergunte se está conseguindo atender bem dessa maneira e peça desculpas por essa imprecisão. Se o usuário preferir, diga que ele pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule}`,
+                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, secretária. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica, nunca robótica. Você NÃO faz mais agendamentos e NÃO tem acesso à agenda. Diga ao usuário que a agenda agora é automática e está na página inicial. Se o horário desejado não estiver lá, sugira falar com a Dra. Lia aqui no chat. Cada vez que responder sobre isso, mude as palavras para não parecer um bot.`
+            };
+            return prompts[therapistId] || "";
+        }
 
-/*************** CHAT ****************/
+        function login() {
+            const name = document.getElementById('user-name-input').value.trim();
+            clientGender = document.getElementById('user-gender').value;
+            if(name) {
+                clientName = name;
+                document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
+                showTab('home');
+                loadMural(); // Carrega o mural ao logar
+            } else alert("Por favor, digite seu nome.");
+        }
 
-let history=[];
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
 
-async function sendMsg(){
-const input=document.getElementById("chatInput");
-const txt=input.value;
+        function checkAvailability() {
+            // Todos sempre online para testes, conforme solicitado
+            return therapists.map(t => {
+                return { ...t, status: 'online', label: 'Online' };
+            });
+        }
 
-if(!txt)return;
+        function openChatSelection() {
+            const list = document.getElementById('therapist-list');
+            list.innerHTML = '';
+            const available = checkAvailability();
+            
+            available.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all mb-3 cursor-pointer hover:bg-sky-50`;
+                card.onclick = () => startChat(t.id);
+                
+                card.innerHTML = `
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white" style="background-color:${t.color}">
+                        <i class="fas fa-${t.icon}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="font-bold text-sm text-gray-700">${t.name}</span>
+                        <div class="flex items-center">
+                            <span class="status-dot status-${t.status}"></span>
+                            <span class="text-[8px] uppercase font-bold text-gray-400">${t.label}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            showTab('chat-selection');
+        }
 
-addMsg(txt,"user");
-input.value="";
+        function startChat(id) {
+            activeTherapist = therapists.find(t => t.id === id);
+            const availability = checkAvailability().find(t => t.id === id);
+            const tratamento = clientGender === "homem" ? "querido" : "querida";
+            
+            document.getElementById('active-name').innerText = activeTherapist.name;
+            document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
+            document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
+            
+            const dot = document.getElementById('active-status-dot');
+            dot.className = `status-dot status-${availability.status}`;
+            document.getElementById('active-status-text').innerText = availability.label;
 
-history.push({role:"user",content:txt});
+            document.getElementById('chat-messages').innerHTML = '';
+            messageCounter = 0;
+            
+            chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
+            
+            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            addMessage(welcome, 'therapist', false);
+            showTab('chat');
+        }
 
-const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-method:"POST",
-headers:{
-Authorization:`Bearer ${GROQ_API_KEY}`,
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-model:"llama-3.3-70b-versatile",
-messages:history
-})
-});
+        function addMessage(text, type, saveToHistory=true) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = text;
+            document.getElementById('chat-messages').appendChild(div);
+            document.getElementById('chat-messages').scrollTop = 99999;
+            if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
+        }
 
-const data=await res.json();
-const reply=data.choices[0].message.content;
+        document.getElementById('chat-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text || isWaiting) return;
+            
+            addMessage(text, 'user');
+            input.value = '';
+            isWaiting = true;
+            messageCounter++;
 
-addMsg(reply,"therapist");
-history.push({role:"assistant",content:reply});
-}
+            // Sempre online agora
+            document.getElementById('active-status-dot').className = "status-dot status-online";
+            document.getElementById('active-status-text').innerText = "Online";
 
-function addMsg(t,c){
-const div=document.createElement("div");
-div.className="message "+c;
-div.innerText=t;
-document.getElementById("messages").appendChild(div);
-}
+            let waitTime = 1000; // Tempo reduzido para testes mais fluidos, pode ajustar se quiser
+            let typingTime = 2000;
 
-/*************** CAIXINHA ****************/
+            // Usando a API Groq para o diálogo
+            const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chatHistory, temperature: 0.7, max_tokens: 200 })
+            })
+            .then(res => res.json())
+            .catch(() => null);
 
-async function gerarEsperanca(){
+            setTimeout(() => {
+                document.getElementById('typing-box').classList.remove('hidden');
+                setTimeout(async () => {
+                    document.getElementById('typing-box').classList.add('hidden');
+                    const data = await apiPromise;
+                    if (data && data.choices) {
+                        addMessage(data.choices[0].message.content, 'therapist');
+                    } else {
+                        const responses = offlineResponses[activeTherapist.id] || offlineResponses['generico'];
+                        addMessage(responses[Math.floor(Math.random() * responses.length)], 'therapist');
+                    }
+                    isWaiting = false;
+                }, typingTime);
+            }, waitTime);
+        };
 
-const img=`https://source.unsplash.com/600x400/?peace,nature&${Math.random()}`;
-document.getElementById("hopeImg").src=img;
+        async function generateHopeGemini() {
+            if(isWaiting) return;
+            isWaiting = true;
+            document.getElementById('hope-start').classList.add('hidden');
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-loading').classList.remove('hidden');
+            
+            let frase = "Respire... tudo vai ficar bem.";
 
-const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-method:"POST",
-headers:{
-Authorization:`Bearer ${GROQ_API_KEY}`,
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-model:"llama-3.3-70b-versatile",
-messages:[
-{role:"system",content:"Escreva uma mensagem curta de regulação emocional."}
-]
-})
-});
+            try {
+                // Gera a frase
+                const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. Responda apenas com a frase." }] }]
+                    })
+                });
+                const dataText = await resText.json();
+                frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
 
-const data=await res.json();
-document.getElementById("hopeTxt").innerText =
-data.choices[0].message.content;
+                // Gera a imagem
+                const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: { prompt: `calm serene landscape, nature, soft lighting, peaceful, watercolor style, seed ${Math.random()}` },
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const dataImg = await resImg.json();
+                if (dataImg.predictions?.[0]?.bytesBase64Encoded) {
+                    document.getElementById('hope-img').src = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    handleImageError(document.getElementById('hope-img'));
+                }
+            } catch(e) {
+                handleImageError(document.getElementById('hope-img'));
+            }
 
-}
+            document.getElementById('hope-msg').innerText = frase;
+            
+            setTimeout(() => {
+                document.getElementById('hope-loading').classList.add('hidden');
+                document.getElementById('hope-result').classList.remove('hidden');
+                document.getElementById('hope-result').style.display = 'flex';
+                isWaiting = false;
+            }, 1000);
+        }
 
-/*************** MURAL ****************/
+        window.handleImageError = function(img) {
+            img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
+        }
 
-function postMural(){
-const txt=document.getElementById("muralInput").value;
-if(!txt)return;
+        // Funções do Mural de Sentimentos
+        function saveMuralMessage() {
+            const txt = document.getElementById('mural-input').value;
+            if(!txt) return;
+            
+            const messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
+            // Adiciona como "Anônimo" para manter o espírito do mural
+            messages.unshift({d: new Date().toLocaleDateString(), t: txt});
+            localStorage.setItem('mural_data', JSON.stringify(messages));
+            
+            document.getElementById('mural-input').value = '';
+            loadMural();
+        }
 
-const arr=JSON.parse(localStorage.getItem("mural")||"[]");
-arr.unshift(txt);
-localStorage.setItem("mural",JSON.stringify(arr));
-renderMural();
-}
-
-function renderMural(){
-const arr=JSON.parse(localStorage.getItem("mural")||"[]");
-document.getElementById("muralList").innerHTML=
-arr.map(x=>`<div class="bg-white p-2 rounded mb-2">${x}</div>`).join("");
-}
-
-renderMural();
-
-</script>
-
+        function loadMural() {
+            let messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
+            
+            // Se não houver mensagens, adiciona algumas fictícias para dar exemplo
+            if (messages.length === 0) {
+                const fakeMessages = [
+                    {d: 'hoje', t: 'Aprendi que respirar fundo muda tudo. A calma chega se a gente permitir.'},
+                    {d: 'ontem', t: 'Não tenha medo de recomeçar. Cada dia é uma nova chance de ser feliz.'},
+                    {d: 'ontem', t: 'A ansiedade mente para você. Você é mais forte do que imagina.'}
+                ];
+                // Não salvamos no localStorage para não poluir o do usuário real, apenas exibimos
+                // Ou podemos mesclar na exibição. Vamos apenas exibir se vazio.
+                const displayList = messages.length ? messages : fakeMessages;
+                
+                document.getElementById('mural-list').innerHTML = displayList.map(i => `
+                    <div class="mural-card">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-amber-600 text-xs uppercase">Anônimo</span>
+                            <span class="text-[10px] text-gray-400">${i.d}</span>
+                        </div>
+                        <p>${i.t}</p>
+                    </div>
+                `).join('');
+            } else {
+                 document.getElementById('mural-list').innerHTML = messages.map(i => `
+                    <div class="mural-card">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-amber-600 text-xs uppercase">Anônimo</span>
+                            <span class="text-[10px] text-gray-400">${i.d}</span>
+                        </div>
+                        <p>${i.t}</p>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(SpeechRecognition) {
+            const rec = new SpeechRecognition();
+            rec.lang = 'pt-BR';
+            rec.onresult = e => { document.getElementById('chat-input').value = e.results[0][0].transcript; toggleMic(); };
+            window.toggleMic = () => {
+                const btn = document.getElementById('mic-btn');
+                if(btn.classList.contains('mic-active')) { rec.stop(); btn.classList.remove('mic-active'); }
+                else { rec.start(); btn.classList.add('mic-active'); }
+            };
+        }
+    </script>
 </body>
 </html>
