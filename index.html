@@ -140,7 +140,10 @@
                     <button onclick="showTab('moral')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm"><i class="fas fa-feather text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Moral das Palavras</span></button>
                     <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm"><i class="fas fa-lightbulb text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
                 </div>
-                <button onclick="showTab('regulacao')" class="w-full mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-3 hover:bg-purple-100 shadow-sm"><i class="fas fa-gamepad text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Regulação Divertida</span></button>
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="showTab('regulacao')" class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-2 hover:bg-purple-100 shadow-sm"><i class="fas fa-gamepad text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Regulação Divertida</span></button>
+                    <button onclick="showTab('relaxamento')" class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-center gap-2 hover:bg-indigo-100 shadow-sm"><i class="fas fa-cloud-rain text-indigo-500"></i><span class="text-[10px] font-bold uppercase text-indigo-700">Espaço Relaxamento</span></button>
+                </div>
             </div>
         </section>
 
@@ -204,6 +207,16 @@
             </div>
         </section>
 
+        <section id="relaxamento" class="tab-content">
+            <div class="glass-card p-5">
+                <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Espaço Relaxamento</h2></div>
+                <p class="text-sm text-gray-600 mb-3">Deite-se ou se acomode confortavelmente, coloque os fones se quiser, dê play e permita seu corpo relaxar com o som da chuva e música suave.</p>
+                <div class="aspect-video w-full rounded-xl overflow-hidden border border-indigo-100">
+                    <iframe width="100%" height="100%" src="https://www.youtube.com/embed/lFcSrYw-ARY" title="Música suave e chuva" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
         <section id="hope" class="tab-content">
             <div class="glass-card p-6 text-center min-h-[450px] flex flex-col justify-center relative">
                 <div class="flex justify-between items-center absolute top-4 left-4 right-4">
@@ -214,7 +227,7 @@
                     <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-gift text-amber-400 text-3xl"></i></div>
                     <h2 class="text-xl font-bold text-gray-800 mb-2 title-dark">Uma dose de encorajamento</h2>
                     <p class="text-xs text-gray-500 mb-6 soft-text">Gere uma imagem bonita + uma mensagem para fortalecer seu dia.</p>
-                    <button onclick="generateHopeGemini()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Gerar Mensagem de Esperança</button>
+                    <button onclick="generateHopeGroq()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Gerar Mensagem de Esperança</button>
                 </div>
                 <div id="hope-loading" class="hidden">
                     <div class="loader mx-auto mb-4 border-t-amber-500"></div>
@@ -238,7 +251,7 @@
                     <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4"><img id="hope-img" src="" class="w-full h-56 object-cover bg-gray-200" onerror="handleImageError(this)"></div>
                     <div class="bg-white/80 p-5 rounded-xl border border-amber-100 shadow-sm w-full"><p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p></div>
                     <div class="mt-6 flex items-center gap-4 justify-center">
-                        <button onclick="generateHopeGemini()" class="text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                        <button onclick="generateHopeGroq()" class="text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
                         <button onclick="downloadHopeImage()" class="text-xs text-sky-600 font-bold uppercase tracking-wide hover:underline">Baixar Imagem</button>
                     </div>
                 </div>
@@ -252,8 +265,8 @@
     </nav>
 
     <script>
-        const GROQ_API_KEY = "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";
-        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
+        
+        const GROQ_API_KEY = "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";
 
         let clientName = "Visitante";
         let clientGender = "homem";
@@ -402,7 +415,7 @@
             }
         };
 
-        async function generateHopeGemini() {
+        async function generateHopeGroq() {
             if (isWaiting) return;
             isWaiting = true;
             document.getElementById('hope-start').classList.add('hidden');
@@ -411,45 +424,48 @@
 
             const theme = document.getElementById('hope-theme')?.value || 'natureza';
             const style = document.getElementById('hope-style')?.value || 'fotografia';
-            const themeMap = {
-                natureza: 'paisagem de natureza serena com luz suave',
-                oceano: 'oceano calmo com ondas leves ao pôr do sol',
-                montanhas: 'montanhas tranquilas com neblina leve',
-                flores: 'campo de flores delicadas com atmosfera acolhedora'
-            };
-            const styleMap = {
-                fotografia: 'professional photography, high detail',
-                aquarela: 'watercolor style, soft brush, pastel',
-                cinematica: 'cinematic composition, volumetric light',
-                pintura: 'digital painting, dreamy texture'
-            };
-
             let frase = hopeFallback[Math.floor(Math.random() * hopeFallback.length)];
+            let promptImagem = `${theme}, ${style}, luz suave, esperança`;
 
             try {
-                const textReq = safeTimeout(9000, fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                const msgReq = safeTimeout(7000, fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: `Escreva uma frase curta de encorajamento em português. Tema: ${theme}. Responda só a frase.` }] }] })
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'Escreva mensagens curtas de encorajamento em português.' },
+                            { role: 'user', content: `Crie 1 frase de encorajamento curta para alguém ansioso. Tema: ${theme}.` }
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 70
+                    })
                 }).then(r => r.json()));
 
-                const imageReq = safeTimeout(9000, fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`, {
+                const promptReq = safeTimeout(7000, fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instances: [{ prompt: `${themeMap[theme]}, ${styleMap[style]}, peaceful, hopeful` }], parameters: { sampleCount: 1 } })
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'Você gera prompts curtos em inglês para criação de imagens.' },
+                            { role: 'user', content: `Crie um prompt visual de até 20 palavras para arte de ${theme} no estilo ${style}, acolhedora e bonita.` }
+                        ],
+                        temperature: 0.9,
+                        max_tokens: 80
+                    })
                 }).then(r => r.json()));
 
-                const [textRes, imageRes] = await Promise.allSettled([textReq, imageReq]);
+                const [msgRes, prRes] = await Promise.allSettled([msgReq, promptReq]);
+                if (msgRes.status === 'fulfilled') {
+                    frase = truncateText(msgRes.value?.choices?.[0]?.message?.content || frase, 180);
+                }
+                if (prRes.status === 'fulfilled') {
+                    promptImagem = truncateText(prRes.value?.choices?.[0]?.message?.content || promptImagem, 180);
+                }
 
-                if (textRes.status === 'fulfilled') {
-                    frase = truncateText(textRes.value?.candidates?.[0]?.content?.parts?.[0]?.text || frase, 180);
-                }
-                if (imageRes.status === 'fulfilled' && imageRes.value?.predictions?.[0]?.bytesBase64Encoded) {
-                    hopeImageSrc = `data:image/png;base64,${imageRes.value.predictions[0].bytesBase64Encoded}`;
-                    document.getElementById('hope-img').src = hopeImageSrc;
-                } else {
-                    handleImageError(document.getElementById('hope-img'));
-                }
+                hopeImageSrc = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptImagem)}?width=900&height=600&nologo=true&seed=${Date.now()}`;
+                document.getElementById('hope-img').src = hopeImageSrc;
             } catch {
                 handleImageError(document.getElementById('hope-img'));
             }
