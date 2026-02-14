@@ -57,6 +57,14 @@
             font-size: 0.85rem;
             color: #4b5563;
         }
+
+        /* Game Styles */
+        #gameCanvas {
+            border-radius: 1rem;
+            background: linear-gradient(to bottom, #e0f2fe, #fff);
+            cursor: crosshair;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body class="pb-24">
@@ -96,7 +104,10 @@
                     <button onclick="showTab('mural')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-comments text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Mural</span></button>
                     <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-lightbulb text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Caixinha IA</span></button>
                 </div>
-                <button onclick="showTab('relaxation')" class="w-full mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-3 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Espaço Relaxamento</span></button>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <button onclick="showTab('relaxation')" class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-xl text-purple-500"></i><span class="text-[9px] font-bold uppercase text-purple-700">Relaxar</span></button>
+                    <button onclick="startGame()" class="p-4 bg-rose-50 rounded-2xl border border-rose-100 flex flex-col items-center gap-2 hover:bg-rose-100 shadow-sm transition-all"><i class="fas fa-gamepad text-xl text-rose-500"></i><span class="text-[9px] font-bold uppercase text-rose-700">Descompressão</span></button>
+                </div>
             </div>
         </section>
 
@@ -180,31 +191,87 @@
             </div>
         </section>
 
+        <section id="game-section" class="tab-content">
+            <div class="glass-card p-5 h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <button onclick="stopGame()"><i class="fas fa-arrow-left text-gray-500"></i></button>
+                        <h2 class="font-bold text-sky-900">Estoure a Tensão</h2>
+                    </div>
+                    <div class="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-xs font-bold">
+                        Alívio: <span id="game-score">0</span>
+                    </div>
+                </div>
+                <div class="flex-1 relative rounded-xl overflow-hidden border border-sky-100 bg-white">
+                    <canvas id="gameCanvas" width="300" height="400" class="w-full h-full block"></canvas>
+                    <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
+                        <p class="text-sky-800 font-bold mb-2">Clique nas bolhas!</p>
+                        <button onclick="initGame()" class="bg-rose-500 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-rose-600">Começar</button>
+                    </div>
+                </div>
+                <p class="text-[10px] text-center text-gray-400 mt-3">Respire fundo enquanto joga.</p>
+            </div>
+        </section>
+
         <section id="hope" class="tab-content">
-            <div class="glass-card p-6 text-center min-h-[450px] flex flex-col justify-center relative">
+            <div class="glass-card p-6 text-center min-h-[500px] flex flex-col justify-center relative">
                 <div class="flex justify-between items-center absolute top-4 left-4 right-4">
                     <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
                     <span class="text-[10px] uppercase font-bold text-blue-500 tracking-widest">Caixinha Mágica</span>
                 </div>
-                <div id="hope-start">
-                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-blue-400 text-3xl"></i></div>
-                    <h2 class="text-xl font-bold text-gray-800 mb-2">Sua Esperança</h2>
-                    <p class="text-xs text-gray-500 mb-6">Receba uma mensagem e uma imagem para o seu coração.</p>
-                    <button onclick="generateHopeGemini()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600">Abrir Presente</button>
+                
+                <div id="hope-start" class="mt-8">
+                    <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-blue-400 text-2xl"></i></div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-2">Sua Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-4">Personalize seu presente:</p>
+                    
+                    <div class="space-y-3 mb-6 text-left">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">Tema</label>
+                            <select id="hope-theme" class="w-full p-3 rounded-xl border border-blue-100 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="Acolhimento">Acolhimento</option>
+                                <option value="Angústia">Angústia</option>
+                                <option value="Emoções">Emoções</option>
+                                <option value="Esperança" selected>Esperança</option>
+                                <option value="Felicidade">Felicidade</option>
+                                <option value="Nostalgia">Nostalgia</option>
+                                <option value="Objetivos">Objetivos</option>
+                                <option value="Propósito">Propósito</option>
+                                <option value="Recomeço">Recomeço</option>
+                                <option value="Sentimentos">Sentimentos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">Paisagem</label>
+                            <select id="hope-landscape" class="w-full p-3 rounded-xl border border-blue-100 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="Floresta Encantada">Floresta Encantada</option>
+                                <option value="Praia ao Pôr do Sol">Praia ao Pôr do Sol</option>
+                                <option value="Montanhas Nevadas">Montanhas Nevadas</option>
+                                <option value="Jardim Florido">Jardim Florido</option>
+                                <option value="Céu Estrelado">Céu Estrelado</option>
+                                <option value="Cachoeira Serena">Cachoeira Serena</option>
+                                <option value="Campo Aberto">Campo Aberto</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="generateHopeGemini()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 transition-all">Abrir Presente</button>
                 </div>
-                <div id="hope-loading" class="hidden">
+
+                <div id="hope-loading" class="hidden mt-10">
                     <div class="loader mx-auto mb-4 border-t-blue-500"></div>
-                    <p class="text-[10px] text-blue-500 uppercase font-bold tracking-widest animate-pulse">Preparando surpresa...</p>
+                    <p class="text-[10px] text-blue-500 uppercase font-bold tracking-widest animate-pulse">Criando sua arte...</p>
                 </div>
-                <div id="hope-result" class="hidden w-full flex-col items-center">
-                    <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4">
-                        <img id="hope-img" class="w-full h-56 object-cover bg-gray-200" onerror="handleImageError(this)">
+
+                <div id="hope-result" class="hidden w-full flex-col items-center mt-8">
+                    <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4 group">
+                        <img id="hope-img" class="w-full h-56 object-cover bg-gray-200 transition-transform duration-700 group-hover:scale-105" onerror="handleImageError(this)">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>
                     <div class="bg-white/90 p-5 rounded-xl border border-blue-100 shadow-sm w-full">
                         <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
                     </div>
-                    <button onclick="generateHopeGemini()" class="mt-6 text-xs text-blue-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                    <button onclick="resetHope()" class="mt-6 text-xs text-blue-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
                 </div>
             </div>
         </section>
@@ -260,17 +327,17 @@
                 clientName = name;
                 document.querySelectorAll('.client-name').forEach(el => el.innerText = clientName);
                 showTab('home');
-                loadMural(); // Carrega o mural ao logar
+                loadMural(); 
             } else alert("Por favor, digite seu nome.");
         }
 
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            if (id !== 'game-section') stopGameLogic();
         }
 
         function checkAvailability() {
-            // Todos sempre online para testes, conforme solicitado
             return therapists.map(t => {
                 return { ...t, status: 'online', label: 'Online' };
             });
@@ -346,14 +413,12 @@
             isWaiting = true;
             messageCounter++;
 
-            // Sempre online agora
             document.getElementById('active-status-dot').className = "status-dot status-online";
             document.getElementById('active-status-text').innerText = "Online";
 
-            let waitTime = 1000; // Tempo reduzido para testes mais fluidos, pode ajustar se quiser
+            let waitTime = 1000;
             let typingTime = 2000;
 
-            // Usando a API Groq para o diálogo
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
@@ -378,8 +443,18 @@
             }, waitTime);
         };
 
+        // --- CAIXINHA MÁGICA LÓGICA ---
+        function resetHope() {
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-start').classList.remove('hidden');
+        }
+
         async function generateHopeGemini() {
             if(isWaiting) return;
+            
+            const theme = document.getElementById('hope-theme').value;
+            const landscape = document.getElementById('hope-landscape').value;
+
             isWaiting = true;
             document.getElementById('hope-start').classList.add('hidden');
             document.getElementById('hope-result').classList.add('hidden');
@@ -388,23 +463,23 @@
             let frase = "Respire... tudo vai ficar bem.";
 
             try {
-                // Gera a frase
+                // Gera a frase baseada no tema
                 const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. Responda apenas com a frase." }] }]
+                        contents: [{ parts: [{ text: `Escreva uma frase curta, inspiradora e carinhosa em Português sobre o tema: ${theme}. Responda apenas com a frase.` }] }]
                     })
                 });
                 const dataText = await resText.json();
                 frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
 
-                // Gera a imagem
+                // Gera a imagem baseada na paisagem e tema
                 const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        instances: { prompt: `calm serene landscape, nature, soft lighting, peaceful, watercolor style, seed ${Math.random()}` },
+                        instances: { prompt: `beautiful ${landscape} scenery representing ${theme}, soft lighting, peaceful, watercolor art style, high resolution, seed ${Math.random()}` },
                         parameters: { sampleCount: 1 }
                     })
                 });
@@ -432,13 +507,12 @@
             img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
         }
 
-        // Funções do Mural de Sentimentos
+        // --- MURAL LÓGICA ---
         function saveMuralMessage() {
             const txt = document.getElementById('mural-input').value;
             if(!txt) return;
             
             const messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
-            // Adiciona como "Anônimo" para manter o espírito do mural
             messages.unshift({d: new Date().toLocaleDateString(), t: txt});
             localStorage.setItem('mural_data', JSON.stringify(messages));
             
@@ -449,17 +523,13 @@
         function loadMural() {
             let messages = JSON.parse(localStorage.getItem('mural_data') || '[]');
             
-            // Se não houver mensagens, adiciona algumas fictícias para dar exemplo
             if (messages.length === 0) {
                 const fakeMessages = [
                     {d: 'hoje', t: 'Aprendi que respirar fundo muda tudo. A calma chega se a gente permitir.'},
                     {d: 'ontem', t: 'Não tenha medo de recomeçar. Cada dia é uma nova chance de ser feliz.'},
                     {d: 'ontem', t: 'A ansiedade mente para você. Você é mais forte do que imagina.'}
                 ];
-                // Não salvamos no localStorage para não poluir o do usuário real, apenas exibimos
-                // Ou podemos mesclar na exibição. Vamos apenas exibir se vazio.
-                const displayList = messages.length ? messages : fakeMessages;
-                
+                const displayList = fakeMessages;
                 document.getElementById('mural-list').innerHTML = displayList.map(i => `
                     <div class="mural-card">
                         <div class="flex justify-between items-center mb-1">
@@ -480,6 +550,102 @@
                     </div>
                 `).join('');
             }
+        }
+
+        // --- GAME LOGIC (BUBBLE POP) ---
+        let gameCanvas, gameCtx, gameLoopId;
+        let bubbles = [];
+        let score = 0;
+        let gameRunning = false;
+
+        function startGame() {
+            showTab('game-section');
+        }
+        
+        function stopGame() {
+            showTab('home');
+        }
+
+        function stopGameLogic() {
+            gameRunning = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('game-overlay').style.display = 'flex';
+        }
+
+        function initGame() {
+            gameCanvas = document.getElementById('gameCanvas');
+            gameCtx = gameCanvas.getContext('2d');
+            
+            // Resize canvas to match display size
+            gameCanvas.width = gameCanvas.clientWidth;
+            gameCanvas.height = gameCanvas.clientHeight;
+            
+            score = 0;
+            document.getElementById('game-score').innerText = score;
+            bubbles = [];
+            gameRunning = true;
+            document.getElementById('game-overlay').style.display = 'none';
+            
+            // Click handler
+            gameCanvas.onclick = (e) => {
+                if(!gameRunning) return;
+                const rect = gameCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                for(let i = bubbles.length - 1; i >= 0; i--) {
+                    const b = bubbles[i];
+                    const dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
+                    if(dist < b.radius) {
+                        bubbles.splice(i, 1);
+                        score++;
+                        document.getElementById('game-score').innerText = score;
+                        break;
+                    }
+                }
+            };
+            
+            loopGame();
+        }
+
+        function loopGame() {
+            if(!gameRunning) return;
+            
+            gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // Spawn bubbles randomly
+            if(Math.random() < 0.03) {
+                bubbles.push({
+                    x: Math.random() * gameCanvas.width,
+                    y: gameCanvas.height + 30,
+                    radius: 15 + Math.random() * 20,
+                    speed: 1 + Math.random() * 2,
+                    color: `hsla(${Math.random() * 360}, 70%, 60%, 0.6)`
+                });
+            }
+            
+            // Update and draw bubbles
+            for(let i = bubbles.length - 1; i >= 0; i--) {
+                const b = bubbles[i];
+                b.y -= b.speed;
+                
+                gameCtx.beginPath();
+                gameCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                gameCtx.fillStyle = b.color;
+                gameCtx.fill();
+                gameCtx.strokeStyle = "white";
+                gameCtx.stroke();
+                
+                // Reflection dot
+                gameCtx.beginPath();
+                gameCtx.arc(b.x - b.radius/3, b.y - b.radius/3, b.radius/5, 0, Math.PI * 2);
+                gameCtx.fillStyle = "rgba(255,255,255,0.6)";
+                gameCtx.fill();
+
+                if(b.y < -50) bubbles.splice(i, 1);
+            }
+            
+            gameLoopId = requestAnimationFrame(loopGame);
         }
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
