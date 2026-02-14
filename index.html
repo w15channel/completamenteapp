@@ -214,48 +214,65 @@
         </section>
 
         <section id="hope" class="tab-content">
-            <div class="glass-card p-6 text-center h-[75vh] flex flex-col justify-center overflow-y-auto">
-                
-                <div class="flex justify-between items-center mb-4">
+            <div class="glass-card p-6 text-center min-h-[500px] flex flex-col justify-center relative">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4">
                     <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
-                    <h2 class="font-bold text-lg text-sky-900">Caixinha Emocional IA</h2>
-                    <div class="w-4"></div> <!-- Spacer -->
+                    <span class="text-[10px] uppercase font-bold text-blue-500 tracking-widest">Caixinha Mágica</span>
                 </div>
-
-                <select id="paisagem" class="w-full p-3 rounded-xl border border-sky-100 mb-3 bg-white">
-                    <option value="montanhas">Montanhas</option>
-                    <option value="mar">Mar</option>
-                    <option value="floresta">Floresta</option>
-                    <option value="chuva">Chuva</option>
-                    <option value="pôr do sol">Pôr do Sol</option>
-                    <option value="campo">Campo</option>
-                    <option value="céu estrelado">Céu Estrelado</option>
-                </select>
-
-                <select id="tema" class="w-full p-3 rounded-xl border border-sky-100 mb-4 bg-white">
-                    <option>acolhimento</option>
-                    <option>angustia</option>
-                    <option>emoções</option>
-                    <option>esperança</option>
-                    <option>felicidade</option>
-                    <option>nostalgia</option>
-                    <option>objetivos</option>
-                    <option>propósito</option>
-                    <option>recomeço</option>
-                    <option>sentimentos</option>
-                </select>
-
-                <button onclick="gerarCaixinha()" class="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-amber-600 transition-all">
-                    Gerar Experiência
-                </button>
-
-                <div id="resultadoBox" class="mt-5 hidden animate-fade-in">
-                    <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover"/>
-                    <div class="bg-white/80 p-4 rounded-xl border border-sky-50">
-                        <p id="msgBox" class="italic text-gray-700 text-sm"></p>
+                
+                <div id="hope-start" class="mt-8">
+                    <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-gift text-blue-400 text-2xl"></i></div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-2">Sua Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-4">Personalize seu presente:</p>
+                    
+                    <div class="space-y-3 mb-6 text-left">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">Tema</label>
+                            <select id="hope-theme" class="w-full p-3 rounded-xl border border-blue-100 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="Acolhimento">Acolhimento</option>
+                                <option value="Angústia">Angústia</option>
+                                <option value="Emoções">Emoções</option>
+                                <option value="Esperança" selected>Esperança</option>
+                                <option value="Felicidade">Felicidade</option>
+                                <option value="Nostalgia">Nostalgia</option>
+                                <option value="Objetivos">Objetivos</option>
+                                <option value="Propósito">Propósito</option>
+                                <option value="Recomeço">Recomeço</option>
+                                <option value="Sentimentos">Sentimentos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 ml-1">Paisagem</label>
+                            <select id="hope-landscape" class="w-full p-3 rounded-xl border border-blue-100 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="Floresta Encantada">Floresta Encantada</option>
+                                <option value="Praia ao Pôr do Sol">Praia ao Pôr do Sol</option>
+                                <option value="Montanhas Nevadas">Montanhas Nevadas</option>
+                                <option value="Jardim Florido">Jardim Florido</option>
+                                <option value="Céu Estrelado">Céu Estrelado</option>
+                                <option value="Cachoeira Serena">Cachoeira Serena</option>
+                                <option value="Campo Aberto">Campo Aberto</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <button onclick="generateHope()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 transition-all">Abrir Presente</button>
                 </div>
 
+                <div id="hope-loading" class="hidden mt-10">
+                    <div class="loader mx-auto mb-4 border-t-blue-500"></div>
+                    <p class="text-[10px] text-blue-500 uppercase font-bold tracking-widest animate-pulse">Criando sua arte...</p>
+                </div>
+
+                <div id="hope-result" class="hidden w-full flex-col items-center mt-8">
+                    <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4 group">
+                        <img id="hope-img" class="w-full h-56 object-cover bg-gray-200 transition-transform duration-700 group-hover:scale-105" onerror="handleImageError(this)">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    </div>
+                    <div class="bg-white/90 p-5 rounded-xl border border-blue-100 shadow-sm w-full">
+                        <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
+                    </div>
+                    <button onclick="resetHope()" class="mt-6 text-xs text-blue-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                </div>
             </div>
         </section>
 
@@ -426,59 +443,77 @@
             }, waitTime);
         };
 
-        // --- CAIXINHA EMOCIONAL IA (NOVA LÓGICA) ---
-        async function gerarCaixinha() {
-            const paisagem = document.getElementById("paisagem").value;
-            const tema = document.getElementById("tema").value;
-            const resBox = document.getElementById("resultadoBox");
-            const imgBox = document.getElementById("imgBox");
-            const msgBox = document.getElementById("msgBox");
+        // --- CAIXINHA MÁGICA LÓGICA ---
+        function resetHope() {
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-start').classList.remove('hidden');
+        }
 
-            resBox.classList.remove("hidden");
-            msgBox.innerText = "Gerando reflexão...";
+        async function generateHope() {
+            if(isWaiting) return;
             
-            // Imagem via Pollinations AI (substituindo source.unsplash.com que foi descontinuado)
-            // Gera uma imagem AI baseada no prompt, garantindo que sempre funcione.
-            const imgUrl = `https://image.pollinations.ai/prompt/paisagem de ${paisagem} com sentimento de ${tema} style realistic nature photography?width=900&height=600&nologo=true&seed=${Math.random()}`;
-            imgBox.src = imgUrl;
+            const theme = document.getElementById('hope-theme').value;
+            const landscape = document.getElementById('hope-landscape').value;
 
-            // Prompt para IA (Texto)
-            const comandoIA = `
-            Crie uma mensagem terapêutica curta e emocionalmente acolhedora.
-            Tema central: ${tema}
-            Ambiente simbólico: ${paisagem}
-            Estilo:
-            - humano
-            - profundo
-            - regulador emocional
-            - linguagem acessível
-            - máximo 4 frases
-            `;
+            isWaiting = true;
+            document.getElementById('hope-start').classList.add('hidden');
+            document.getElementById('hope-result').classList.add('hidden');
+            document.getElementById('hope-loading').classList.remove('hidden');
+            
+            let frase = "Respire... tudo vai ficar bem.";
 
             try {
-                const resposta = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${GROQ_API_KEY}`,
-                        "Content-Type": "application/json"
-                    },
+                // 1. Gera a frase usando Groq (agora como gerador de texto/comando)
+                const resText = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
-                        messages: [{ role: "system", content: comandoIA }],
-                        temperature: 0.9
+                        messages: [
+                            { role: "system", content: "Você é um assistente poético e terapêutico." },
+                            { role: "user", content: `Crie uma frase curta, inspiradora e carinhosa em Português conectando este sentimento: '${theme}' com esta paisagem visual: '${landscape}'. Responda APENAS com a frase.` }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 100
                     })
                 });
-
-                const data = await resposta.json();
-                if (data.choices && data.choices[0]) {
-                    msgBox.innerText = data.choices[0].message.content;
-                } else {
-                    msgBox.innerText = "Respire fundo. A calma chegará em breve.";
+                const dataText = await resText.json();
+                if (dataText.choices && dataText.choices[0]) {
+                    frase = dataText.choices[0].message.content;
                 }
-            } catch (error) {
-                console.error(error);
-                msgBox.innerText = "Sinta o abraço da natureza neste momento.";
+
+                // 2. Gera a imagem usando Gemini Imagen (pois Groq não gera imagens)
+                const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: { prompt: `beautiful ${landscape} scenery representing ${theme}, soft lighting, peaceful, watercolor art style, high resolution, seed ${Math.random()}` },
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const dataImg = await resImg.json();
+                if (dataImg.predictions?.[0]?.bytesBase64Encoded) {
+                    document.getElementById('hope-img').src = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    handleImageError(document.getElementById('hope-img'));
+                }
+            } catch(e) {
+                console.error(e);
+                handleImageError(document.getElementById('hope-img'));
             }
+
+            document.getElementById('hope-msg').innerText = frase;
+            
+            setTimeout(() => {
+                document.getElementById('hope-loading').classList.add('hidden');
+                document.getElementById('hope-result').classList.remove('hidden');
+                document.getElementById('hope-result').style.display = 'flex';
+                isWaiting = false;
+            }, 1000);
+        }
+
+        window.handleImageError = function(img) {
+            img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
         }
 
         // --- MURAL LÓGICA ---
