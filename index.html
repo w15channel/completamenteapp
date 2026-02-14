@@ -34,6 +34,7 @@
         .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px; }
         .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
         .message.therapist { align-self: flex-start; background: white; color: #334155; border-bottom-left-radius: 0.2rem; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .message.audio-msg { font-style: italic; display: flex; items-center; gap: 8px; }
         
         /* Status Dot */
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
@@ -190,9 +191,24 @@
         </section>
 
         <section id="relaxation" class="tab-content">
-            <div class="glass-card p-4">
+            <div class="glass-card p-4 h-[75vh] overflow-y-auto">
                 <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Relaxamento</h2></div>
                 <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div>
+                
+                <div class="mt-6 p-5 bg-white/70 rounded-2xl border border-purple-50 text-gray-700 leading-relaxed text-sm shadow-sm">
+                    <p class="mb-4">
+                        Muitas vezes em nossas rotinas nos perdemos em pensamentos e sofrimentos, mas é fundamental parar, relaxar e deixar sentir a leveza da vida.
+                    </p>
+                    <p class="mb-4">
+                        Então, dê play, encontre um espaço confortável e deixe a ansiedade, a angústia e os sentimentos negativos irem embora. Foco no som agradável da música e nas gotas de chuva, imagine histórias agradáveis, locais lindos e histórias incríveis.
+                    </p>
+                    <p class="mb-6">
+                        Abrace um travesseiro, feche os olhos e se reconstrua.
+                    </p>
+                    <p class="text-right font-bold text-purple-800 font-heading">
+                        Att. William Ribeiro - O seu terapeuta ❤️
+                    </p>
+                </div>
             </div>
         </section>
 
@@ -293,6 +309,7 @@
         let chatHistory = [];
         let isWaiting = false;
         let messageCounter = 0;
+        let activeTherapist = null;
         
         const offlineResponses = {
             'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
@@ -310,13 +327,18 @@
 
         function getSystemPrompt(therapistId) {
             const tratamento = clientGender === "homem" ? "querido" : "querida";
+            const amigo = clientGender === "homem" ? "amigo" : "amiga";
+            const formal = clientGender === "homem" ? "Sr." : "Sra.";
             const commonAgendaRule = "Sobre agendamentos: informe que a agenda agora é automática e está na página inicial do app. Ninguém da equipe pode agendar manualmente ou ver horários. Para agendar, o usuário precisa voltar à tela inicial. Se o horário que ele quer não aparecer lá, sugira que ele se consulte aqui no chat com a Dra. Lia para orientação.";
             
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é acolhedora como uma avó. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões. Não use tom romântico, apenas carinho de avó. ${commonAgendaRule}`,
-                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo agora, às vezes não consegue responder certinho. Periodicamente pergunte se está conseguindo atender bem dessa maneira e peça desculpas por essa imprecisão. Se o usuário preferir, diga que ele pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule}`,
-                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
-                'fer': `Você é a Fernanda, secretária. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica, nunca robótica. Você NÃO faz mais agendamentos e NÃO tem acesso à agenda. Diga ao usuário que a agenda agora é automática e está na página inicial. Se o horário desejado não estiver lá, sugira falar com a Dra. Lia aqui no chat. Cada vez que responder sobre isso, mude as palavras para não parecer um bot.`
+                'lia': `Sua persona é a Dra. Lia, uma terapeuta muito experiente e acolhedora. Você conhece como ninguém as dificuldades humanas. Trate o paciente como '${tratamento}'. Respostas profundas, mas curtas. Demonstre preocupação genuína. ${commonAgendaRule}`,
+                
+                'william': `Sua persona é o Dr. William, um terapeuta jovem e dinâmico. Para você, cada cliente é único e merece personalização total. REGRA OBRIGATÓRIA: Sempre inicie suas frases usando o nome do paciente (${clientName}) antecedido por expressões como 'Pois é', 'Então' ou 'Olha'. Exemplo: 'Pois é ${clientName}...', 'Então ${clientName}...'. Seja direto mas empático. ${commonAgendaRule}`,
+                
+                'yara': `Sua persona é a Dra. Yara, terapeuta da madrugada (23h às 08h). Você é jovem e tem um jeito carinhoso. REGRA OBRIGATÓRIA: Chame o paciente de '${amigo}'. E quase sempre termine suas frases com '${tratamento}'. Exemplo: 'Conte comigo, ${amigo}... tudo vai passar, ${tratamento}'. ${commonAgendaRule}`,
+                
+                'fer': `Você é a Fernanda, recepcionista jovem, simpática e prestativa. REGRA OBRIGATÓRIA: Trate o paciente sempre por '${formal} ${clientName}'. Seja muito educada. Você NÃO faz agendamentos, apenas orienta sobre o sistema automático. ${commonAgendaRule}`
             };
             return prompts[therapistId] || "";
         }
@@ -379,6 +401,8 @@
             activeTherapist = therapists.find(t => t.id === id);
             const availability = checkAvailability().find(t => t.id === id);
             const tratamento = clientGender === "homem" ? "querido" : "querida";
+            const amigo = clientGender === "homem" ? "amigo" : "amiga";
+            const formal = clientGender === "homem" ? "Sr." : "Sra.";
             
             document.getElementById('active-name').innerText = activeTherapist.name;
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
@@ -393,36 +417,74 @@
             
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
-            const welcome = id === 'lia' ? `Oi ${tratamento}, vovó Lia está aqui. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            let welcome = "";
+            if (id === 'lia') welcome = `Oi ${tratamento}, vovó Lia está aqui. Sinto que você tem algo a dizer. O que te traz hoje?`;
+            else if (id === 'william') welcome = `Então ${clientName}, vamos conversar. Sou o Dr. William, e estou aqui exclusivamente para você. O que está acontecendo?`;
+            else if (id === 'yara') welcome = `Olá ${amigo}. A noite é uma boa conselheira. Estou aqui com você, ${tratamento}.`;
+            else if (id === 'fer') welcome = `Olá, ${formal} ${clientName}. Sou a Fernanda. Como posso ajudar com suas dúvidas sobre o app hoje?`;
+
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
 
-        function addMessage(text, type, saveToHistory=true) {
+        function addMessage(text, type, saveToHistory=true, isAudio=false) {
             const div = document.createElement('div');
             div.className = `message ${type}`;
-            div.innerHTML = text;
+            
+            if (isAudio && type === 'user') {
+                div.classList.add('audio-msg');
+                div.innerHTML = '<i class="fas fa-microphone-lines text-lg"></i> Mensagem de Voz Enviada';
+            } else {
+                div.innerHTML = text;
+            }
+
             document.getElementById('chat-messages').appendChild(div);
             document.getElementById('chat-messages').scrollTop = 99999;
             if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
         }
 
+        // Variável global para armazenar texto de áudio temporariamente
+        let tempAudioText = "";
+
         document.getElementById('chat-form').onsubmit = async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if(!text || isWaiting) return;
+            let text = input.value.trim();
+            let isAudioMsg = false;
+
+            // Se veio do reconhecimento de voz (input preenchido e flag ativa ou detectada)
+            // Lógica simplificada: Se o input tem texto, enviamos.
+            // Para diferenciar visualmente se foi "Voz", verificamos se a função toggleMic preencheu.
             
-            addMessage(text, 'user');
+            // Aqui, vamos assumir que se o usuário usou o microfone, ele clica em enviar ou o envio é automático.
+            // Para simplificar a UI pedida: vamos usar uma flag global setada pelo mic.
+            
+            if(!text && !tempAudioText) return;
+            if(isWaiting) return;
+
+            if (tempAudioText) {
+                text = tempAudioText;
+                isAudioMsg = true;
+                tempAudioText = ""; // Limpa
+            } else {
+                text = input.value.trim();
+            }
+            
+            // Adiciona mensagem do usuário (Visualmente ícone se for áudio, texto se não)
+            addMessage(text, 'user', true, isAudioMsg);
+            
             input.value = '';
             isWaiting = true;
             messageCounter++;
 
-            document.getElementById('active-status-dot').className = "status-dot status-online";
-            document.getElementById('active-status-text').innerText = "Online";
+            // Dinâmica de Tempo
+            // Msg 1 (impar): espera 30s + digita 30s
+            // Msg 2 (par): espera 40s + digita 30s
+            let waitTime = (messageCounter % 2 !== 0) ? 30000 : 40000;
+            let typingTime = 30000; 
 
-            let waitTime = 1000;
-            let typingTime = 2000;
+            // Para testes rápidos, pode-se reduzir estes valores, mas mantive conforme pedido.
+            // Se desejar testar mais rápido, altere 30000 para 3000.
 
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -433,8 +495,11 @@
             .catch(() => null);
 
             setTimeout(() => {
+                // Começa a animação de digitando após o tempo de espera inicial
                 document.getElementById('typing-box').classList.remove('hidden');
+                
                 setTimeout(async () => {
+                    // Finaliza animação e mostra mensagem
                     document.getElementById('typing-box').classList.add('hidden');
                     const data = await apiPromise;
                     if (data && data.choices) {
@@ -658,11 +723,27 @@
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
             rec.lang = 'pt-BR';
-            rec.onresult = e => { document.getElementById('chat-input').value = e.results[0][0].transcript; toggleMic(); };
+            
+            // Quando tiver resultado, salva na variável temporária e envia o formulário automaticamente
+            rec.onresult = e => { 
+                tempAudioText = e.results[0][0].transcript;
+                toggleMic(); // Desliga o mic
+                document.getElementById('chat-form').dispatchEvent(new Event('submit')); // Envia automático
+            };
+            
             window.toggleMic = () => {
                 const btn = document.getElementById('mic-btn');
-                if(btn.classList.contains('mic-active')) { rec.stop(); btn.classList.remove('mic-active'); }
-                else { rec.start(); btn.classList.add('mic-active'); }
+                if(btn.classList.contains('mic-active')) { 
+                    rec.stop(); 
+                    btn.classList.remove('mic-active'); 
+                    btn.classList.remove('bg-red-500', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-500');
+                } else { 
+                    rec.start(); 
+                    btn.classList.add('mic-active'); 
+                    btn.classList.remove('bg-gray-100', 'text-gray-500');
+                    btn.classList.add('bg-red-500', 'text-white');
+                }
             };
         }
     </script>
