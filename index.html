@@ -32,14 +32,19 @@
 <section id="chat-selection" class="tab-content"><div class="glass-card p-6 h-full overflow-y-auto"><div class="flex items-center gap-3 mb-4"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 text-lg">Nossa Equipe</h2></div><div id="therapist-list" class="space-y-3 pb-20"></div></div></section>
 <section id="chat" class="tab-content"><div class="chat-layout h-full"><div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10"><div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div><div class="flex-1"><p id="active-name" class="font-bold text-white text-sm"></p><div class="flex items-center"><span id="active-status-dot" class="status-dot"></span><span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span></div></div><button onclick="window.openChatSelection()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="chat-messages-area"></div><div class="flex-none bg-slate-800 border-t border-slate-700 pb-2"><div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/30">Digitando <span class="animate-pulse">...</span></div><div class="p-3"><form id="chat-form" class="flex items-center gap-2"><button type="button" id="mic-btn" onclick="window.toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button><input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400"><button type="button" id="wa-btn" onclick="window.sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md hover:bg-emerald-500 transition-colors flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button><button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></form></div></div></div></section>
 <section id="relaxation" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400">Relaxamento</h2></div><div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600 bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div><div class="mt-4 p-5 bg-slate-800/80 rounded-2xl border border-slate-700 text-slate-300 leading-relaxed text-sm shadow-inner flex-1 overflow-y-auto"><p class="mb-4">Muitas vezes em nossas rotinas nos perdemos em pensamentos e sofrimentos, mas é fundamental parar, relaxar e deixar sentir a leveza da vida.</p><p class="mb-4">Então, dê play, encontre um espaço confortável e deixe a ansiedade, a angústia e os sentimentos negativos irem embora.</p><p class="mb-6">Abrace um travesseiro, feche os olhos e se reconstrua.</p><p class="text-right font-bold text-sky-500 font-heading text-xs">Att. William Ribeiro - O seu terapeuta ❤️</p></div></div></section>
-<section id="mural" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-sky-400">Mural de Sentimentos</h2><p class="text-[10px] text-slate-500">Compartilhe suas experiências anonimamente.</p><p class="text-[9px] text-emerald-400 font-bold"><i class="fas fa-globe-americas mr-1"></i>Mural Global Online</p></div></div><div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20"></div><div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl"><textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea><button onclick="window.saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all"><i class="fas fa-paper-plane mr-2"></i>Publicar</button></div></div></section>
+<section id="mural" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-sky-400">Mural de Sentimentos</h2><p class="text-[10px] text-slate-500">Compartilhe suas experiências anonimamente.</p><p class="text-[9px] text-emerald-400 font-bold"><i class="fas fa-globe-americas mr-1"></i>Conectado à Planilha</p></div></div><div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20"></div><div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl"><textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea><button onclick="window.saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all"><i class="fas fa-paper-plane mr-2"></i>Publicar</button></div></div></section>
 <section id="hope" class="tab-content"><div class="glass-card p-6 min-h-full flex flex-col justify-center overflow-y-auto"><div class="flex justify-between items-center mb-6 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-lg text-yellow-400">Caixinha Surpresa</h2><div class="w-8"></div></div><div class="mb-8 flex-none text-center"><div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600 shadow-lg animate-pulse"><i class="fas fa-gift text-yellow-400 text-4xl"></i></div><p class="text-sm text-slate-400 mb-2">Toque para receber uma mensagem de luz.</p></div><button onclick="window.gerarCaixinha()" class="flex-none w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50"><i class="fas fa-magic mr-2"></i>Gerar Experiência</button><div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-20 flex-none"><img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/><div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm"><p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed text-center"></p></div></div></div></section>
 <section id="game-section" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center justify-between mb-4 flex-none"><div class="flex items-center gap-2"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-rose-400">Descompressão</h2></div><span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/10</span></div><div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none"><p class="text-xs text-slate-400 text-center leading-relaxed">Este é um espaço seguro para brincar, relaxar e sair da rotina.<br>Treine seu raciocínio, memória e percepção.</p></div><div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative overflow-y-auto"></div><button id="next-game-btn" onclick="window.nextGame()" class="flex-none hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">Próximo Desafio <i class="fas fa-arrow-right ml-2"></i></button></div></section>
 </main>
 <nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50"><button onclick="window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button><button onclick="window.openChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button></nav>
-<!-- SCRIPT 1: LÓGICA DO APP (Interface, Jogos, Áudio - SEM BANCO DE DADOS) -->
 <script>
+// --- CONFIGURAÇÃO ---
 window.GROQ_API_KEY="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";
+window.SHEET_ID = "1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";
+// <<== LINK ATUALIZADO AQUI:
+window.SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyA9aMclO9n7yjiUXblYfsAEFHzofiKtaCN-iW1CV4zUvHn2WdIJ8gsg7YB8xfuktGr/exec";
+
+// Dados do Usuário
 window.clientName=localStorage.getItem('wr_client_name')||"Visitante";
 window.clientGender=localStorage.getItem('wr_client_gender')||"homem";
 window.isWaiting=false;
@@ -53,9 +58,9 @@ window.player = null;
 window.showTab = function(id){
     document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    if(id === 'mural') window.loadMural(); 
 }
 
-// LOGIN TOTALMENTE LOCAL
 window.login = function(){
     const n=document.getElementById('user-name-input').value.trim();
     window.clientGender=document.getElementById('user-gender').value;
@@ -79,7 +84,7 @@ window.onYouTubeIframeAPIReady = function(){window.player=new YT.Player('bg-musi
 function onPlayerReady(e){e.target.setVolume(30)}
 window.toggleMusic = function(){if(!window.player)return;const btn=document.getElementById('music-icon');if(window.player.isMuted()){window.player.unMute();window.player.setVolume(30);btn.className="fas fa-volume-up text-sky-400"}else{window.player.mute();btn.className="fas fa-volume-mute text-slate-400"}}
 
-// Chat Logic (Local Storage)
+// Chat Logic
 window.saveChatHistory = function(id,h){if(!window.clientName)return;localStorage.setItem(`chat_${window.clientName}_${id}`,JSON.stringify(h))}
 window.loadChatHistory = function(id){if(!window.clientName)return[];return JSON.parse(localStorage.getItem(`chat_${window.clientName}_${id}`))||[]}
 
@@ -103,6 +108,105 @@ let tat="";
 document.getElementById('chat-form').onsubmit=async(e)=>{e.preventDefault();const i=document.getElementById('chat-input');let t=i.value.trim();let aud=false;if(!t&&!tat)return;if(window.isWaiting)return;if(tat){t=tat;aud=true;tat=""}else{t=i.value.trim()}window.renderMessage(t,'user',aud);let h=window.loadChatHistory(window.activeTherapist.id);h.push({role:'user',content:t});window.saveChatHistory(window.activeTherapist.id,h);i.value='';if(window.aiPaused[window.activeTherapist.id])return;window.isWaiting=true;window.messageCounter++;const waitTime=window.activeTherapist.id==='william'?15000:(window.messageCounter%2!==0?30000:40000);const apiPromise=fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':`Bearer ${window.GROQ_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:h,temperature:0.7,max_tokens:300})}).then(r=>r.json()).catch(()=>null);setTimeout(()=>{document.getElementById('typing-box').classList.remove('hidden');setTimeout(async()=>{document.getElementById('typing-box').classList.add('hidden');if(window.aiPaused[window.activeTherapist.id]){window.isWaiting=false;return}const d=await apiPromise;let r="Estou te ouvindo...";if(d&&d.choices)r=d.choices[0].message.content;window.renderMessage(r,'therapist');const ch=window.loadChatHistory(window.activeTherapist.id);ch.push({role:'assistant',content:r});window.saveChatHistory(window.activeTherapist.id,ch);const c=document.getElementById('chat-messages');c.scrollTop=c.scrollHeight;window.isWaiting=false},window.activeTherapist.id==='william'?5000:30000)},waitTime)};
 window.gerarCaixinha = async function(){const ts=["acolhimento","paz","emoções","esperança","calma"];const ps=["montanhas","mar","floresta","chuva"];const t=ts[Math.floor(Math.random()*ts.length)];const p=ps[Math.floor(Math.random()*ps.length)];const mb=document.getElementById("msgBox");document.getElementById("resultadoBox").classList.remove("hidden");mb.innerText="Sintonizando...";document.getElementById("imgBox").src=`https://loremflickr.com/800/600/${p==='mar'?'sea':'nature'},nature?lock=${Math.floor(Math.random()*1000)}`;const c=`Mensagem curta terapêutica sobre: ${t}`;try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${window.GROQ_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"system",content:c}],temperature:0.9})});const d=await r.json();mb.innerText=d.choices?d.choices[0].message.content:"Paz."}catch(e){mb.innerText="Paz."}}
 window.gerarLeitura = async function(){const tema=document.getElementById('book-theme').value;const container=document.getElementById('book-container');const loading=document.getElementById('book-loading');const titleEl=document.getElementById('book-title');const contentEl=document.getElementById('book-content');container.classList.add('hidden');loading.classList.remove('hidden');const prompt=`Escreva um capítulo curto, envolvente e inspirador de um livro fictício sobre "${tema}". Foco em bem-estar. Estilo literário clássico. Comece com Título Criativo (sem 'Capítulo'). Use tags HTML <p>.`;try{const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${window.GROQ_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"system",content:prompt}],temperature:0.8,max_tokens:800})});const data=await res.json();const fullText=data.choices?data.choices[0].message.content:"<p>Erro. Tente novamente.</p>";let cleanText=fullText.replace(/```html/g,'').replace(/```/g,'');let lines=cleanText.split('\n');let title=lines[0].replace(/<[^>]*>/g,'');let body=cleanText;if(title.length<100){titleEl.innerText=title;body=lines.slice(1).join('\n')}else{titleEl.innerText=tema}contentEl.innerHTML=body;loading.classList.add('hidden');container.classList.remove('hidden')}catch(e){loading.classList.add('hidden');alert("Erro na biblioteca.")}}
+
+// --- MURAL COM GOOGLE APPS SCRIPT ---
+
+window.saveMuralMessage = async function(){
+    const input = document.getElementById('mural-input');
+    const text = input.value.trim();
+    if(!text) return;
+
+    // 1. Salva Localmente (Backup imediato)
+    const localMsgs = JSON.parse(localStorage.getItem('mural_local') || '[]');
+    localMsgs.unshift({
+        d: new Date().toLocaleDateString('pt-BR'),
+        t: text,
+        local: true
+    });
+    localStorage.setItem('mural_local', JSON.stringify(localMsgs));
+    
+    // 2. Tenta enviar para a Planilha se o Script estiver configurado
+    if(window.SHEET_SCRIPT_URL) {
+        const btn = input.nextElementSibling;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        
+        try {
+            // Usando 'no-cors' para evitar erro de segurança do navegador.
+            // O script vai receber, mas não saberemos a resposta exata.
+            await fetch(window.SHEET_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ t: text })
+            });
+            alert("Mensagem enviada para o Mural Global!");
+        } catch(e) {
+            console.error(e);
+            alert("Salvo localmente. Erro ao conectar com o script.");
+        } finally {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+        }
+    } else {
+        alert("Mensagem salva apenas no seu dispositivo. Configure o Script na planilha para publicar mundialmente.");
+    }
+    
+    input.value = '';
+    window.loadMural();
+}
+
+window.loadMural = async function(){
+    const list = document.getElementById('mural-list');
+    list.innerHTML = '<div class="text-center text-slate-500 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando mensagens...</div>';
+    
+    let allMsgs = [];
+
+    // 1. Carrega Locais
+    const localMsgs = JSON.parse(localStorage.getItem('mural_local') || '[]');
+    allMsgs = [...localMsgs];
+
+    // 2. Carrega da Planilha
+    try {
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${window.SHEET_ID}/gviz/tq?tqx=out:json`);
+        const txt = await res.text();
+        const jsonString = txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1);
+        const json = JSON.parse(jsonString);
+        
+        if (json.table && json.table.rows) {
+            json.table.rows.forEach(row => {
+                const dateVal = row.c[0] ? (row.c[0].f || row.c[0].v) : 'Global';
+                const msgVal = row.c[1] ? (row.c[1].v) : null;
+                if (msgVal) {
+                    allMsgs.push({ d: dateVal, t: msgVal, sheet: true });
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao ler planilha:", e);
+    }
+
+    // Ordenação (tentativa) - inverte para mais recentes primeiro
+    
+    if(allMsgs.length === 0) {
+        list.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Nenhuma mensagem ainda.</div>';
+        return;
+    }
+
+    list.innerHTML = allMsgs.map(i => `
+        <div class="mural-card bg-slate-800 border-l-4 ${i.local ? 'border-sky-500' : 'border-emerald-500'} p-3 rounded mb-3 shadow animate-fade-in">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold ${i.local ? 'text-sky-500' : 'text-emerald-500'} text-xs uppercase">
+                    ${i.local ? 'Você' : 'Mural'}
+                </span>
+                <span class="text-[10px] text-slate-500">${i.d}</span>
+            </div>
+            <p class="text-slate-300 text-sm break-words">${i.t}</p>
+        </div>`).join('');
+}
+
+
 // Games
 window.cgi=0;window.startDescompressao=function(){window.showTab('game-section');window.cgi=0;window.loadGame(0)}
 window.nextGame=function(){window.cgi++;if(window.cgi<10)window.loadGame(window.cgi);else window.finishDescompressao()}
@@ -120,127 +224,6 @@ window.initReflex=function(c){c.innerHTML=`<div class="text-center text-white"><
 window.initLetterHunt=function(c){c.innerHTML=`<div class="text-center text-white mb-2">Ache a letra 'Q'</div><div class="grid grid-cols-6 gap-2" id="lh"></div>`;const g=document.getElementById('lh');const pos=Math.floor(Math.random()*36);for(let i=0;i<36;i++){const b=document.createElement('button');b.innerText=(i===pos)?'Q':'O';b.className="p-2 bg-slate-700 rounded text-xl";b.onclick=()=>{if(i===pos){b.style.bg="#10b981";window.gameWin()}else b.style.bg="#ef4444"};g.appendChild(b)}}
 window.initBreathing=function(c){c.innerHTML=`<div class="text-center text-white"><p>Inspire... e clique ao final</p><div id="br-circle" class="w-20 h-20 bg-sky-400 rounded-full mx-auto mt-8 transition-all duration-[3000ms]"></div></div>`;setTimeout(()=>{const b=document.getElementById('br-circle');b.style.transform="scale(2.5)";setTimeout(()=>{b.innerHTML='<span class="text-xs text-black flex h-full items-center justify-center">Clique</span>';b.onclick=()=>window.gameWin()},3000)},100)}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='pt-BR';r.onresult=e=>{tat=e.results[0][0].transcript;window.toggleMic();document.getElementById('chat-form').dispatchEvent(new Event('submit'))};window.toggleMic=()=>{const b=document.getElementById('mic-btn');if(b.classList.contains('mic-active')){r.stop();b.classList.remove('mic-active','bg-red-500','text-white');b.classList.add('bg-slate-700','text-slate-400')}else{r.start();b.classList.add('mic-active','bg-red-500','text-white');b.classList.remove('bg-slate-700','text-slate-400')}}}
-</script>
-
-<!-- SCRIPT 2: BANCO DE DADOS E MURAL (ISOLADO - SE FALHAR, O RESTO FUNCIONA) -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-let auth, db, appId;
-
-// Tenta iniciar o Firebase, mas sem bloquear a thread principal
-(async function initFirebaseSafe() {
-    try {
-        if (typeof __firebase_config === 'undefined') {
-            console.warn("Firebase config not available. Running in offline mode.");
-            renderMural([]); // Renderiza vazio ou offline
-            return;
-        }
-
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // Autenticação Silenciosa em Background
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (authError) {
-            console.error("Auth de background falhou, mas app segue normal:", authError);
-            // Mesmo sem auth, o app continua
-        }
-
-        // Se autenticou, liga o ouvinte do Mural
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setupMuralListener();
-            }
-        });
-
-    } catch (e) {
-        console.error("Erro geral no Firebase (App não será afetado):", e);
-    }
-})();
-
-function setupMuralListener() {
-    if (!db) return;
-    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
-    onSnapshot(colRef, (snapshot) => {
-        const msgs = [];
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            if(!d.d) d.d = 'Recentemente';
-            msgs.push(d);
-        });
-        msgs.sort((a, b) => {
-            const ta = a.timestamp?.seconds || 0;
-            const tb = b.timestamp?.seconds || 0;
-            return tb - ta;
-        });
-        renderMural(msgs);
-    }, (err) => console.error("Mural Listen Error:", err));
-}
-
-function renderMural(msgs) {
-    if(msgs.length === 0) msgs = [{d: 'Sistema', t: 'Seja o primeiro a compartilhar luz!'}];
-    const list = document.getElementById('mural-list');
-    if(list) {
-        list.innerHTML = msgs.map(i => `
-            <div class="mural-card bg-slate-800 border-l-4 border-amber-500 p-3 rounded mb-3 shadow animate-fade-in">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="font-bold text-amber-500 text-xs uppercase">Anônimo</span>
-                    <span class="text-[10px] text-slate-500">${i.d}</span>
-                </div>
-                <p class="text-slate-300 text-sm break-words">${i.t}</p>
-            </div>`).join('');
-    }
-}
-
-// Sobrescreve a função global APENAS para o Mural usar o banco
-window.saveMuralMessage = async function() {
-    const input = document.getElementById('mural-input');
-    const text = input.value.trim();
-    if(!text) return;
-    
-    // UI Feedback
-    const btn = input.nextElementSibling;
-    const oldHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled = true;
-
-    try {
-        // Se o Firebase não carregou, avisa e para.
-        if (!auth || !db) throw new Error("Serviço offline temporariamente.");
-        
-        if(!auth.currentUser) {
-           console.log("Aguardando conexão segura...");
-           // Tenta reconectar rápido se precisar
-           await signInAnonymously(auth);
-        }
-        
-        const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural');
-        await addDoc(colRef, {
-            t: text,
-            d: new Date().toLocaleDateString('pt-BR'),
-            timestamp: serverTimestamp()
-        });
-        
-        input.value = '';
-    } catch(e) {
-        console.error(e);
-        alert("O Mural está offline no momento, mas sua mensagem foi ouvida pelo universo.");
-    } finally {
-        btn.innerHTML = oldHtml;
-        btn.disabled = false;
-    }
-}
 </script>
 </body>
 </html>
