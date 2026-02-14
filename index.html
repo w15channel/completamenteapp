@@ -45,6 +45,19 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .mini-select {
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            border-radius: 0.8rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #b45309;
+            width: 100%;
+            padding: 0.65rem 0.7rem;
+            text-transform: uppercase;
+        }
+        .mini-select:focus { outline: 2px solid #fcd34d; }
     </style>
 </head>
 <body class="pb-24">
@@ -171,13 +184,30 @@
                     <p class="text-[10px] text-amber-500 uppercase font-bold tracking-widest animate-pulse">Preparando surpresa...</p>
                 </div>
                 <div id="hope-result" class="hidden w-full flex-col items-center">
+                    <div class="grid grid-cols-2 gap-2 mb-3 w-full">
+                        <select id="hope-theme" class="mini-select">
+                            <option value="natureza">Natureza</option>
+                            <option value="oceano">Oceano</option>
+                            <option value="montanhas">Montanhas</option>
+                            <option value="flores">Flores</option>
+                        </select>
+                        <select id="hope-style" class="mini-select">
+                            <option value="fotografia">Fotografia</option>
+                            <option value="aquarela">Aquarela</option>
+                            <option value="cinematica">Cinemática</option>
+                            <option value="pintura">Pintura</option>
+                        </select>
+                    </div>
                     <div class="relative w-full rounded-xl overflow-hidden shadow-lg mb-4">
                         <img id="hope-img" src="" class="w-full h-56 object-cover bg-gray-200" onerror="handleImageError(this)">
                     </div>
                     <div class="bg-white/80 p-5 rounded-xl border border-amber-100 shadow-sm w-full">
                         <p id="hope-msg" class="text-sm italic text-gray-700 font-medium leading-relaxed"></p>
                     </div>
-                    <button onclick="generateHopeGemini()" class="mt-6 text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                    <div class="mt-6 flex items-center gap-4 justify-center">
+                        <button onclick="generateHopeGemini()" class="text-xs text-amber-600 font-bold uppercase tracking-wide hover:underline">Gerar Outra</button>
+                        <button onclick="downloadHopeImage()" class="text-xs text-sky-600 font-bold uppercase tracking-wide hover:underline">Baixar Imagem</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -198,6 +228,7 @@
         let chatHistory = [];
         let isWaiting = false;
         let messageCounter = 0;
+        let hopeImageSrc = "";
         
         const offlineResponses = {
             'lia': ["Querido, vovó está te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
@@ -375,13 +406,29 @@
             document.getElementById('hope-loading').classList.remove('hidden');
             
             let frase = "Respire... tudo vai ficar bem.";
+            const theme = document.getElementById('hope-theme')?.value || 'natureza';
+            const style = document.getElementById('hope-style')?.value || 'fotografia';
+
+            const themeMap = {
+                natureza: 'jardins tranquilos com luz suave do amanhecer',
+                oceano: 'oceano calmo com ondas leves e céu dourado no entardecer',
+                montanhas: 'montanhas serenas com neblina delicada e atmosfera acolhedora',
+                flores: 'campo florido com cores suaves e sensação de renovação'
+            };
+
+            const styleMap = {
+                fotografia: 'professional photography, soft light, high detail',
+                aquarela: 'watercolor art, pastel tones, smooth brush strokes',
+                cinematica: 'cinematic composition, volumetric light, emotional framing',
+                pintura: 'digital painting, textured brushwork, dreamy mood'
+            };
 
             try {
                 const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. Responda apenas com a frase." }] }]
+                        contents: [{ parts: [{ text: `Escreva uma frase de esperança curta e carinhosa em Português para uma pessoa ansiosa. A frase deve combinar com o tema '${theme}'. Responda apenas com a frase.` }] }]
                     })
                 });
                 const dataText = await resText.json();
@@ -391,13 +438,14 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        instances: { prompt: `serene peaceful nature landscape, soft sunlight, high resolution, professional photography, seed ${Math.random()}` },
+                        instances: { prompt: `${themeMap[theme]}, ${styleMap[style]}, peaceful, comforting atmosphere, seed ${Math.random()}` },
                         parameters: { sampleCount: 1 }
                     })
                 });
                 const dataImg = await resImg.json();
                 if (dataImg.predictions?.[0]?.bytesBase64Encoded) {
-                    document.getElementById('hope-img').src = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                    hopeImageSrc = `data:image/png;base64,${dataImg.predictions[0].bytesBase64Encoded}`;
+                    document.getElementById('hope-img').src = hopeImageSrc;
                 } else {
                     handleImageError(document.getElementById('hope-img'));
                 }
@@ -416,7 +464,25 @@
         }
 
         function handleImageError(img) {
-            img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
+            const fallbackImages = {
+                natureza: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+                oceano: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+                montanhas: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+                flores: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80'
+            };
+            const theme = document.getElementById('hope-theme')?.value || 'natureza';
+            hopeImageSrc = `${fallbackImages[theme] || fallbackImages.natureza}&sig=${Math.random()}`;
+            img.src = hopeImageSrc;
+        }
+
+        function downloadHopeImage() {
+            if (!hopeImageSrc) return;
+            const link = document.createElement('a');
+            link.href = hopeImageSrc;
+            link.download = `caixinha-magica-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         }
 
         function saveDream() {
