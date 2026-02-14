@@ -20,14 +20,16 @@
             --text-dim: #94a3b8;
         }
         
+        * { box-sizing: border-box; }
+
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-dark);
-            height: 100vh;
-            width: 100vw;
             color: var(--text-light); 
             margin: 0; padding: 0;
-            overflow: hidden; /* Evita rolagem da janela inteira */
+            /* Fixa o corpo na tela inteira, impedindo rolagem global indesejada */
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
             display: flex;
             flex-direction: column;
         }
@@ -35,36 +37,66 @@
         .heading-font { font-family: 'Quicksand', sans-serif; }
         
         .glass-card {
-            background: rgba(30, 41, 59, 0.98); /* Mais opaco para garantir leitura */
-            backdrop-filter: blur(12px);
+            background: rgba(30, 41, 59, 0.98);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 1.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
-        /* Tabs Logic */
+        /* Área Principal de Conteúdo */
+        main {
+            flex: 1; /* Ocupa todo espaço entre header e footer */
+            position: relative; /* Necessário para posicionamento absoluto dos filhos */
+            width: 100%;
+            max-width: 480px; /* Limita largura em telas grandes */
+            margin: 0 auto;
+        }
+
+        /* Conteúdo das Abas */
         .tab-content { 
             display: none; 
-            height: 100%; 
+            /* Ocupa exatamente o espaço do main e permite rolagem interna */
+            position: absolute;
+            inset: 0;
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+        }
+        
+        .tab-content.active { 
+            display: flex; 
             flex-direction: column;
-            width: 100%;
+            animation: fadeIn 0.3s ease-out; 
         }
-        .tab-content.active { display: flex; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Chat Styles */
-        .chat-container { 
-            flex: 1;
-            overflow-y: auto; 
-            scroll-behavior: smooth; 
-            padding-bottom: 10px;
+        /* Estilo Específico para Chat (Para fixar o input no fundo) */
+        #chat.tab-content {
+            padding: 0; /* Remove padding para o chat ocupar tudo */
+            overflow: hidden; /* Chat gerencia sua própria rolagem */
         }
+
+        .chat-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        /* Mensagens */
         .message { max-width: 85%; padding: 12px 16px; border-radius: 1.2rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px; }
         .message.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 0.2rem; margin-left: auto; }
         .message.therapist { align-self: flex-start; background: #334155; color: #e2e8f0; border-bottom-left-radius: 0.2rem; margin-right: auto; }
         .message.audio-msg { font-style: italic; display: flex; items-center; gap: 8px; color: #cbd5e1; }
         
-        /* Game Styles */
+        /* Jogos */
         .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 1000px; }
         .memory-card {
             background-color: #334155;
@@ -80,10 +112,10 @@
         .memory-card.flipped, .memory-card.matched { background-color: #f1f5f9; border-color: var(--primary); color: #333; transform: rotateY(180deg); }
         .memory-card.matched { background-color: #10b981; border-color: #059669; color: white; cursor: default; }
         
-        /* Scrollbar customizada */
-        ::-webkit-scrollbar { width: 6px; }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
 
         .btn-game { @apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95; }
         input, select, textarea { background-color: #334155; color: white; border-color: #475569; }
@@ -98,48 +130,70 @@
         <p class="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">WR TERAPIA | NOITE</p>
     </header>
 
-    <!-- Área Principal -->
-    <main class="flex-1 overflow-hidden relative w-full max-w-md mx-auto bg-slate-900">
+    <!-- Container Principal -->
+    <main>
         
         <!-- ONBOARDING -->
-        <section id="onboarding" class="tab-content active p-6 justify-center">
-            <div class="glass-card p-8 text-center flex flex-col items-center justify-center h-full max-h-[500px] my-auto">
-                <div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 ring-2 ring-sky-500/50">
-                    <i class="fas fa-fingerprint text-sky-400 text-3xl"></i>
+        <section id="onboarding" class="tab-content active">
+            <div class="h-full flex flex-col items-center justify-center p-4">
+                <div class="glass-card p-8 text-center w-full">
+                    <div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 mx-auto ring-2 ring-sky-500/50">
+                        <i class="fas fa-fingerprint text-sky-400 text-3xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2>
+                    <p class="text-sm text-slate-400 mb-8">Identifique-se para acessar seu espaço seguro.</p>
+                    <div class="w-full mb-4 space-y-3">
+                        <select id="user-gender" class="w-full p-4 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="homem">Sou Homem</option>
+                            <option value="mulher">Sou Mulher</option>
+                        </select>
+                        <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+                    <button onclick="login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-500 transition-all">Entrar</button>
                 </div>
-                <h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2>
-                <p class="text-sm text-slate-400 mb-8">Identifique-se para acessar seu espaço seguro.</p>
-                <div class="w-full mb-4 space-y-3">
-                    <select id="user-gender" class="w-full p-4 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500">
-                        <option value="homem">Sou Homem</option>
-                        <option value="mulher">Sou Mulher</option>
-                    </select>
-                    <input type="text" id="user-name-input" oninput="this.value = this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none focus:ring-2 focus:ring-sky-500">
-                </div>
-                <button onclick="login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-500 transition-all">Entrar</button>
             </div>
         </section>
 
         <!-- HOME -->
-        <section id="home" class="tab-content p-4 overflow-y-auto">
+        <section id="home" class="tab-content">
             <div class="glass-card p-6 mb-4">
                 <p class="text-xs text-slate-400">Boa noite,</p>
                 <h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2>
+                
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="openChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button>
-                    <button onclick="showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span></button>
-                    <button onclick="showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button>
-                    <button onclick="showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha IA</span></button>
+                    <button onclick="openChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all">
+                        <i class="fas fa-comment-medical text-2xl text-sky-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span>
+                    </button>
+                    <button onclick="showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all">
+                        <i class="fas fa-calendar-check text-2xl text-emerald-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span>
+                    </button>
+                    <button onclick="showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all">
+                        <i class="fas fa-comments text-2xl text-amber-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-slate-300">Mural</span>
+                    </button>
+                    <button onclick="showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all">
+                        <i class="fas fa-lightbulb text-2xl text-yellow-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-slate-300">Caixinha IA</span>
+                    </button>
                 </div>
+                
                 <div class="grid grid-cols-2 gap-4 mt-4">
-                    <button onclick="showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button>
-                    <button onclick="startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button>
+                    <button onclick="showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all">
+                        <i class="fas fa-spa text-xl text-purple-400"></i>
+                        <span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span>
+                    </button>
+                    <button onclick="startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all">
+                        <i class="fas fa-brain text-xl text-rose-400"></i>
+                        <span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span>
+                    </button>
                 </div>
             </div>
         </section>
 
         <!-- AGENDA -->
-        <section id="agenda" class="tab-content p-4 h-full">
+        <section id="agenda" class="tab-content">
             <div class="glass-card p-4 h-full flex flex-col">
                 <div class="flex items-center gap-3 mb-4 flex-none">
                     <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
@@ -153,19 +207,21 @@
         </section>
 
         <!-- SELEÇÃO CHAT -->
-        <section id="chat-selection" class="tab-content p-4 overflow-y-auto">
-            <div class="glass-card p-6 min-h-full">
-                <h2 class="text-lg font-bold text-sky-400 mb-4 text-center">Nossa Equipe</h2>
-                <div id="therapist-list" class="space-y-3"></div>
-                <button onclick="showTab('home')" class="mt-6 w-full text-xs text-slate-500 font-bold uppercase hover:text-slate-300">Voltar para Início</button>
+        <section id="chat-selection" class="tab-content">
+            <div class="glass-card p-6 h-full overflow-y-auto">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                    <h2 class="font-bold text-sky-400 text-lg">Nossa Equipe</h2>
+                </div>
+                <div id="therapist-list" class="space-y-3 pb-20"></div>
             </div>
         </section>
 
-        <!-- CHAT -->
-        <section id="chat" class="tab-content h-full flex flex-col">
-            <div class="glass-card flex flex-col h-full m-2 border-0 rounded-none bg-transparent shadow-none">
+        <!-- CHAT (Layout Fixo Interno) -->
+        <section id="chat" class="tab-content">
+            <div class="chat-layout h-full">
                 <!-- Chat Header -->
-                <div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/90 rounded-t-2xl">
+                <div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10">
                     <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div>
                     <div class="flex-1">
                         <p id="active-name" class="font-bold text-white text-sm"></p>
@@ -174,38 +230,37 @@
                             <span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span>
                         </div>
                     </div>
-                    <!-- Botão Fechar Chat (X) - Leva para Seleção -->
                     <button onclick="openChatSelection()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button>
                 </div>
                 
-                <!-- Messages -->
-                <div id="chat-messages" class="chat-container p-4 bg-slate-900/50"></div>
+                <!-- Messages Area -->
+                <div id="chat-messages" class="chat-messages-area"></div>
                 
-                <!-- Typing Indicator -->
-                <div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/50">
-                    Digitando <span class="animate-pulse">...</span>
-                </div>
-                
-                <!-- Input Area -->
-                <div class="p-3 bg-slate-800 border-t border-slate-700 rounded-b-2xl">
-                    <form id="chat-form" class="flex items-center gap-2">
-                        <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button>
-                        <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400">
-                        <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
-                    </form>
+                <!-- Typing Indicator & Input -->
+                <div class="flex-none bg-slate-800 border-t border-slate-700 pb-2">
+                    <div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/30">
+                        Digitando <span class="animate-pulse">...</span>
+                    </div>
+                    <div class="p-3">
+                        <form id="chat-form" class="flex items-center gap-2">
+                            <button type="button" id="mic-btn" onclick="toggleMic()" class="w-10 h-10 bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-microphone"></i></button>
+                            <input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400">
+                            <button type="submit" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- RELAXAMENTO -->
-        <section id="relaxation" class="tab-content p-4 h-full overflow-y-auto">
+        <section id="relaxation" class="tab-content">
             <div class="glass-card p-4 h-full flex flex-col">
                 <div class="flex items-center gap-3 mb-4 flex-none">
                     <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <h2 class="font-bold text-sky-400">Relaxamento</h2>
                 </div>
                 
-                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600">
+                <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600 bg-black">
                     <iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe>
                 </div>
                 
@@ -227,7 +282,7 @@
         </section>
 
         <!-- MURAL -->
-        <section id="mural" class="tab-content p-4 h-full">
+        <section id="mural" class="tab-content">
             <div class="glass-card p-5 h-full flex flex-col">
                 <div class="flex items-center gap-3 mb-4 flex-none">
                     <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
@@ -237,11 +292,11 @@
                     </div>
                 </div>
                 
-                <div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1">
+                <div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20">
                     <!-- Mensagens -->
                 </div>
 
-                <div class="mt-auto pt-4 border-t border-slate-700 flex-none">
+                <div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl">
                     <textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea>
                     <button onclick="saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all">
                         <i class="fas fa-paper-plane mr-2"></i>Publicar
@@ -251,38 +306,38 @@
         </section>
 
         <!-- CAIXINHA IA -->
-        <section id="hope" class="tab-content p-4 h-full overflow-y-auto">
-            <div class="glass-card p-6 text-center min-h-full flex flex-col justify-center">
-                <div class="flex justify-between items-center mb-6">
+        <section id="hope" class="tab-content">
+            <div class="glass-card p-6 min-h-full flex flex-col justify-center overflow-y-auto">
+                <div class="flex justify-between items-center mb-6 flex-none">
                     <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                     <h2 class="font-bold text-lg text-yellow-400">Caixinha Emocional</h2>
                     <div class="w-8"></div>
                 </div>
 
-                <div class="mb-8">
+                <div class="mb-8 flex-none text-center">
                     <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600 shadow-lg animate-pulse">
                         <i class="fas fa-gift text-yellow-400 text-4xl"></i>
                     </div>
                     <p class="text-sm text-slate-400 mb-2">Toque para receber uma mensagem de luz para sua noite.</p>
                 </div>
 
-                <button onclick="gerarCaixinha()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50">
+                <button onclick="gerarCaixinha()" class="flex-none w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50">
                     <i class="fas fa-magic mr-2"></i>Gerar Experiência
                 </button>
 
-                <div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-4">
+                <div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-20 flex-none">
                     <img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/>
                     <div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm">
-                        <p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed"></p>
+                        <p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed text-center"></p>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- DESCOMPRESSÃO (5 JOGOS) -->
-        <section id="game-section" class="tab-content p-4 h-full overflow-y-auto">
-            <div class="glass-card p-5 min-h-full flex flex-col">
-                <div class="flex items-center justify-between mb-2 flex-none">
+        <section id="game-section" class="tab-content">
+            <div class="glass-card p-5 h-full flex flex-col">
+                <div class="flex items-center justify-between mb-4 flex-none">
                     <div class="flex items-center gap-2">
                         <button onclick="showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button>
                         <h2 class="font-bold text-rose-400">Descompressão</h2>
@@ -293,18 +348,17 @@
                 <div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none">
                     <p class="text-xs text-slate-400 text-center leading-relaxed">
                         Este é um espaço seguro para brincar, relaxar e sair da rotina. <br>
-                        Se estiver em crise, foque apenas no jogo. <br>
                         Treine seu raciocínio, memória e percepção.
                     </p>
                 </div>
                 
                 <!-- Container dos Jogos -->
-                <div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative">
+                <div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative overflow-y-auto">
                     <!-- O conteúdo do jogo será injetado aqui via JS -->
                 </div>
 
-                <!-- Botão Próximo (Oculto inicialmente) -->
-                <button id="next-game-btn" onclick="nextGame()" class="hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">
+                <!-- Botão Próximo -->
+                <button id="next-game-btn" onclick="nextGame()" class="flex-none hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">
                     Próximo Desafio <i class="fas fa-arrow-right ml-2"></i>
                 </button>
             </div>
@@ -347,16 +401,15 @@
             const tratamento = clientGender === "homem" ? "querido" : "querida";
             const amigo = clientGender === "homem" ? "amigo" : "amiga";
             const formal = clientGender === "homem" ? "Sr." : "Sra.";
-            const commonAgendaRule = "Sobre agendamentos: informe que a agenda é automática na tela inicial. Se não tiver horário, sugira continuar a conversa aqui para apoio emocional.";
             
-            // Estilo de fala: Leve, acolhedor, sem sotaque regional
-            const estiloLeve = "Use uma linguagem leve, empática, acolhedora e culta. Sem gírias ou sotaques regionais. Seja humano e caloroso.";
+            // LINGUAGEM NEUTRA E ACOLHEDORA (SEM SOTAQUE)
+            const estilo = "Use linguagem culta, leve, calorosa e empática. Evite gírias ou regionalismos. Foco total em acolhimento e escuta ativa.";
 
             const prompts = {
-                'lia': `Você é a Dra. Lia. Uma terapeuta experiente e com acolhimento materno (mas não aja como uma avó estereotipada, seja uma profissional calorosa). Seu foco é acolher e validar sentimentos. Trate o paciente de forma gentil. ${estiloLeve} ${commonAgendaRule}`,
-                'william': `Você é o Dr. William. Jovem, dinâmico e empático. Trate o paciente pelo NOME sempre que possível, de forma natural. Ex: 'Entendo, ${clientName}...'. Foco na personalização do atendimento. ${estiloLeve} ${commonAgendaRule}`,
-                'yara': `Você é a Dra. Yara, terapeuta da madrugada. Sua voz é calma e serena. Chame de '${amigo}' e termine frases com '${tratamento}' ocasionalmente para gerar conforto. ${estiloLeve} ${commonAgendaRule}`,
-                'fer': `Você é a Fernanda, recepcionista. Profissional, simpática e prestativa. Trate por '${formal} ${clientName}'. Ajude com dúvidas sobre o app. ${estiloLeve} ${commonAgendaRule}`
+                'lia': `Você é a Dra. Lia, uma terapeuta muito experiente e maternal (mas profissional). Seu foco é acolhimento profundo. Trate de forma gentil e valida os sentimentos. ${estilo}`,
+                'william': `Você é o Dr. William. Jovem, dinâmico e focado em personalização. Chame o paciente pelo NOME frequentemente. Use frases como 'Entendo, ${clientName}', 'Veja bem, ${clientName}'. ${estilo}`,
+                'yara': `Você é a Dra. Yara, terapeuta da madrugada. Voz serena e calma. Chame de '${amigo}' e ocasionalmente use '${tratamento}'. ${estilo}`,
+                'fer': `Você é a Fernanda, recepcionista. Educada e eficiente. Trate por '${formal} ${clientName}'. Ajude com dúvidas do app. ${estilo}`
             };
             return prompts[therapistId] || "";
         }
@@ -373,15 +426,8 @@
         }
 
         function showTab(id) {
-            // Esconde todas as abas
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            // Mostra a aba desejada
-            const tab = document.getElementById(id);
-            if(tab) {
-                tab.classList.add('active');
-            } else {
-                console.error("Tab not found:", id);
-            }
+            document.getElementById(id).classList.add('active');
         }
 
         function openChatSelection() {
@@ -412,11 +458,11 @@
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
             let welcome = "Olá! Como posso ajudar?";
-            // Mensagens de boas-vindas ajustadas
-            if (id === 'lia') welcome = `Olá ${clientName}, que bom ter você aqui. Sou a Dra. Lia. Sinta-se acolhido(a). Como você está se sentindo hoje?`;
-            else if (id === 'william') welcome = `Oi ${clientName}, tudo bem? Sou o Dr. William. Estou aqui para te ouvir. O que está acontecendo?`;
-            else if (id === 'yara') welcome = `Olá, amigo(a). A noite é um momento de paz. Estou aqui com você, querido(a).`;
-            else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Sou a Fernanda. Como posso auxiliar com o aplicativo?`;
+            // Boas-vindas sem sugestão de agenda para Lia
+            if (id === 'lia') welcome = `Olá ${clientName}. Que bom que você veio conversar. Sou a Dra. Lia. Estou aqui para te ouvir com todo carinho. Como você está se sentindo?`;
+            else if (id === 'william') welcome = `Oi ${clientName}, tudo bem? Sou o Dr. William. Estou inteiramente à sua disposição. O que gostaria de compartilhar hoje?`;
+            else if (id === 'yara') welcome = `Olá, amigo(a). A noite é um momento de reflexão. Estou aqui ao seu lado, querido(a).`;
+            else if (id === 'fer') welcome = `Olá, ${clientGender === 'homem' ? 'Sr.' : 'Sra.'} ${clientName}. Sou a Fernanda. Como posso auxiliar você com o uso do aplicativo?`;
 
             addMessage(welcome, 'therapist', false);
             showTab('chat');
@@ -427,12 +473,13 @@
             div.className = `message ${type}`;
             if (isAudio && type === 'user') {
                 div.classList.add('audio-msg');
-                div.innerHTML = '<i class="fas fa-microphone-lines text-lg text-sky-400"></i> <span class="text-xs">Áudio enviado para análise...</span>';
+                div.innerHTML = '<i class="fas fa-microphone-lines text-lg text-sky-400"></i> <span class="text-xs">Áudio enviado...</span>';
             } else {
                 div.innerHTML = text;
             }
-            document.getElementById('chat-messages').appendChild(div);
-            document.getElementById('chat-messages').scrollTop = 99999;
+            const container = document.getElementById('chat-messages');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
             if(saveToHistory) chatHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
         }
 
@@ -454,9 +501,6 @@
 
             let waitTime = (messageCounter % 2 !== 0) ? 30000 : 40000;
             let typingTime = 30000;
-            
-            // Para testes:
-            // waitTime = 1000; typingTime = 1000;
 
             const apiPromise = fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -478,7 +522,7 @@
 
         // --- CAIXINHA EMOCIONAL ---
         async function gerarCaixinha() {
-            const temas = ["acolhimento", "angustia", "emoções", "esperança", "calma", "gratidão"];
+            const temas = ["acolhimento", "paz", "emoções", "esperança", "calma", "gratidão"];
             const paisagens = ["montanhas", "mar", "floresta", "chuva", "pôr do sol", "campo", "céu estrelado"];
             const tema = temas[Math.floor(Math.random() * temas.length)];
             const paisagem = paisagens[Math.floor(Math.random() * paisagens.length)];
@@ -495,7 +539,7 @@
             const termo = traducoes[paisagem] || "nature";
             imgBox.src = `https://loremflickr.com/800/600/${termo},nature?lock=${Math.floor(Math.random() * 1000)}`;
 
-            const comando = `Crie uma mensagem terapêutica curta (max 3 frases), leve e acolhedora sobre: ${tema} e ${paisagem}.`;
+            const comando = `Crie uma mensagem terapêutica curta (max 3 frases), leve, culta e acolhedora sobre: ${tema} e ${paisagem}.`;
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -549,7 +593,7 @@
             document.getElementById('game-level-display').innerText = `Nível ${index + 1}/5`;
             document.getElementById('next-game-btn').classList.add('hidden');
             const container = document.getElementById('game-container');
-            container.innerHTML = ''; // Limpa
+            container.innerHTML = ''; 
 
             switch(index) {
                 case 0: initMemoryGame(container); break;
@@ -582,142 +626,66 @@
             document.getElementById('next-game-btn').classList.remove('hidden');
         }
 
-        // JOGO 1: MEMÓRIA
+        // JOGOS IMPLEMENTAÇÃO
         function initMemoryGame(container) {
             container.innerHTML = '<div id="memory-grid" class="memory-grid w-full"></div>';
             const grid = document.getElementById('memory-grid');
             const icons = ['leaf', 'cloud', 'dove', 'heart', 'star', 'tree'];
             let cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
             let flipped = [], matched = 0;
-
             cards.forEach(icon => {
                 const card = document.createElement('div');
                 card.className = 'memory-card';
                 card.innerHTML = `<i class="fas fa-${icon}"></i>`;
                 card.onclick = function() {
                     if (this.classList.contains('flipped') || this.classList.contains('matched') || flipped.length >= 2) return;
-                    this.classList.add('flipped');
-                    flipped.push(this);
+                    this.classList.add('flipped'); flipped.push(this);
                     if (flipped.length === 2) {
                         if (flipped[0].innerHTML === flipped[1].innerHTML) {
-                            flipped.forEach(c => c.classList.add('matched'));
-                            matched++;
-                            flipped = [];
+                            flipped.forEach(c => c.classList.add('matched')); matched++; flipped = [];
                             if (matched === icons.length) gameWin();
-                        } else {
-                            setTimeout(() => { flipped.forEach(c => c.classList.remove('flipped')); flipped = []; }, 800);
-                        }
+                        } else { setTimeout(() => { flipped.forEach(c => c.classList.remove('flipped')); flipped = []; }, 800); }
                     }
                 };
                 grid.appendChild(card);
             });
         }
-
-        // JOGO 2: O INTRUSO
         function initIntruderGame(container) {
-            container.innerHTML = `
-                <div class="text-center mb-4"><p class="text-white">Encontre o emoji diferente!</p></div>
-                <div class="grid grid-cols-4 gap-4" id="intruder-grid"></div>
-            `;
+            container.innerHTML = `<div class="text-center mb-4"><p class="text-white">Encontre o diferente!</p></div><div class="grid grid-cols-4 gap-4" id="intruder-grid"></div>`;
             const grid = document.getElementById('intruder-grid');
-            const mainEmoji = "😊";
-            const intruderEmoji = "🙂"; 
-            const pos = Math.floor(Math.random() * 16);
+            const main = "😊"; const intruder = "🙂"; const pos = Math.floor(Math.random() * 16);
             for(let i=0; i<16; i++) {
-                const btn = document.createElement('button');
-                btn.className = "text-3xl p-4 bg-slate-700 rounded-lg hover:bg-slate-600";
-                btn.innerText = (i === pos) ? intruderEmoji : mainEmoji;
-                btn.onclick = () => {
-                    if(i === pos) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
-                    else { btn.style.backgroundColor = "#ef4444"; setTimeout(() => btn.style.backgroundColor = "", 300); }
-                };
+                const btn = document.createElement('button'); btn.className = "text-3xl p-4 bg-slate-700 rounded-lg";
+                btn.innerText = (i === pos) ? intruder : main;
+                btn.onclick = () => { if(i===pos){btn.style.bg="#10b981"; gameWin();} else {btn.style.bg="#ef4444"; setTimeout(()=>btn.style.bg="",300);} };
                 grid.appendChild(btn);
             }
         }
-
-        // JOGO 3: CÁLCULO ZEN
         function initMathGame(container) {
-            const n1 = Math.floor(Math.random() * 20) + 10;
-            const n2 = Math.floor(Math.random() * 10) + 5;
-            const res = n1 + n2;
-            const wrongs = [res + 2, res - 3, res + 5].sort(() => Math.random() - 0.5);
-            const options = [...wrongs.slice(0, 2), res].sort(() => Math.random() - 0.5);
-            container.innerHTML = `
-                <div class="text-center w-full">
-                    <p class="text-slate-400 mb-2">Quanto é?</p>
-                    <h3 class="text-4xl text-white font-bold mb-8">${n1} + ${n2} = ?</h3>
-                    <div class="flex flex-col gap-3 w-full max-w-xs mx-auto">
-                        ${options.map(opt => `<button onclick="checkMath(this, ${opt}, ${res})" class="btn-game bg-slate-700 text-white hover:bg-slate-600">${opt}</button>`).join('')}
-                    </div>
-                </div>
-            `;
+            const n1 = Math.floor(Math.random()*20)+10; const n2 = Math.floor(Math.random()*10)+5; const res = n1+n2;
+            const wrongs = [res+2, res-3, res+5].sort(()=>Math.random()-0.5); const opts = [...wrongs.slice(0,2), res].sort(()=>Math.random()-0.5);
+            container.innerHTML = `<div class="text-center w-full"><h3 class="text-4xl text-white font-bold mb-8">${n1} + ${n2} = ?</h3><div class="flex flex-col gap-3 max-w-xs mx-auto">${opts.map(o=>`<button onclick="checkMath(this,${o},${res})" class="btn-game bg-slate-700 text-white">${o}</button>`).join('')}</div></div>`;
         }
-        window.checkMath = (btn, val, correct) => {
-            if(val === correct) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
-            else { btn.style.backgroundColor = "#ef4444"; }
-        };
-
-        // JOGO 4: CORES
+        window.checkMath = (btn,v,c) => { if(v===c){btn.style.backgroundColor="#10b981"; gameWin();} else btn.style.backgroundColor="#ef4444"; };
         function initColorGame(container) {
-            const colors = [{ name: "VERMELHO", hex: "#ef4444" }, { name: "AZUL", hex: "#3b82f6" }, { name: "VERDE", hex: "#10b981" }, { name: "AMARELO", hex: "#eab308" }];
-            const textIdx = Math.floor(Math.random() * 4);
-            let colorIdx = Math.floor(Math.random() * 4);
-            while(colorIdx === textIdx) colorIdx = Math.floor(Math.random() * 4); 
-            const correctColorName = colors[colorIdx].name; 
-            container.innerHTML = `
-                <div class="text-center w-full">
-                    <p class="text-white mb-2">Qual a <b>COR</b> do texto? (Ignore o que está escrito)</p>
-                    <h3 class="text-5xl font-bold mb-8" style="color: ${colors[colorIdx].hex}">${colors[textIdx].name}</h3>
-                    <div class="grid grid-cols-2 gap-3 w-full">
-                        ${colors.map(c => `<button onclick="checkColor(this, '${c.name}', '${correctColorName}')" class="btn-game bg-slate-700 text-white border-2" style="border-color:${c.hex}">${c.name}</button>`).join('')}
-                    </div>
-                </div>
-            `;
+            const cols = [{n:"VERMELHO",h:"#ef4444"},{n:"AZUL",h:"#3b82f6"},{n:"VERDE",h:"#10b981"},{n:"AMARELO",h:"#eab308"}];
+            const tIdx = Math.floor(Math.random()*4); let cIdx = Math.floor(Math.random()*4); while(cIdx===tIdx) cIdx=Math.floor(Math.random()*4);
+            container.innerHTML = `<div class="text-center w-full"><p class="text-white mb-2">Qual a <b>COR</b>?</p><h3 class="text-5xl font-bold mb-8" style="color:${cols[cIdx].h}">${cols[tIdx].n}</h3><div class="grid grid-cols-2 gap-3 w-full">${cols.map(c=>`<button onclick="checkColor(this,'${c.n}','${cols[cIdx].n}')" class="btn-game bg-slate-700 text-white border-2" style="border-color:${c.h}">${c.n}</button>`).join('')}</div></div>`;
         }
-        window.checkColor = (btn, val, correct) => {
-            if(val === correct) { btn.style.backgroundColor = "#10b981"; gameWin(); } 
-            else { btn.style.backgroundColor = "#ef4444"; }
-        };
-
-        // JOGO 5: SEQUÊNCIA
+        window.checkColor = (btn,v,c) => { if(v===c){btn.style.backgroundColor="#10b981"; gameWin();} else btn.style.backgroundColor="#ef4444"; };
         function initSequenceGame(container) {
-            let seq = [];
-            for(let i=0; i<4; i++) seq.push(Math.floor(Math.random() * 9) + 1);
-            container.innerHTML = `
-                <div class="text-center w-full">
-                    <p class="text-white mb-4">Memorize a sequência:</p>
-                    <div id="seq-display" class="text-4xl font-bold text-sky-400 tracking-widest mb-8 h-12">${seq.join(' ')}</div>
-                    <div id="seq-input" class="hidden grid grid-cols-3 gap-2 w-full max-w-xs mx-auto">
-                        ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="addSeq(${n})" class="p-4 bg-slate-700 rounded-lg text-xl font-bold hover:bg-slate-600">${n}</button>`).join('')}
-                    </div>
-                    <div id="user-seq" class="h-8 text-xl text-emerald-400 mt-4 tracking-widest"></div>
-                    <button onclick="checkSeq()" id="btn-check-seq" class="hidden w-full mt-4 bg-sky-600 text-white py-2 rounded-xl">Verificar</button>
-                </div>
-            `;
-            setTimeout(() => {
-                document.getElementById('seq-display').innerText = "????";
-                document.getElementById('seq-input').classList.remove('hidden');
-                document.getElementById('btn-check-seq').classList.remove('hidden');
-                window.targetSeq = seq;
-                window.currentSeq = [];
-            }, 3000);
+            let seq=[]; for(let i=0;i<4;i++) seq.push(Math.floor(Math.random()*9)+1);
+            container.innerHTML = `<div class="text-center w-full"><p class="text-white mb-4">Memorize:</p><div id="seq-disp" class="text-4xl font-bold text-sky-400 tracking-widest mb-8 h-12">${seq.join(' ')}</div><div id="seq-inp" class="hidden grid grid-cols-3 gap-2 max-w-xs mx-auto">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="addSeq(${n})" class="p-4 bg-slate-700 rounded-lg text-xl font-bold">${n}</button>`).join('')}</div><div id="u-seq" class="h-8 text-xl text-emerald-400 mt-4 tracking-widest"></div><button onclick="checkSeq()" id="btn-chk" class="hidden w-full mt-4 bg-sky-600 text-white py-2 rounded-xl">Verificar</button></div>`;
+            setTimeout(()=>{document.getElementById('seq-disp').innerText="????"; document.getElementById('seq-inp').classList.remove('hidden'); document.getElementById('btn-chk').classList.remove('hidden'); window.tSeq=seq; window.cSeq=[];},3000);
         }
-        window.addSeq = (n) => { window.currentSeq.push(n); document.getElementById('user-seq').innerText = window.currentSeq.join(' '); };
-        window.checkSeq = () => {
-            if(JSON.stringify(window.currentSeq) === JSON.stringify(window.targetSeq)) { gameWin(); } 
-            else { document.getElementById('user-seq').innerText = "Tente novamente..."; window.currentSeq = []; setTimeout(() => document.getElementById('user-seq').innerText = "", 1000); }
-        };
+        window.addSeq = (n) => { window.cSeq.push(n); document.getElementById('u-seq').innerText = window.cSeq.join(' '); };
+        window.checkSeq = () => { if(JSON.stringify(window.cSeq)===JSON.stringify(window.tSeq)) gameWin(); else { document.getElementById('u-seq').innerText="Tente de novo..."; window.cSeq=[]; setTimeout(()=>document.getElementById('u-seq').innerText="",1000); } };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
-            const rec = new SpeechRecognition();
-            rec.lang = 'pt-BR';
+            const rec = new SpeechRecognition(); rec.lang = 'pt-BR';
             rec.onresult = e => { tempAudioText = e.results[0][0].transcript; toggleMic(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); };
-            window.toggleMic = () => {
-                const btn = document.getElementById('mic-btn');
-                if(btn.classList.contains('mic-active')) { rec.stop(); btn.classList.remove('mic-active', 'bg-red-500', 'text-white'); btn.classList.add('bg-slate-700', 'text-slate-400'); }
-                else { rec.start(); btn.classList.add('mic-active', 'bg-red-500', 'text-white'); btn.classList.remove('bg-slate-700', 'text-slate-400'); }
-            };
+            window.toggleMic = () => { const btn = document.getElementById('mic-btn'); if(btn.classList.contains('mic-active')) { rec.stop(); btn.classList.remove('mic-active','bg-red-500','text-white'); btn.classList.add('bg-slate-700','text-slate-400'); } else { rec.start(); btn.classList.add('mic-active','bg-red-500','text-white'); btn.classList.remove('bg-slate-700','text-slate-400'); } };
         }
     </script>
 </body>
