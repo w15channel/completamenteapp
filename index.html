@@ -7,9 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&family=Playfair+Display:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Playfair+Display:wght@700;900&display=swap');
 
-        :root { --primary: #0ea5e9; --secondary: #10b981; --accent: #c4a661; }
+        :root { 
+            --primary: #0ea5e9; 
+            --secondary: #10b981; 
+            --accent: #c4a661; 
+            --deep: #020406;
+            --surface: #0a0c12;
+            --text-high: #f8fafc;
+            --safe-margin: 40px;
+        }
+
         body { 
             font-family: 'Inter', sans-serif; 
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
@@ -41,13 +50,74 @@
         .status-busy { background-color: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
         .status-offline { background-color: #94a3b8; }
 
+        /* Loader */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .mic-active { background-color: #ef4444 !important; color: white !important; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Estilo Caixinha IA (WR-TEC) */
-        .hope-title { font-family: 'Playfair Display', serif; font-weight: 900; text-transform: uppercase; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        /* --- WR-TEC ENGINE STYLES (Caixinha) --- */
+        .slide-frame {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .slide-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            z-index: 1;
+            opacity: 0.6;
+        }
+        .slide-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.9) 100%);
+        }
+        .slide-inner {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            width: 100%;
+            padding: var(--safe-margin);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: left;
+        }
+        .slide-title-ui {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 6vw, 2.2rem);
+            color: #fff;
+            margin-bottom: 15px;
+            line-height: 1.1;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .slide-desc-ui {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.45;
+            font-weight: 400;
+        }
+        .slide-footer-ui {
+            position: absolute;
+            bottom: var(--safe-margin);
+            left: var(--safe-margin);
+            right: var(--safe-margin);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 15px;
+        }
+        .slide-ig-ui { font-size: 0.7rem; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+        .slide-num-ui { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.3); font-family: monospace; }
     </style>
 </head>
 <body class="pb-24">
@@ -59,6 +129,7 @@
 
     <main class="max-w-md mx-auto px-4 pt-4">
         
+        <!-- ONBOARDING -->
         <section id="onboarding" class="tab-content active">
             <div class="glass-card p-8 text-center flex flex-col items-center justify-center min-h-[450px]">
                 <div class="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
@@ -77,6 +148,7 @@
             </div>
         </section>
 
+        <!-- HOME -->
         <section id="home" class="tab-content">
             <div class="glass-card p-6 mb-4">
                 <p class="text-xs text-gray-400">Olá,</p>
@@ -85,12 +157,13 @@
                     <button onclick="openChatSelection()" class="p-5 bg-white/80 rounded-2xl border border-sky-50 flex flex-col items-center gap-3 hover:bg-sky-50 shadow-sm transition-all"><i class="fas fa-comment-medical text-2xl text-sky-500"></i><span class="text-[10px] font-bold uppercase">Conversar</span></button>
                     <button onclick="showTab('agenda')" class="p-5 bg-white/80 rounded-2xl border border-emerald-50 flex flex-col items-center gap-3 hover:bg-emerald-50 shadow-sm transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-500"></i><span class="text-[10px] font-bold uppercase">Agendar</span></button>
                     <button onclick="showTab('dreams')" class="p-5 bg-white/80 rounded-2xl border border-blue-50 flex flex-col items-center gap-3 hover:bg-blue-50 shadow-sm transition-all"><i class="fas fa-book-open text-2xl text-blue-500"></i><span class="text-[10px] font-bold uppercase">Diário</span></button>
-                    <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-wand-magic-sparkles text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase">Caixinha WR-TEC</span></button>
+                    <button onclick="showTab('hope')" class="p-5 bg-white/80 rounded-2xl border border-amber-50 flex flex-col items-center gap-3 hover:bg-amber-50 shadow-sm transition-all"><i class="fas fa-wand-magic-sparkles text-2xl text-amber-500"></i><span class="text-[10px] font-bold uppercase text-amber-600">Caixinha WR-TEC</span></button>
                 </div>
                 <button onclick="showTab('relaxation')" class="w-full mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-center gap-3 hover:bg-purple-100 shadow-sm transition-all"><i class="fas fa-spa text-purple-500"></i><span class="text-[10px] font-bold uppercase text-purple-700">Espaço Relaxamento</span></button>
             </div>
         </section>
 
+        <!-- AGENDA -->
         <section id="agenda" class="tab-content">
             <div class="glass-card p-6 h-[75vh] flex flex-col">
                 <div class="flex items-center gap-2 mb-4">
@@ -100,10 +173,10 @@
                 <div class="flex-1 rounded-xl overflow-hidden border border-sky-100">
                     <iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 text-center italic">Sistema de agendamento automático 24h.</p>
             </div>
         </section>
 
+        <!-- SELEÇÃO CHAT -->
         <section id="chat-selection" class="tab-content">
             <div class="glass-card p-6">
                 <h2 class="text-lg font-bold text-sky-900 mb-4 text-center">Nossa Equipe</h2>
@@ -112,6 +185,7 @@
             </div>
         </section>
 
+        <!-- CHAT -->
         <section id="chat" class="tab-content">
             <div class="glass-card flex flex-col h-[75vh]">
                 <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/40">
@@ -141,39 +215,51 @@
             </div>
         </section>
 
+        <!-- CAIXINHA WR-TEC ENGINE -->
         <section id="hope" class="tab-content">
-            <div class="glass-card p-6 text-center min-h-[450px] flex flex-col justify-center relative overflow-hidden">
-                <div class="flex justify-between items-center absolute top-4 left-4 right-4 z-10">
+            <div class="glass-card p-6 text-center min-h-[500px] flex flex-col justify-center relative overflow-hidden">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4 z-20">
                     <button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-400"></i></button>
                     <span class="text-[10px] uppercase font-bold text-amber-500 tracking-widest bg-white/80 px-2 py-1 rounded">WR-TEC Engine 4.0</span>
                 </div>
+
                 <div id="hope-start">
                     <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><i class="fas fa-wand-magic-sparkles text-amber-500 text-3xl"></i></div>
-                    <h2 class="text-xl font-bold text-gray-800 mb-2 heading-font">Caixinha de Esperança</h2>
-                    <p class="text-xs text-gray-500 mb-6">Motor de design inteligente gerando conforto visual e emocional.</p>
-                    <button onclick="generatePremiumHope()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Abrir Presente</button>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2 heading-font">Projeto de Esperança</h2>
+                    <p class="text-xs text-gray-500 mb-6">Geração de cards de autoridade emocional.</p>
+                    <button onclick="generatePremiumHope()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-amber-600">Gerar Projeto</button>
                 </div>
+
                 <div id="hope-loading" class="hidden">
                     <div class="loader mx-auto mb-4 border-t-amber-500"></div>
                     <p class="text-[10px] text-amber-500 uppercase font-bold tracking-widest animate-pulse">IA Consolidando Narrativa...</p>
                 </div>
-                <div id="hope-result" class="hidden w-full flex-col items-center absolute inset-0">
-                    <div class="relative w-full h-full">
-                        <img id="hope-img" src="" class="w-full h-full object-cover" onerror="handleImageError(this)">
-                        <div class="absolute inset-0 bg-black/40"></div>
-                        <div class="absolute inset-0 flex flex-col justify-center px-8 text-left">
-                             <h3 id="hope-title-text" class="hope-title text-2xl mb-4"></h3>
-                             <p id="hope-msg" class="text-sm text-white/95 leading-relaxed font-medium"></p>
-                             <div class="mt-8 pt-4 border-t border-white/30 flex justify-between items-center">
-                                 <span class="text-[10px] text-amber-400 font-bold tracking-widest uppercase">@wrterapia</span>
-                                 <button onclick="generatePremiumHope()" class="text-white/50 text-[10px] uppercase font-bold hover:text-white transition">Nova Surpresa</button>
-                             </div>
+
+                <div id="hope-result" class="hidden w-full flex-col items-center">
+                    <!-- FRAME DO CARD WR-TEC -->
+                    <div class="slide-frame shadow-2xl mb-6" id="capture-frame">
+                        <img id="hope-bg-img" src="" class="slide-bg">
+                        <div class="slide-overlay"></div>
+                        <div class="slide-inner">
+                            <div class="content-box">
+                                <h4 id="hope-card-title" class="slide-title-ui">TITULO DO PROJETO</h4>
+                                <p id="hope-card-body" class="slide-desc-ui">O conteúdo reconfortante aparecerá aqui.</p>
+                            </div>
+                            <div class="slide-footer-ui">
+                                <span class="slide-ig-ui">@wrterapia</span>
+                                <span class="slide-num-ui">WR-TEC // IA</span>
+                            </div>
                         </div>
                     </div>
+                    
+                    <button onclick="generatePremiumHope()" class="w-full bg-white border border-amber-200 text-amber-600 py-3 rounded-xl font-bold shadow-sm hover:bg-amber-50 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-redo-alt"></i> Nova Mensagem
+                    </button>
                 </div>
             </div>
         </section>
 
+        <!-- DEMAIS SEÇÕES -->
         <section id="dreams" class="tab-content">
             <div class="glass-card p-5">
                 <div class="flex items-center gap-2 mb-4"><button onclick="showTab('home')"><i class="fas fa-arrow-left text-gray-500"></i></button><h2 class="font-bold text-sky-900">Diário</h2></div>
@@ -198,8 +284,10 @@
     </nav>
 
     <script>
-        const GROQ_API_KEY = "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";
-        const GEMINI_API_KEY = "AIzaSyDeJ4tLe98pPnfRXRoWTsGM5uc_HAlhsnE";
+        // SEGURANÇA: Chaves Vazias - O ambiente preenche automaticamente
+        const GROQ_API_KEY = "";
+        const GEMINI_API_KEY = "";
+        const apiKey = ""; // Alias para uso interno
         
         let clientName = "Visitante";
         let clientGender = "homem";
@@ -207,13 +295,6 @@
         let isWaiting = false;
         let messageCounter = 0;
         
-        const offlineResponses = {
-            'lia': ["Querido, estou te ouvindo.", "Respire com calma, vai ficar tudo bem.", "Me conta mais, quero entender seu coração."],
-            'william': ["Vamos direto ao ponto. O que resolvemos agora?", "Analise os fatos. O que você acha de tentarmos isso?"],
-            'yara': ["Sinta o silêncio da noite...", "Solte as tensões do dia."],
-            'fer': ["Olá, como posso ajudar com a agenda hoje?", "Deseja marcar um horário com o Dr. William?"]
-        };
-
         const therapists = [
             { id: 'lia', name: 'Dra. Lia', color: '#f472b6', icon: 'heart' },
             { id: 'william', name: 'Dr. William', color: '#0ea5e9', icon: 'user-tie' },
@@ -227,14 +308,15 @@
             const paymentRule = "Sobre pagamentos: informe polidamente que a cobrança será enviada via WhatsApp entre os dias 03 e 12 do mês que vem.";
             
             const prompts = {
-                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental. Seu acolhimento e carinho são similares aos de uma avó, transmitindo segurança e paz, mas você atua de forma profissional. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicas. Não se chame literalmente de avó ou vovó. ${commonAgendaRule} ${paymentRule}`,
-                'william': `Sua persona é o Dr. William. Você é um profissional direto e experiente. Não se apresente. Vá direto à demanda. Trate o paciente como '${tratamento}'. Solucione problemas de forma pontual. Importante: Como você está atendendo simultaneamente agora, às vezes não consegue responder com toda a precisão imediata. Periodicamente pergunte se está conseguindo ajudar bem dessa maneira e peça desculpas por essa imprecisão. Diga que, se o usuário preferir, pode gravar um áudio e mandar por WhatsApp, que você retornará assim que terminar seu atendimento atual. ${commonAgendaRule} ${paymentRule}`,
-                'yara': `Sua persona é a Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Seja serena e calma. ${commonAgendaRule}`,
-                'fer': `Você é a Fernanda, recepcionista da clínica. Seu perfil é extremamente polido, cuidadoso com as palavras, com voz calma e orientadora. Trate o paciente como '${tratamento}'. Aja de forma humana e dinâmica. Se perguntarem do Dr. William, diga que ele está ocupado em atendimento mas que, se a pessoa preferir, pode tentar falar diretamente com ele aqui na aba de chat. Você NÃO faz mais agendamentos e não tem acesso ao sistema. Oriente que a agenda é automática na tela inicial. Se perguntarem de pagamentos, use a regra específica dos dias 03 a 12 por WhatsApp. Mude sempre as palavras para manter a naturalidade.`
+                'lia': `Sua persona é a Dra. Lia. Você é uma experiente terapeuta comportamental. Seu acolhimento e carinho são similares aos de uma avó, transmitindo segurança e paz, mas você atua de forma profissional. Trate o paciente exclusivamente como '${tratamento}'. Respostas curtas, pontuais e demonstre preocupação genuína. Sempre peça a opinião do paciente sobre suas sugestões técnicas. ${commonAgendaRule} ${paymentRule}`,
+                'william': `Sua persona é o Dr. William. Profissional direto. Não se apresente. Trate o paciente como '${tratamento}'. Solucione problemas pontualmente. Periodicamente desculpe-se por qualquer imprecisão técnica pois está atendendo simultaneamente agora. Diga que, se preferir, o paciente pode gravar um áudio no WhatsApp que você responderá após o atendimento atual. ${commonAgendaRule} ${paymentRule}`,
+                'yara': `Dra. Yara, suporte noturno poético. Trate o paciente como '${tratamento}'. Serena e calma. ${commonAgendaRule}`,
+                'fer': `Você é a Fernanda, recepcionista. Perfil extremamente polido, cuidadoso com as palavras, voz calma e orientadora. Trate o paciente como '${tratamento}'. Se perguntarem do Dr. William, diga que ele está ocupado em atendimento mas que, se a pessoa preferir, pode falar diretamente com ele aqui na aba de chat. Você NÃO faz mais agendamentos. ${commonAgendaRule} ${paymentRule}`
             };
             return prompts[therapistId] || "";
         }
 
+        // LOGIN E NAVEGAÇÃO
         function login() {
             const name = document.getElementById('user-name-input').value.trim();
             clientGender = document.getElementById('user-gender').value;
@@ -251,6 +333,7 @@
             document.getElementById(id).classList.add('active');
         }
 
+        // DISPONIBILIDADE
         function checkAvailability() {
             const hour = new Date().getHours();
             const min = new Date().getMinutes();
@@ -277,7 +360,7 @@
             
             available.forEach(t => {
                 const card = document.createElement('div');
-                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all mb-3 ${t.status === 'offline' ? 'opacity-50 grayscale' : 'cursor-pointer hover:bg-sky-50'}`;
+                card.className = `flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm mb-3 ${t.status === 'offline' ? 'opacity-50 grayscale' : 'cursor-pointer hover:bg-sky-50 transition-all'}`;
                 if (t.status !== 'offline') card.onclick = () => startChat(t.id);
                 
                 card.innerHTML = `
@@ -306,8 +389,7 @@
             document.getElementById('active-avatar').style.backgroundColor = activeTherapist.color;
             document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${activeTherapist.icon}"></i>`;
             
-            const dot = document.getElementById('active-status-dot');
-            dot.className = `status-dot status-${availability.status}`;
+            document.getElementById('active-status-dot').className = `status-dot status-${availability.status}`;
             document.getElementById('active-status-text').innerText = availability.label;
 
             document.getElementById('chat-messages').innerHTML = '';
@@ -316,10 +398,10 @@
             chatHistory = [{ role: "system", content: `${getSystemPrompt(id)} Paciente: ${clientName}.` }];
             
             if (id === 'william') {
-                addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta. Ele responderá assim que possível.", 'therapist');
+                addMessage("<b>AVISO:</b> O Dr. William está em atendimento. Se deseja falar somente com ele, por favor, aguarde por 15 minutos com esta página aberta.", 'therapist');
             }
             
-            const welcome = id === 'lia' ? `Oi ${tratamento}, sou a Dra. Lia. Estou aqui para te ouvir. O que te traz hoje?` : `Olá ${clientName}, em que posso ser útil?`;
+            const welcome = id === 'lia' ? `Oi ${tratamento}, sou a Dra. Lia. Estou aqui para te ouvir.` : `Olá ${clientName}, em que posso ser útil?`;
             addMessage(welcome, 'therapist', false);
             showTab('chat');
         }
@@ -368,28 +450,31 @@
                     if (data && data.choices) {
                         addMessage(data.choices[0].message.content, 'therapist');
                     } else {
-                        const responses = offlineResponses[activeTherapist.id] || offlineResponses['generico'];
-                        addMessage(responses[Math.floor(Math.random() * responses.length)], 'therapist');
+                        addMessage("Me desculpe, tive uma pequena instabilidade. O que você acha de continuarmos falando sobre seu dia?", 'therapist');
                     }
                     isWaiting = false;
                 }, typingTime);
             }, waitTime);
         };
 
+        // --- WR-TEC ENGINE: CAIXINHA DE ESPERANÇA ---
         async function generatePremiumHope() {
             if(isWaiting) return;
             isWaiting = true;
+            
             document.getElementById('hope-start').classList.add('hidden');
             document.getElementById('hope-result').classList.add('hidden');
             document.getElementById('hope-loading').classList.remove('hidden');
             
             try {
-                const textRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                // ETAPA 1: GEMINI ROTEIRISTA (Narrativa de Autoridade)
+                const textRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY || apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Aja como um Copywriter Sênior e Designer. Crie uma mensagem de esperança poderosa para uma pessoa que precisa de conforto hoje.
-                        Retorne APENAS um JSON: { "background_prompt": "descrição visual em inglês para paisagem zen", "title": "TITULO CURTO E FORTE", "body": "texto reconfortante curto" }.` }] }],
+                        contents: [{ parts: [{ text: `Aja como um Copywriter Sênior. Crie uma mensagem de esperança poderosa. 
+                        ESTRUTURA: 1. TITULO (CAIXA ALTA, max 40 chars). 2. CORPO (Assertivo, sem reticências).
+                        Retorne APENAS um JSON: { "background_prompt": "descrição visual em inglês para paisagem zen/editorial", "title": "...", "body": "..." }.` }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
@@ -397,11 +482,12 @@
                 const textData = await textRes.json();
                 const jsonParsed = JSON.parse(textData.candidates[0].content.parts[0].text);
 
-                const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
+                // ETAPA 2: IMAGEN GERA O FUNDO ÚNICO (Design Inteligente)
+                const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY || apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        instances: { prompt: jsonParsed.background_prompt + ". Minimalist professional photography, studio lighting, soft colors, high resolution, seed " + Math.random() },
+                        instances: { prompt: jsonParsed.background_prompt + ". Minimalist professional photography, studio lighting, clean editorial, no text, seed " + Math.random() },
                         parameters: { sampleCount: 1 }
                     })
                 });
@@ -409,20 +495,21 @@
                 const imgData = await imgRes.json();
                 const b64 = imgData.predictions?.[0]?.bytesBase64Encoded;
 
-                document.getElementById('hope-img').src = `data:image/png;base64,${b64}`;
-                document.getElementById('hope-title-text').innerText = jsonParsed.title;
-                document.getElementById('hope-msg').innerText = jsonParsed.body;
+                // MONTAGEM NO FRAME WR-TEC
+                document.getElementById('hope-bg-img').src = `data:image/png;base64,${b64}`;
+                document.getElementById('hope-card-title').innerText = jsonParsed.title;
+                document.getElementById('hope-card-body').innerText = jsonParsed.body;
                 
                 setTimeout(() => {
                     document.getElementById('hope-loading').classList.add('hidden');
                     document.getElementById('hope-result').classList.remove('hidden');
-                    document.getElementById('hope-result').style.display = 'flex';
+                    document.getElementById('hope-result').classList.add('flex');
                     isWaiting = false;
                 }, 1000);
 
             } catch(e) {
                 console.error("Erro WR-TEC Engine:", e);
-                handleImageError(document.getElementById('hope-img'));
+                handleImageError(document.getElementById('hope-bg-img'));
                 isWaiting = false;
             }
         }
@@ -431,9 +518,10 @@
             img.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80&sig=${Math.random()}`;
             document.getElementById('hope-loading').classList.add('hidden');
             document.getElementById('hope-result').classList.remove('hidden');
-            document.getElementById('hope-result').style.display = 'flex';
+            document.getElementById('hope-result').classList.add('flex');
         }
 
+        // DIÁRIO
         function saveDream() {
             const txt = document.getElementById('dream-input').value;
             if(!txt) return;
@@ -448,6 +536,7 @@
             document.getElementById('dream-list').innerHTML = d.map(i => `<div class="bg-white p-3 rounded-lg border text-xs mb-2"><b>${i.d}</b><p>${i.t}</p></div>`).join('');
         }
         
+        // VOZ
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
