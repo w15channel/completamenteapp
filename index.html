@@ -255,7 +255,7 @@
                         </div>
                     </div>
 
-                    <button onclick="generateHopeGemini()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 transition-all">Abrir Presente</button>
+                    <button onclick="generateHope()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 transition-all">Abrir Presente</button>
                 </div>
 
                 <div id="hope-loading" class="hidden mt-10">
@@ -449,7 +449,7 @@
             document.getElementById('hope-start').classList.remove('hidden');
         }
 
-        async function generateHopeGemini() {
+        async function generateHope() {
             if(isWaiting) return;
             
             const theme = document.getElementById('hope-theme').value;
@@ -463,18 +463,26 @@
             let frase = "Respire... tudo vai ficar bem.";
 
             try {
-                // Gera a frase baseada no tema
-                const resText = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                // 1. Gera a frase usando Groq (agora como gerador de texto/comando)
+                const resText = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Escreva uma frase curta, inspiradora e carinhosa em Português sobre o tema: ${theme}. Responda apenas com a frase.` }] }]
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: "Você é um assistente poético e terapêutico." },
+                            { role: "user", content: `Crie uma frase curta, inspiradora e carinhosa em Português conectando este sentimento: '${theme}' com esta paisagem visual: '${landscape}'. Responda APENAS com a frase.` }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 100
                     })
                 });
                 const dataText = await resText.json();
-                frase = dataText.candidates?.[0]?.content?.parts?.[0]?.text || frase;
+                if (dataText.choices && dataText.choices[0]) {
+                    frase = dataText.choices[0].message.content;
+                }
 
-                // Gera a imagem baseada na paisagem e tema
+                // 2. Gera a imagem usando Gemini Imagen (pois Groq não gera imagens)
                 const resImg = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -490,6 +498,7 @@
                     handleImageError(document.getElementById('hope-img'));
                 }
             } catch(e) {
+                console.error(e);
                 handleImageError(document.getElementById('hope-img'));
             }
 
