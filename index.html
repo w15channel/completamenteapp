@@ -10,495 +10,95 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap');
-:root{--bg-dark:#0f172a;--card-bg:#1e293b;--primary:#0ea5e9;--text-light:#f1f5f9;--text-dim:#94a3b8}
-*{box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background-color:var(--bg-dark);color:var(--text-light);margin:0;padding:0;position:fixed;inset:0;display:flex;flex-direction:column}
-.heading-font{font-family:'Quicksand',sans-serif}
-.glass-card{background:rgba(30,41,59,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.5)}
-main{flex:1;position:relative;width:100%;max-width:480px;margin:0 auto}
-.tab-content{display:none;position:absolute;inset:0;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.tab-content.active{display:flex;flex-direction:column;animation:fadeIn .3s ease-out}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-#chat.tab-content{padding:0;overflow:hidden}
-.chat-layout{display:flex;flex-direction:column;height:100%}
-.chat-messages-area{flex:1;overflow-y:auto;padding:1rem;background:rgba(15,23,42,0.5)}
-.message{max-width:85%;padding:12px 16px;border-radius:1.2rem;font-size:.95rem;line-height:1.5;margin-bottom:12px}
-.message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto}
-.message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}
-.message.system-note{align-self:center;background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.8rem;text-align:center;border:1px solid rgba(239,68,68,0.4);width:90%}
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
-.status-online{background-color:#10b981;box-shadow:0 0 5px #10b981}
-.status-busy{background-color:#f59e0b;box-shadow:0 0 5px #f59e0b}
-.status-offline{background-color:#94a3b8}
-.admin-trigger{opacity:.1;transition:opacity .3s;cursor:pointer}
-.admin-trigger:hover{opacity:1}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}
-input,select,textarea{background-color:#334155;color:#fff;border-color:#475569}
-input:disabled{opacity:0.6; cursor:not-allowed}
-/* Kids Specific Styles */
-.kids-card{background:linear-gradient(145deg, #1e293b, #0f172a); border:2px solid #38bdf8; border-radius:1.5rem;}
-.kids-btn{transition:transform 0.2s; cursor:pointer;}
-.kids-btn:active{transform:scale(0.95);}
-@keyframes floatUp { 0% { transform: translateY(100vh) scale(0.5); opacity: 1; } 100% { transform: translateY(-20vh) scale(1.2); opacity: 0; } }
-.bubble { position: absolute; bottom: -50px; background: rgba(56, 189, 248, 0.6); border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; cursor: pointer; animation: floatUp linear forwards; }
-@keyframes pulseBreathe { 0%, 100% { transform: scale(1); background-color: #38bdf8; } 50% { transform: scale(2.5); background-color: #10b981; } }
-.breathe-circle { animation: pulseBreathe 8s infinite ease-in-out; }
+:root{--bg-dark:#0f172a;--card-bg:#1e293b;--primary:#0ea5e9;--text-light:#f1f5f9;--text-dim:#94a3b8}*{box-sizing:border-box}body{font-family:'Inter',sans-serif;background-color:var(--bg-dark);color:var(--text-light);margin:0;padding:0;position:fixed;inset:0;display:flex;flex-direction:column}.heading-font{font-family:'Quicksand',sans-serif}.glass-card{background:rgba(30,41,59,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.5)}main{flex:1;position:relative;width:100%;max-width:480px;margin:0 auto}.tab-content{display:none;position:absolute;inset:0;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}.tab-content.active{display:flex;flex-direction:column;animation:fadeIn .3s ease-out}@keyframes fadeIn{from{opacity:0}to{opacity:1}}#chat.tab-content{padding:0;overflow:hidden}.chat-layout{display:flex;flex-direction:column;height:100%}.chat-messages-area{flex:1;overflow-y:auto;padding:1rem;background:rgba(15,23,42,0.5)}.message{max-width:85%;padding:12px 16px;border-radius:1.2rem;font-size:.95rem;line-height:1.5;margin-bottom:12px}.message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto}.message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}.message.audio-msg{font-style:italic;display:flex;align-items:center;gap:8px;color:#cbd5e1}.message.system-note{align-self:center;background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.8rem;text-align:center;border:1px solid rgba(239,68,68,0.4);width:90%}.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.memory-card{background-color:#334155;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border:2px solid #475569;color:transparent;transition:all .3s ease;transform-style:preserve-3d}.memory-card.flipped,.memory-card.matched{background-color:#f1f5f9;border-color:var(--primary);color:#333;transform:rotateY(180deg)}.memory-card.matched{background-color:#10b981;border-color:#059669;color:#fff;cursor:default}.puzzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;aspect-ratio:1;background:#334155;padding:4px;border-radius:8px}.puzzle-tile{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;cursor:pointer;border-radius:4px;user-select:none;transition:transform .2s}.puzzle-tile.empty{background:transparent;cursor:default}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.status-online{background-color:#10b981;box-shadow:0 0 5px #10b981}.status-busy{background-color:#f59e0b;box-shadow:0 0 5px #f59e0b}.status-offline{background-color:#94a3b8}.admin-trigger{opacity:.1;transition:opacity .3s;cursor:pointer}.admin-trigger:hover{opacity:1}.book-page{background-color:#fdf6e3;color:#2c1810;font-family:'Merriweather',serif;padding:2rem;border-radius:4px;box-shadow:inset 20px 0 50px rgba(0,0,0,0.1),5px 5px 15px rgba(0,0,0,0.3);border-left:5px solid #d4c5b0;line-height:1.8;position:relative;overflow:hidden;min-height:400px}.book-page::before{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0) 10%,rgba(0,0,0,0) 90%,rgba(0,0,0,0.05) 100%);pointer-events:none}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}.btn-game{@apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95}input,select,textarea{background-color:#334155;color:#fff;border-color:#475569}input::placeholder,textarea::placeholder{color:#94a3b8}input:disabled{opacity:0.6; cursor:not-allowed}
 </style>
 <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 <header class="flex-none p-4 text-center bg-slate-900/95 backdrop-blur-md border-b border-slate-700 z-20 relative">
-<button id="music-toggle" onclick="window.toggleMusic()" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-400 transition-colors w-8 h-8 flex items-center justify-center rounded-full"><i id="music-icon" class="fas fa-volume-mute"></i></button>
+<button id="music-toggle" onclick="window.toggleMusic()" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-400 transition-colors w-8 h-8 flex items-center justify-center rounded-full active:bg-slate-800"><i id="music-icon" class="fas fa-volume-mute"></i></button>
 <h1 class="text-xl font-bold text-sky-400 heading-font">Espaço | WR Terapia®</h1>
 </header>
 <main>
 <div id="bg-music-player" style="display:none;"></div>
-
 <div id="consent-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
-  <div class="glass-card p-6 w-full max-w-sm animate-fade-in border border-sky-500/30">
-    <div class="w-16 h-16 bg-sky-900/50 rounded-full flex items-center justify-center mb-4 mx-auto text-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-      <i class="fas fa-comment-medical text-3xl animate-pulse"></i>
-    </div>
-    <h3 class="text-xl font-bold text-center text-white mb-4 heading-font">Seu acolhimento em primeiro lugar</h3>
-    <div class="text-xs text-slate-300 space-y-3 mb-6 text-justify leading-relaxed">
-      <p>"Para garantir que você nunca fique sem amparo ou aguarde em filas de espera, utilizamos um sistema de <b>Atendimento Híbrido</b>.</p>
-      <p>Sempre que nossos profissionais estiverem atendendo mais de três pessoas simultaneamente, acionamos nossa Inteligência Artificial de suporte. Ela oferece escuta e conforto imediatos, sendo sempre supervisionada e operada em tempo real por nossa equipe humana. Unimos tecnologia e calor humano para cuidar de você."</p>
-    </div>
-    <div class="flex flex-col gap-3">
-      <button onclick="window.acceptTerms()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition-all">Tudo bem, aceito os termos</button>
-      <button onclick="window.declineTerms()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 py-3 rounded-xl font-bold transition-all">Não aceito (Voltar)</button>
-    </div>
-  </div>
+<div class="glass-card p-6 w-full max-w-sm animate-fade-in border border-sky-500/30">
+<div class="w-16 h-16 bg-sky-900/50 rounded-full flex items-center justify-center mb-4 mx-auto text-sky-400"><i class="fas fa-hand-holding-heart text-3xl animate-pulse"></i></div>
+<h3 class="text-xl font-bold text-center text-white mb-4 heading-font">Seu acolhimento em primeiro lugar</h3>
+<div class="text-xs text-slate-300 space-y-3 mb-6 text-justify leading-relaxed">
+<p>"Para garantir que você nunca fique sem amparo ou aguarde em filas de espera, utilizamos um sistema de <b>Atendimento Híbrido</b>.</p>
+<p>Sempre que nossos profissionais estiverem atendendo mais de três pessoas simultaneamente, acionamos nossa Inteligência Artificial de suporte. Ela oferece escuta e conforto imediatos, sendo sempre supervisionada e operada em tempo real por nossa equipe humana. Unimos tecnologia e calor humano para cuidar de você."</p>
 </div>
-
-<section id="onboarding" class="tab-content active">
-  <div class="h-full flex flex-col items-center justify-center p-4">
-    <div class="glass-card p-8 text-center w-full">
-      <div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 mx-auto ring-2 ring-sky-500/50"><i class="fas fa-fingerprint text-sky-400 text-3xl"></i></div>
-      <h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2>
-      <p class="text-sm text-slate-400 mb-6">Identifique-se para acessar seu espaço seguro.</p>
-      <div class="w-full mb-4 space-y-3">
-        <select id="user-age" class="w-full p-4 rounded-2xl outline-none font-bold text-center bg-slate-800 text-white border-2 border-slate-600 focus:border-sky-500">
-          <option value="adulto">Sou Adulto (14+ anos)</option>
-          <option value="crianca">Sou Criança (6 a 13 anos)</option>
-        </select>
-        <select id="user-gender" class="w-full p-4 rounded-2xl outline-none text-center bg-slate-800 text-white border border-slate-600">
-          <option value="homem">Menino / Homem</option>
-          <option value="mulher">Menina / Mulher</option>
-        </select>
-        <input type="text" id="user-name-input" oninput="this.value=this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none bg-slate-800 text-white border border-slate-600">
-      </div>
-      <button onclick="window.login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-sky-500 transition-all">Entrar no Espaço</button>
-    </div>
-  </div>
-</section>
-
-<section id="home" class="tab-content">
-  <div class="glass-card p-6 mb-4">
-    <p class="text-xs text-slate-400">Muito bom te ver aqui,</p>
-    <h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <button onclick="window.triggerChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button>
-      <button onclick="window.showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha</span></button>
-    </div>
-  </div>
-</section>
-
-<section id="home-kids" class="tab-content">
-  <div class="kids-card p-6 mb-4 text-center">
-    <h2 class="text-2xl font-bold text-white heading-font mb-2">Mundo Mágico ✨</h2>
-    <p class="text-sm text-sky-300 mb-6">Oi, <span class="client-name font-bold"></span>! O que vamos fazer agora?</p>
-    
-    <div class="grid grid-cols-2 gap-4">
-      <button onclick="window.showTab('kids-breathe')" class="kids-btn p-4 bg-sky-900/50 rounded-2xl border-2 border-sky-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(56,189,248,0.3)]">
-        <i class="fas fa-wind text-3xl text-sky-300"></i><span class="text-xs font-bold text-white">Respirar</span>
-      </button>
-      <button onclick="window.showTab('kids-emotions')" class="kids-btn p-4 bg-rose-900/50 rounded-2xl border-2 border-rose-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(244,63,94,0.3)]">
-        <i class="fas fa-smile-beam text-3xl text-rose-300"></i><span class="text-xs font-bold text-white">Sentimentos</span>
-      </button>
-      <button onclick="window.showTab('kids-bubbles')" class="kids-btn p-4 bg-indigo-900/50 rounded-2xl border-2 border-indigo-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(99,102,241,0.3)]">
-        <i class="fas fa-soap text-3xl text-indigo-300"></i><span class="text-xs font-bold text-white">Bolhas</span>
-      </button>
-      <button onclick="window.showTab('kids-story')" class="kids-btn p-4 bg-amber-900/50 rounded-2xl border-2 border-amber-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-        <i class="fas fa-book-open text-3xl text-amber-300"></i><span class="text-xs font-bold text-white">Histórias</span>
-      </button>
-      <button onclick="window.showTab('kids-sound')" class="kids-btn p-4 bg-emerald-900/50 rounded-2xl border-2 border-emerald-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-        <i class="fas fa-headphones text-3xl text-emerald-300"></i><span class="text-xs font-bold text-white">Caverna</span>
-      </button>
-      <button onclick="window.gerarPoteAlegria()" class="kids-btn p-4 bg-fuchsia-900/50 rounded-2xl border-2 border-fuchsia-400 flex flex-col items-center gap-2 shadow-[0_0_10px_rgba(217,70,239,0.3)]">
-        <i class="fas fa-star text-3xl text-fuchsia-300"></i><span class="text-xs font-bold text-white">Pote Feliz</span>
-      </button>
-    </div>
-  </div>
-  <div id="jar-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm" onclick="this.classList.add('hidden')">
-    <div class="kids-card p-8 text-center animate-bounce">
-      <i class="fas fa-star text-5xl text-yellow-400 mb-4"></i>
-      <h3 id="jar-text" class="text-xl font-bold text-white"></h3>
-      <p class="text-xs text-slate-400 mt-4">(Toque para fechar)</p>
-    </div>
-  </div>
-</section>
-
-<section id="kids-breathe" class="tab-content"><div class="kids-card h-full flex flex-col p-4"><div class="flex items-center mb-4"><button onclick="window.showTab('home-kids')" class="text-sky-300 text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white mx-auto">Respire com o Balão</h2><div class="w-4"></div></div><div class="flex-1 flex flex-col items-center justify-center relative"><p class="text-sm text-slate-300 mb-12 text-center absolute top-10">Inspire quando crescer...<br>Expire quando diminuir.</p><div class="w-20 h-20 rounded-full breathe-circle flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.6)]"></div></div></div></section>
-
-<section id="kids-emotions" class="tab-content"><div class="kids-card h-full flex flex-col p-4"><div class="flex items-center mb-4"><button onclick="window.showTab('home-kids')" class="text-rose-300 text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white mx-auto">Como você se sente?</h2><div class="w-4"></div></div><div class="flex-1 flex flex-col justify-center gap-4 px-4"><button onclick="window.showEmotion('feliz')" class="kids-btn p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-xl flex items-center gap-4 text-white"><i class="fas fa-laugh-beam text-4xl text-yellow-400"></i><span class="text-xl font-bold">Estou Feliz!</span></button><button onclick="window.showEmotion('triste')" class="kids-btn p-4 bg-blue-500/20 border-2 border-blue-500 rounded-xl flex items-center gap-4 text-white"><i class="fas fa-sad-tear text-4xl text-blue-400"></i><span class="text-xl font-bold">Estou Triste</span></button><button onclick="window.showEmotion('bravo')" class="kids-btn p-4 bg-red-500/20 border-2 border-red-500 rounded-xl flex items-center gap-4 text-white"><i class="fas fa-angry text-4xl text-red-400"></i><span class="text-xl font-bold">Estou Bravo!</span></button><button onclick="window.showEmotion('medo')" class="kids-btn p-4 bg-purple-500/20 border-2 border-purple-500 rounded-xl flex items-center gap-4 text-white"><i class="fas fa-flushed text-4xl text-purple-400"></i><span class="text-xl font-bold">Estou com Medo</span></button></div></div></section>
-
-<section id="kids-story" class="tab-content"><div class="kids-card h-full flex flex-col p-4"><div class="flex items-center mb-4"><button onclick="window.showTab('home-kids')" class="text-amber-300 text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white mx-auto">Fábrica de Histórias</h2><div class="w-4"></div></div><div class="flex-none space-y-3 mb-4"><select id="story-animal" class="w-full p-3 rounded-xl bg-slate-800 text-white border-2 border-amber-500"><option value="um cachorrinho corajoso">Cachorrinho</option><option value="um gatinho curioso">Gatinho</option><option value="um dragãozinho bondoso">Dragão</option><option value="um passarinho aventureiro">Passarinho</option></select><button onclick="window.gerarHistoriaKids()" class="w-full bg-amber-500 text-white font-bold py-3 rounded-xl shadow-lg kids-btn">Criar História Mágica ✨</button></div><div id="story-box" class="flex-1 bg-slate-800/80 rounded-xl border border-slate-600 p-4 overflow-y-auto text-sm text-slate-200 leading-relaxed text-justify hidden animate-fade-in"></div><div id="story-loading" class="hidden flex-1 flex flex-col items-center justify-center text-amber-300"><i class="fas fa-wand-magic-sparkles text-4xl mb-3 animate-spin"></i><p>A magia está acontecendo...</p></div></div></section>
-
-<section id="kids-bubbles" class="tab-content relative overflow-hidden bg-gradient-to-b from-sky-900 to-indigo-900"><div class="absolute top-4 left-4 z-10"><button onclick="window.stopBubbles(); window.showTab('home-kids')" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-md"><i class="fas fa-arrow-left"></i></button></div><div class="absolute top-4 right-4 z-10 bg-white/20 px-4 py-1 rounded-full text-white font-bold backdrop-blur-md">Bolhas: <span id="bubble-score">0</span></div><div id="bubble-container" class="w-full h-full absolute inset-0"></div></section>
-
-<section id="kids-sound" class="tab-content"><div class="kids-card h-full flex flex-col p-4"><div class="flex items-center mb-4 flex-none"><button onclick="window.showTab('home-kids')" class="text-emerald-300 text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white mx-auto">Caverna do Som</h2><div class="w-4"></div></div><div class="flex-1 bg-black rounded-xl overflow-hidden border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/5qap5aO4i9A" frameborder="0" allowfullscreen></iframe></div><p class="text-center mt-4 text-emerald-300 text-sm">Feche os olhos e ouça a natureza.</p></div></section>
-
+<div class="flex flex-col gap-3">
+<button onclick="window.acceptTerms()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition-all">Tudo bem, aceito os termos</button>
+<button onclick="window.declineTerms()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 py-3 rounded-xl font-bold transition-all">Não aceito (Voltar)</button>
+</div>
+</div>
+</div>
+<section id="onboarding" class="tab-content active"><div class="h-full flex flex-col items-center justify-center p-4"><div class="glass-card p-8 text-center w-full"><div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-6 mx-auto ring-2 ring-sky-500/50"><i class="fas fa-fingerprint text-sky-400 text-3xl"></i></div><h2 class="text-2xl font-bold text-white mb-2 heading-font">Bem-vindo(a)</h2><p class="text-sm text-slate-400 mb-8">Identifique-se para acessar seu espaço seguro.</p><div class="w-full mb-4 space-y-3"><select id="user-gender" class="w-full p-4 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500"><option value="homem">Sou Homem</option><option value="mulher">Sou Mulher</option></select><input type="text" id="user-name-input" oninput="this.value=this.value.toUpperCase()" placeholder="SEU NOME" class="w-full p-4 rounded-2xl text-center uppercase font-bold outline-none focus:ring-2 focus:ring-sky-500"></div><button onclick="window.login()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-2 hover:bg-sky-500 transition-all">Entrar</button></div></div></section>
+<section id="home" class="tab-content"><div class="glass-card p-6 mb-4"><p class="text-xs text-slate-400">Muito bom te ver aqui,</p><h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2><div class="grid grid-cols-2 gap-4"><button onclick="window.triggerChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button><button onclick="window.showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span></button><button onclick="window.showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button><button onclick="window.showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha Surpresa</span></button></div><div class="grid grid-cols-2 gap-4 mt-4"><button onclick="window.showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button><button onclick="window.startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button></div><button onclick="window.showTab('library')" class="w-full mt-4 p-4 bg-indigo-900/30 rounded-2xl border border-indigo-800/50 flex flex-col items-center gap-2 hover:bg-indigo-900/50 transition-all"><i class="fas fa-book-open text-xl text-indigo-400"></i><span class="text-[9px] font-bold uppercase text-indigo-300">Biblioteca Mágica</span></button></div><div class="mt-auto pt-8 pb-4 text-center flex flex-col items-center justify-center gap-2"><p class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Desenvolvido por WR-TECNOLOGIA | William Ribeiro</p><i onclick="window.showAdminLogin()" class="fas fa-lock text-slate-700 text-xs admin-trigger" title="Admin"></i></div></section>
+<section id="library" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-indigo-400">Biblioteca Mágica</h2></div><div class="mb-4 text-center flex-none"><p class="text-xs text-slate-400 mb-2">Escolha um tema e deixe nosso sistema te apresentar um capítulo exclusivo.</p></div><div class="flex-none mb-4"><select id="book-theme" class="w-full p-3 rounded-xl text-sm bg-slate-800 text-slate-200 border border-slate-600 focus:ring-2 focus:ring-indigo-500"><option value="Autoconhecimento">Autoconhecimento</option><option value="Resiliência">Resiliência</option><option value="Ansiedade e Calma">Ansiedade e Calma</option><option value="Relacionamentos Saudáveis">Relacionamentos Saudáveis</option><option value="Propósito de Vida">Propósito de Vida</option><option value="Sono e Descanso">Sono e Descanso</option><option value="Foco e Disciplina">Foco e Disciplina</option></select><button onclick="window.gerarLeitura()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"><i class="fas fa-pen-fancy mr-2"></i>Ler um Capítulo</button></div><div id="book-container" class="flex-1 overflow-y-auto hidden animate-fade-in"><div class="book-page"><h3 id="book-title" class="text-xl font-bold mb-4 text-center border-b border-stone-400 pb-2"></h3><div id="book-content" class="text-sm text-justify"></div><p class="text-center mt-8 text-xs text-stone-500 italic">~ Fim do Capítulo ~</p></div></div><div id="book-loading" class="hidden flex-1 flex flex-col items-center justify-center text-indigo-300"><i class="fas fa-feather-alt fa-spin text-4xl mb-3"></i><p class="text-sm animate-pulse">Buscando seu Capítulo...</p></div></div></section>
+<section id="admin-login-screen" class="tab-content justify-center items-center"><div class="glass-card p-6 w-full text-center"><div class="flex justify-between items-center mb-4"><button onclick="window.showTab('home')" class="text-slate-400"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white">Acesso Administrativo</h2><div class="w-4"></div></div><input type="password" id="admin-pass" placeholder="Senha" class="w-full p-3 mb-4 rounded-xl text-center"><button onclick="window.attemptAdminLogin()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Entrar</button></div></section>
+<section id="admin-dashboard" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700"><h2 class="font-bold text-emerald-400">Painel do Terapeuta</h2><button onclick="window.logoutAdmin()" class="text-xs text-red-400">Sair</button></div><p class="text-xs text-slate-400 mb-2">Conversas Ativas:</p><div id="admin-chat-list" class="flex-1 overflow-y-auto space-y-2"></div><div id="admin-response-area" class="hidden mt-4 pt-4 border-t border-slate-700"><div class="flex justify-between items-center mb-2"><span id="admin-target-name" class="text-xs font-bold text-white"></span><button onclick="window.toggleAiStatus()" id="ai-toggle-btn" class="text-[10px] bg-sky-600 px-2 py-1 rounded">IA: ATIVA</button></div><div id="admin-chat-preview" class="h-32 overflow-y-auto bg-slate-900/50 rounded p-2 mb-2 text-xs text-slate-300"></div><div class="flex gap-2"><input type="text" id="admin-reply-input" placeholder="Responder..." class="flex-1 text-sm p-2 rounded"><button onclick="window.sendAdminReply()" class="bg-emerald-600 text-white p-2 rounded"><i class="fas fa-paper-plane"></i></button></div></div></div></section>
+<section id="agenda" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 heading-font">Agendamento</h2></div><div class="flex-1 rounded-xl overflow-hidden border border-slate-600 bg-white"><iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe></div><p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática.</p></div></section>
 <section id="chat-selection" class="tab-content"><div class="glass-card p-6 h-full overflow-y-auto"><div class="flex items-center gap-3 mb-4"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 text-lg">Nossa Equipe</h2></div><div id="therapist-list" class="space-y-3 pb-20"></div></div></section>
-
-<section id="chat" class="tab-content"><div class="chat-layout h-full"><div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10"><div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div><div class="flex-1"><p id="active-name" class="font-bold text-white text-sm"></p><div class="flex items-center"><span id="active-status-dot" class="status-dot"></span><span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span></div></div><button onclick="window.showTab('chat-selection')" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="chat-messages-area"></div><div class="flex-none bg-slate-800 border-t border-slate-700 pb-2"><div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium">Lendo e digitando <span class="animate-pulse">...</span></div><div class="p-3"><form id="chat-form" class="flex items-center gap-2"><input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none placeholder-slate-400 transition-all"><button type="button" id="wa-btn" onclick="window.sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button><button type="submit" id="submit-btn" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></form></div></div></div></section>
-
-<section id="hope" class="tab-content"><div class="glass-card p-6 min-h-full flex flex-col justify-center overflow-y-auto"><div class="flex justify-between items-center mb-6 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-lg text-yellow-400">Caixinha Surpresa</h2><div class="w-8"></div></div><button onclick="window.gerarCaixinha()" class="flex-none w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg mt-4"><i class="fas fa-magic mr-2"></i>Gerar Experiência</button><div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-20 flex-none"><img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/><div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm"><p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed text-center">Buscando conforto...</p></div></div></div></section>
-
+<section id="chat" class="tab-content"><div class="chat-layout h-full"><div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10"><div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div><div class="flex-1"><p id="active-name" class="font-bold text-white text-sm"></p><div class="flex items-center"><span id="active-status-dot" class="status-dot"></span><span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span></div></div><button onclick="window.showTab('chat-selection')" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="chat-messages-area"></div><div class="flex-none bg-slate-800 border-t border-slate-700 pb-2"><div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/30">Digitando <span class="animate-pulse">...</span></div><div class="p-3"><form id="chat-form" class="flex items-center gap-2"><input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400 transition-all"><button type="button" id="wa-btn" onclick="window.sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md hover:bg-emerald-500 transition-colors flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button><button type="submit" id="submit-btn" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></form></div></div></div></section>
+<section id="relaxation" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400">Relaxamento</h2></div><div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg flex-none border border-slate-600 bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/sF80I-TQiW0" frameborder="0" allowfullscreen></iframe></div><div class="mt-4 p-5 bg-slate-800/80 rounded-2xl border border-slate-700 text-slate-300 leading-relaxed text-sm shadow-inner flex-1 overflow-y-auto"><p class="mb-4">Muitas vezes em nossas rotinas nos perdemos em pensamentos e sofrimentos, mas é fundamental parar, relaxar e deixar sentir a leveza da vida.</p><p class="mb-4">Então, dê play, encontre um espaço confortável e deixe a ansiedade, a angústia e os sentimentos negativos irem embora.</p><p class="mb-6">Abrace um travesseiro, feche os olhos e se reconstrua.</p><p class="text-right font-bold text-sky-500 font-heading text-xs">Att. William Ribeiro - O seu terapeuta ❤️</p></div></div></section>
+<section id="mural" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><div><h2 class="font-bold text-sky-400">Mural de Sentimentos</h2><p class="text-[10px] text-slate-500">Compartilhe experiências anonimamente e transforme uma vida.</p><p class="text-[9px] text-emerald-400 font-bold"><i class="fas fa-globe-americas mr-1"></i>Conectado à Planilha</p></div></div><div id="mural-list" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 pb-20"></div><div class="mt-auto pt-4 border-t border-slate-700 flex-none bg-slate-800/50 p-2 rounded-xl"><textarea id="mural-input" placeholder="Escreva algo transformador..." class="w-full p-3 rounded-xl border border-slate-600 h-20 resize-none text-sm bg-slate-800 mb-2 focus:ring-2 focus:ring-amber-500 outline-none"></textarea><button onclick="window.saveMuralMessage()" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-amber-500 transition-all"><i class="fas fa-paper-plane mr-2"></i>Publicar</button></div></div></section>
+<section id="hope" class="tab-content"><div class="glass-card p-6 min-h-full flex flex-col justify-center overflow-y-auto"><div class="flex justify-between items-center mb-6 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-lg text-yellow-400">Caixinha Surpresa</h2><div class="w-8"></div></div><div class="mb-8 flex-none text-center"><div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600 shadow-lg animate-pulse"><i class="fas fa-gift text-yellow-400 text-4xl"></i></div><p class="text-sm text-slate-400 mb-2">Toque para receber uma mensagem de luz.</p></div><button onclick="window.gerarCaixinha()" class="flex-none w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-amber-500/50"><i class="fas fa-magic mr-2"></i>Gerar Experiência</button><div id="resultadoBox" class="mt-8 hidden animate-fade-in pb-20 flex-none"><img id="imgBox" class="rounded-xl mb-4 shadow-lg w-full h-48 object-cover bg-slate-800 border border-slate-700"/><div class="bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-sm"><p id="msgBox" class="italic text-slate-200 text-sm font-medium leading-relaxed text-center"></p></div></div></div></section>
+<section id="game-section" class="tab-content"><div class="glass-card p-5 h-full flex flex-col"><div class="flex items-center justify-between mb-4 flex-none"><div class="flex items-center gap-2"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-rose-400">Descompressão</h2></div><span class="text-xs font-bold bg-rose-900/50 text-rose-300 px-3 py-1 rounded-full border border-rose-800" id="game-level-display">Nível 1/13</span></div><div class="mb-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex-none"><p class="text-xs text-slate-400 text-center leading-relaxed">Este é um espaço seguro para brincar, relaxar e sair da rotina.<br>Treine seu raciocínio, memória e percepção.</p></div><div id="game-container" class="flex-1 flex flex-col items-center justify-center w-full relative overflow-y-auto"></div><button id="next-game-btn" onclick="window.nextGame()" class="flex-none hidden mt-4 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg w-full animate-bounce">Próximo Desafio <i class="fas fa-arrow-right ml-2"></i></button></div></section>
 </main>
-<nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50">
-  <button onclick="window.clientAge==='crianca'?window.showTab('home-kids'):window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button>
-  <button id="nav-chat-btn" onclick="window.triggerChatSelection()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button>
-</nav>
-
+<nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50"><button onclick="window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button><button onclick="window.triggerChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button></nav>
 <script>
-window.AI_PROXY_URL = "https://completamenteapp.vercel.app/api/ai";
+window.AI_PROXY_URL="https://completamenteapp.vercel.app/api/ai";window.SHEET_ID="1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";window.SHEET_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxPmSrtdjfPuLtZma2hd84WMv42zcZx0IzuVpq3zUUvMtwEDEGD-94CQyibUtOZoWDC/exec";window.clientName=localStorage.getItem('wr_client_name')||"Visitante";window.clientGender=localStorage.getItem('wr_client_gender')||"homem";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';window.activeTherapist=null;window.isWaiting=false;window.messageCounter=0;window.aiPaused={};window.player=null;
+window.showTab=function(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='mural')window.loadMural();}
+window.login=function(){const n=document.getElementById('user-name-input').value.trim();window.clientGender=document.getElementById('user-gender').value;if(n){window.clientName=n;localStorage.setItem('wr_client_name',n);localStorage.setItem('wr_client_gender',window.clientGender);document.querySelectorAll('.client-name').forEach(el=>el.innerText=n);window.showTab('home');if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";}}else alert("Digite seu nome.");}
+window.onYouTubeIframeAPIReady=function(){window.player=new YT.Player('bg-music-player',{height:'0',width:'0',videoId:'Cg0dAc4-UCY',playerVars:{'autoplay':0,'controls':0,'loop':1,'playlist':'Cg0dAc4-UCY'},events:{'onReady':(e)=>e.target.setVolume(30)}});}
+window.toggleMusic=function(){if(!window.player)return;const btn=document.getElementById('music-icon');if(window.player.isMuted()){window.player.unMute();window.player.setVolume(30);btn.className="fas fa-volume-up text-sky-400";}else{window.player.mute();btn.className="fas fa-volume-mute text-slate-400";}}
+const therapists=[{id:'lia',name:'Dra. Lia',color:'#ec4899',icon:'heart',schedule:'Seg-Sex (08:00 - 22:00)'},{id:'yara',name:'Dra. Yara',color:'#8b5cf6',icon:'moon',schedule:'Dom-Sáb (22:00 - 08:00)'},{id:'william',name:'William',color:'#0ea5e9',icon:'user-tie',schedule:'Seg-Sex (10-12h / 17-22h)'},{id:'marcos',name:'Dr. Marcos',color:'#10b981',icon:'user-md',schedule:'Sáb (08-12h / 14-22h)'},{id:'juliana',name:'Dra. Juliana',color:'#f59e0b',icon:'star-of-life',schedule:'Sáb 22:00 - Dom 22:00'}];
+window.checkAvailability=function(id){const d=new Date();const day=d.getDay();const h=d.getHours();const isWeekday=day>=1&&day<=5;let isOnline=false;if(id==='lia'&&isWeekday&&h>=8&&h<22)isOnline=true;else if(id==='yara'&&(h>=22||h<8))isOnline=true;else if(id==='william'&&isWeekday&&((h>=10&&h<12)||(h>=17&&h<22)))return{s:'busy',t:'Ocupado (15 min)',c:'#f59e0b',allow:true};else if(id==='marcos'&&day===6&&((h>=8&&h<12)||(h>=14&&h<22)))isOnline=true;else if(id==='juliana'&&((day===6&&h>=22)||(day===0&&h<22)))isOnline=true;if(isOnline)return{s:'online',t:'Online',c:'#10b981',allow:true};return{s:'offline',t:'Fora do Horário',c:'#94a3b8',allow:false};}
+window.triggerChatSelection=function(){if(!window.hasAcceptedTerms)document.getElementById('consent-modal').classList.remove('hidden');else window.renderTherapistList();}
+window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setItem('wr_terms_accepted','true');document.getElementById('consent-modal').classList.add('hidden');window.renderTherapistList();}
+window.declineTerms=function(){document.getElementById('consent-modal').classList.add('hidden');window.showTab('home');}
+window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;l.appendChild(c);});window.showTab('chat-selection');}
+window.getSystemPrompt=function(id){const base="REGRA ABSOLUTA: Você é um ser humano de carne e osso. NUNCA diga ou dê a entender que é IA, modelo ou bot. Se perguntarem sua profissão, você DEVE dizer que é um(a) TERAPEUTA. NUNCA diga que é psicólogo ou psicóloga. Você atende pessoas em fragilidade.";const p={'lia':`${base} Você é a Dra. Lia, terapeuta comportamental de 45 anos. Acolhedora. Não resolva problemas logo de cara: valide emoções e faça perguntas curtas. Trate com carinho. Responda em até 500 caracteres.`,'yara':`${base} Você é a Dra. Yara, terapeuta da madrugada. Tom protetor. AVALIAÇÃO DE RISCO: Se relatarem dor física intensa ou ideação suicida/risco de vida, adote tom firme e oriente IMEDIATAMENTE a ligar 192 (SAMU) ou 188 (CVV). Máximo 3 parágrafos curtos.`,'marcos':`${base} Você é o Dr. Marcos, terapeuta. Analítico, seguro e estabilizador. Máximo 3 parágrafos curtos.`,'juliana':`${base} Você é a Dra. Juliana, terapeuta. Foco em regulação emocional. Máximo 3 parágrafos curtos.`};return p[id]||base;}
+window.loadChatHistory=function(id){return JSON.parse(localStorage.getItem(`chat_${window.clientName}_${id}`))||[];}
+window.saveChatHistory=function(id,h){localStorage.setItem(`chat_${window.clientName}_${id}`,JSON.stringify(h));}
+window.startChat=function(id){const st=window.checkAvailability(id);if(!st.allow)return;window.activeTherapist=therapists.find(t=>t.id===id);document.getElementById('active-name').innerText=window.activeTherapist.name;document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;document.getElementById('active-status-dot').style.background=st.c;document.getElementById('active-status-text').innerText=st.t;const input=document.getElementById('chat-input');const submitBtn=document.getElementById('submit-btn');const waBtn=document.getElementById('wa-btn');let h=window.loadChatHistory(id);if(h.length===0&&id!=='william'){h.push({role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});window.saveChatHistory(id,h);}const mc=document.getElementById('chat-messages');mc.innerHTML='';if(id==='william'){input.disabled=true;input.placeholder="Atendimento restrito. Clique no WhatsApp ->";submitBtn.classList.add('hidden');waBtn.classList.remove('hidden');mc.innerHTML=`<div class="message system-note mb-2">Dr. William está em atendimento.<br>Espera: 15 min.<br>Clique no ícone do WhatsApp para falar com a recepção.</div>`;}else{input.disabled=false;input.placeholder="Digite aqui...";submitBtn.classList.remove('hidden');waBtn.classList.add('hidden');}h.forEach(m=>{if(m.role!=='system')window.renderMessage(m.content,m.role==='user'?'user':'therapist');});mc.scrollTop=mc.scrollHeight;window.showTab('chat');}
+window.sendToWhatsapp=function(){window.open(`https://wa.me/5541992531598?text=${encodeURIComponent(`Olá Fernanda, sou ${window.clientName}. Gostaria de agendar ou verificar a fila com o William.`)}`,'_blank');}
+window.renderMessage=function(t,type){const d=document.createElement('div');d.className=`message ${type}`;d.innerHTML=t;document.getElementById('chat-messages').appendChild(d);}
+document.getElementById('chat-form').onsubmit=async(e)=>{e.preventDefault();const input=document.getElementById('chat-input');let t=input.value.trim();if(!t||window.isWaiting||window.activeTherapist.id==='william')return;window.renderMessage(t,'user');let h=window.loadChatHistory(window.activeTherapist.id);h.push({role:'user',content:t});window.saveChatHistory(window.activeTherapist.id,h);input.value='';window.isWaiting=true;const typingBox=document.getElementById('typing-box');typingBox.classList.add('hidden');const start=Date.now();const userWords=Math.max(t.split(/\s+/).length,1);try{const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:h,temperature:0.7,max_tokens:350})});if(!res.ok)throw new Error();const data=await res.json();const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";const apiTime=Date.now()-start;const botWords=Math.max(rt.split(/\s+/).length,1);const wps=130/60;const readMs=(userWords/wps)*1000;const writeMs=(botWords/wps)*1000;const baseMs=10000;let hiatus=(baseMs+readMs)-apiTime;if(hiatus<0)hiatus=0;setTimeout(()=>{typingBox.classList.remove('hidden');setTimeout(()=>{typingBox.classList.add('hidden');window.renderMessage(rt,'therapist');h.push({role:'assistant',content:rt});window.saveChatHistory(window.activeTherapist.id,h);const c=document.getElementById('chat-messages');c.scrollTop=c.scrollHeight;window.isWaiting=false;},writeMs);},hiatus);}catch(err){typingBox.classList.add('hidden');window.renderMessage("Nossos sistemas de conexão caíram momentaneamente, mas estou tentando te ouvir. Aguarde um instante.",'therapist');window.isWaiting=false;}};
+window.gerarCaixinha=async function(){const mb=document.getElementById("msgBox");const imgBox=document.getElementById("imgBox");document.getElementById("resultadoBox").classList.remove("hidden");mb.innerText="Sintonizando energia e luz...";imgBox.src="";try{const c="Gere uma mensagem de conforto e esperança contendo entre 350 e 500 caracteres. Aja como um terapeuta humano muito sábio e carinhoso.";const res=await fetch(window.AI_PROXY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"system",content:c}],temperature:0.9,max_tokens:300})});const data=await res.json();const texto=data.choices?data.choices[0].message.content:"Paz no coração e calma na alma.";mb.innerText=texto;const safeKw=['nature','sunset','ocean','mountain','forest','waterfall'];const kw=safeKw[Math.floor(Math.random()*safeKw.length)];imgBox.src=`https://image.pollinations.ai/prompt/beautiful%20${kw}%20landscape%20relaxing%20peaceful?width=800&height=600&nologo=true`;}catch(e){mb.innerText="A paz começa no momento em que você decide respirar fundo. Tudo vai ficar bem.";imgBox.src="https://image.pollinations.ai/prompt/beautiful%20nature%20landscape%20relaxing%20peaceful?width=800&height=600&nologo=true";}}
+window.gerarLeitura=async function(){const tema=document.getElementById('book-theme').value;const container=document.getElementById('book-container');const loading=document.getElementById('book-loading');const titleEl=document.getElementById('book-title');const contentEl=document.getElementById('book-content');container.classList.add('hidden');loading.classList.remove('hidden');const prompt=`Escreva um capítulo curto e inspirador de um livro sobre "${tema}". Foco em bem-estar. Comece com Título Criativo (sem a palavra 'Capítulo'). Use tags HTML <p>.`;try{const res=await fetch(window.AI_PROXY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"system",content:prompt}],temperature:0.8,max_tokens:800})});const data=await res.json();const fullText=data.choices?data.choices[0].message.content:"<p>Erro na conexão. Tente novamente.</p>";let cleanText=fullText.replace(/```html/g,'').replace(/```/g,'');let lines=cleanText.split('\n');let title=lines[0].replace(/<[^>]*>/g,'');let body=cleanText;if(title.length<100){titleEl.innerText=title;body=lines.slice(1).join('\n');}else{titleEl.innerText=tema;}contentEl.innerHTML=body;loading.classList.add('hidden');container.classList.remove('hidden');}catch(e){loading.classList.add('hidden');alert("Erro na biblioteca. Tente novamente mais tarde.");}}
+window.saveMuralMessage=async function(){const input=document.getElementById('mural-input');const text=input.value.trim();if(!text)return;const localMsgs=JSON.parse(localStorage.getItem('mural_local')||'[]');localMsgs.unshift({d:new Date().toLocaleDateString('pt-BR'),t:text,local:true});localStorage.setItem('mural_local',JSON.stringify(localMsgs));if(window.SHEET_SCRIPT_URL){const btn=input.nextElementSibling;const oldHtml=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';btn.disabled=true;try{await fetch(window.SHEET_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:text})});alert("Mensagem enviada!");}catch(e){alert("Salvo localmente. Erro script.");}finally{btn.innerHTML=oldHtml;btn.disabled=false;}}input.value='';window.loadMural();}
+window.loadMural=async function(){const list=document.getElementById('mural-list');list.innerHTML='<div class="text-center text-slate-500 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando mensagens...</div>';let allMsgs=[...JSON.parse(localStorage.getItem('mural_local')||'[]')];try{const res=await fetch(`https://docs.google.com/spreadsheets/d/${window.SHEET_ID}/gviz/tq?tqx=out:json`);const txt=await res.text();const json=JSON.parse(txt.substring(txt.indexOf("{"),txt.lastIndexOf("}")+1));if(json.table&&json.table.rows){json.table.rows.forEach(row=>{const dateVal=row.c[0]?(row.c[0].f||row.c[0].v):'Global';const msgVal=row.c[1]?(row.c[1].v):null;if(msgVal)allMsgs.push({d:dateVal,t:msgVal,sheet:true});});}}catch(e){}if(allMsgs.length===0){list.innerHTML='<div class="text-center text-slate-500 text-xs mt-4">Nenhuma mensagem ainda.</div>';return;}list.innerHTML=allMsgs.map(i=>`<div class="mural-card bg-slate-800 border-l-4 ${i.local?'border-sky-500':'border-emerald-500'} p-3 rounded mb-3 shadow animate-fade-in"><div class="flex justify-between items-center mb-1"><span class="font-bold ${i.local?'text-sky-500':'text-emerald-500'} text-xs uppercase">${i.local?'Você':'Mural'}</span><span class="text-[10px] text-slate-500">${i.d}</span></div><p class="text-slate-300 text-sm break-words">${i.t}</p></div>`).join('');}
+window.cgi=0;window.startDescompressao=function(){window.showTab('game-section');window.cgi=0;window.loadGame(0)}
+window.nextGame=function(){window.cgi++;if(window.cgi<13)window.loadGame(window.cgi);else window.finishDescompressao()}
+window.loadGame=function(i){document.getElementById('game-level-display').innerText=`Nível ${i+1}/13`;document.getElementById('next-game-btn').classList.add('hidden');const c=document.getElementById('game-container');c.innerHTML='';if(i===0)window.initBreathing(c);else if(i===1)window.initMemoryGame(c);else if(i===2)window.initIntruderGame(c);else if(i===3)window.initSlidingPuzzle(c);else if(i===4)window.initMathGame(c);else if(i===5)window.initColorGame(c);else if(i===6)window.initSequenceGame(c);else if(i===7)window.initWordScramble(c);else if(i===8)window.initReflex(c);else if(i===9)window.initLetterHunt(c);else if(i===10)window.initBubblePop(c);else if(i===11)window.initStarCount(c);else if(i===12)window.initEmojiMatch(c);}
+window.gameWin=function(){const c=document.getElementById('game-container');c.style.boxShadow="0 0 50px #10b981";setTimeout(()=>{c.style.boxShadow="none"},500);document.getElementById('next-game-btn').classList.remove('hidden')}
+window.finishDescompressao=function(){document.getElementById('game-container').innerHTML=`<div class="text-center animate-bounce"><i class="fas fa-trophy text-6xl text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold text-white">Parabéns!</h2><p class="text-slate-300 mb-4">Mente leve.</p><button onclick="window.startDescompressao()" class="mt-6 bg-sky-600 px-6 py-2 rounded-xl text-white">Brincar Novamente</button></div>`;document.getElementById('next-game-btn').classList.add('hidden')}
+window.initBreathing=function(c){c.innerHTML=`<div class="text-center text-white"><p>Inspire... e clique ao final</p><div id="br-circle" class="w-20 h-20 bg-sky-400 rounded-full mx-auto mt-8 transition-all duration-[3000ms]"></div></div>`;setTimeout(()=>{const b=document.getElementById('br-circle');b.style.transform="scale(2.5)";setTimeout(()=>{b.innerHTML='<span class="text-xs text-black flex h-full items-center justify-center cursor-pointer">Clique</span>';b.onclick=()=>window.gameWin()},3000)},100)}
+window.initMemoryGame=function(c){c.innerHTML='<div id="memory-grid" class="memory-grid w-full"></div>';const g=document.getElementById('memory-grid');const i=['leaf','cloud','dove','heart','star','tree'];let d=[...i,...i].sort(()=>Math.random()-.5);let f=[],m=0;d.forEach(ic=>{const e=document.createElement('div');e.className='memory-card';e.innerHTML=`<i class="fas fa-${ic}"></i>`;e.onclick=function(){if(this.className.includes('flipped')||f.length>=2)return;this.classList.add('flipped');f.push(this);if(f.length===2){if(f[0].innerHTML===f[1].innerHTML){f.forEach(x=>x.classList.add('matched'));m++;f=[];if(m===6)window.gameWin()}else{setTimeout(()=>{f.forEach(x=>x.classList.remove('flipped'));f=[]},800)}}};g.appendChild(e)})}
+window.initIntruderGame=function(c){c.innerHTML=`<div class="text-center mb-4 text-white">Encontre o diferente!</div><div class="grid grid-cols-5 gap-2" id="ig"></div>`;const g=document.getElementById('ig');const p=[{m:"😐",i:"😑"},{m:"🌑",i:"🌒"}];const pr=p[Math.floor(Math.random()*p.length)];const ps=Math.floor(Math.random()*25);for(let i=0;i<25;i++){const b=document.createElement('button');b.className="text-2xl p-2 bg-slate-700 rounded";b.innerText=(i===ps)?pr.i:pr.m;b.onclick=()=>{if(i===ps){b.style.background="#10b981";window.gameWin()}else{b.style.background="#ef4444"}};g.appendChild(b)}}
+window.initSlidingPuzzle=function(c){c.innerHTML='<div class="text-center mb-4 text-white">Ordene 1-8</div><div class="puzzle-grid" id="pg"></div>';const g=document.getElementById('pg');let t=[1,2,3,4,5,6,7,8,null];for(let i=0;i<50;i++){const e=t.indexOf(null);const n=[];if(e%3>0)n.push(e-1);if(e%3<2)n.push(e+1);if(e>=3)n.push(e-3);if(e<6)n.push(e+3);const s=n[Math.floor(Math.random()*n.length)];[t[e],t[s]]=[t[s],t[e]]}const r=()=>{g.innerHTML='';t.forEach((v,i)=>{const d=document.createElement('div');d.className=`puzzle-tile ${v===null?'empty':''}`;if(v)d.innerText=v;d.onclick=()=>{const e=t.indexOf(null);const df=Math.abs(i-e);if(df===3||(df===1&&Math.floor(i/3)===Math.floor(e/3))){[t[i],t[e]]=[t[e],t[i]];r();if(JSON.stringify(t)==='[1,2,3,4,5,6,7,8,null]')window.gameWin()}};g.appendChild(d)})};r()}
+window.initMathGame=function(c){const n1=Math.floor(Math.random()*20)+10,n2=Math.floor(Math.random()*10)+5,r=n1+n2;const w=[r+2,r-3,r+5].sort(()=>Math.random()-.5);const o=[...w.slice(0,2),r].sort(()=>Math.random()-.5);c.innerHTML=`<div class="text-center text-white"><h3 class="text-4xl font-bold mb-8">${n1} + ${n2} = ?</h3><div class="flex flex-col gap-3 max-w-xs mx-auto">${o.map(v=>`<button onclick="if(${v}===${r}){this.style.bg='#10b981';window.gameWin()}else{this.style.bg='#ef4444'}" class="btn-game bg-slate-700">${v}</button>`).join('')}</div></div>`}
+window.initColorGame=function(c){const l=[{n:"VERMELHO",h:"#ef4444"},{n:"AZUL",h:"#3b82f6"},{n:"VERDE",h:"#10b981"}];const t=Math.floor(Math.random()*3);let cl=Math.floor(Math.random()*3);while(cl===t)cl=Math.floor(Math.random()*3);c.innerHTML=`<div class="text-center text-white"><p>Qual a <b>COR</b>?</p><h3 class="text-5xl font-bold mb-8" style="color:${l[cl].h}">${l[t].n}</h3><div class="grid grid-cols-2 gap-3">${l.map(x=>`<button onclick="if('${x.n}'==='${l[cl].n}'){this.style.bg='#10b981';window.gameWin()}else{this.style.bg='#ef4444'}" class="btn-game bg-slate-700 border-2" style="border-color:${x.h}">${x.n}</button>`).join('')}</div></div>`}
+window.initSequenceGame=function(c){let s=[];for(let i=0;i<4;i++)s.push(Math.floor(Math.random()*9)+1);c.innerHTML=`<div class="text-center text-white"><p>Memorize:</p><div id="sd" class="text-4xl font-bold h-12 mb-8">${s.join(' ')}</div><div id="si" class="hidden grid grid-cols-3 gap-2 max-w-xs mx-auto">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.uSeq.push(${n});document.getElementById('us').innerText=window.uSeq.join(' ')" class="p-4 bg-slate-700 rounded font-bold">${n}</button>`).join('')}</div><div id="us" class="h-8 text-xl mt-4"></div><button onclick="if(JSON.stringify(window.uSeq)===JSON.stringify(window.tSeq))window.gameWin();else{window.uSeq=[];document.getElementById('us').innerText='Erro'}" id="bc" class="hidden w-full mt-4 bg-sky-600 py-2 rounded">Verificar</button></div>`;setTimeout(()=>{document.getElementById('sd').innerText="????";document.getElementById('si').classList.remove('hidden');document.getElementById('bc').classList.remove('hidden');window.tSeq=s;window.uSeq=[]},3000)}
+window.initWordScramble=function(c){const words=["CALMA","VIDA","PAZ","LUZ","AMOR"];const w=words[Math.floor(Math.random()*words.length)];const s=w.split('').sort(()=>Math.random()-.5).join('');c.innerHTML=`<div class="text-center text-white"><p>Desembaralhe:</p><h3 class="text-4xl font-bold mb-4 tracking-widest">${s}</h3><input id="ws-inp" class="p-2 rounded text-black text-center uppercase" maxlength="${w.length}"><button onclick="if(document.getElementById('ws-inp').value.toUpperCase()==='${w}'){window.gameWin()}" class="mt-4 bg-sky-600 px-4 py-2 rounded w-full">Verificar</button></div>`}
+window.initReflex=function(c){c.innerHTML=`<div class="text-center text-white"><p>Clique quando ficar VERDE!</p><div id="rx-box" class="w-32 h-32 bg-red-500 rounded-full mx-auto mt-8 transition-colors cursor-pointer"></div></div>`;const b=document.getElementById('rx-box');let active=false;setTimeout(()=>{b.style.backgroundColor="#10b981";active=true;b.onclick=()=>{if(active)window.gameWin()}},Math.random()*2000+1000)}
+window.initLetterHunt=function(c){c.innerHTML=`<div class="text-center text-white mb-2">Ache a letra 'Q'</div><div class="grid grid-cols-6 gap-2" id="lh"></div>`;const g=document.getElementById('lh');const pos=Math.floor(Math.random()*36);for(let i=0;i<36;i++){const b=document.createElement('button');b.innerText=(i===pos)?'Q':'O';b.className="p-2 bg-slate-700 rounded text-xl";b.onclick=()=>{if(i===pos){b.style.bg="#10b981";window.gameWin()}else b.style.bg="#ef4444"};g.appendChild(b)}}
+window.initBubblePop=function(c){c.innerHTML=`<div class="text-center text-white"><p class="mb-4">Estoure 5 bolhas azuis!</p><div id="bubble-area" class="relative w-64 h-64 bg-slate-800 rounded mx-auto overflow-hidden"></div></div>`;const area=document.getElementById('bubble-area');let popped=0;for(let i=0;i<10;i++){const b=document.createElement('div');b.className="absolute rounded-full bg-sky-400 cursor-pointer shadow-[0_0_10px_#38bdf8]";b.style.width=b.style.height=(Math.random()*30+20)+'px';b.style.left=Math.random()*80+'%';b.style.top=Math.random()*80+'%';b.onclick=(e)=>{e.target.remove();popped++;if(popped>=5)window.gameWin();};area.appendChild(b);}}
+window.initStarCount=function(c){c.innerHTML=`<div class="text-center text-white"><p class="mb-4">Encontre 4 estrelas mágicas</p><div id="star-area" class="grid grid-cols-4 gap-4 w-64 mx-auto"></div></div>`;const area=document.getElementById('star-area');const items=['moon','cloud','sun','snowflake','bolt'];let arr=['star','star','star','star'];while(arr.length<16)arr.push(items[Math.floor(Math.random()*items.length)]);arr.sort(()=>Math.random()-0.5);let starsFound=0;arr.forEach(item=>{const b=document.createElement('button');b.className="text-2xl p-2 bg-slate-700 rounded transition-colors";b.innerHTML=`<i class="fas fa-${item}"></i>`;b.onclick=()=>{if(item==='star'){b.style.backgroundColor='#10b981';b.style.color='white';b.disabled=true;starsFound++;if(starsFound===4)window.gameWin();}else{b.style.backgroundColor='#ef4444';setTimeout(()=>b.style.backgroundColor='#334155',500);}};area.appendChild(b);});}
+window.initEmojiMatch=function(c){const emotions=[{w:'Alegria',e:'😄'},{w:'Tristeza',e:'😢'},{w:'Raiva',e:'😡'},{w:'Amor',e:'❤️'}];const target=emotions[Math.floor(Math.random()*emotions.length)];c.innerHTML=`<div class="text-center text-white"><p class="mb-4">Clique no emoji que representa: <br><b class="text-sky-400 text-2xl">${target.w}</b></p><div id="emoji-area" class="flex gap-4 justify-center text-4xl mt-4"></div></div>`;const area=document.getElementById('emoji-area');let shuffled=[...emotions].sort(()=>Math.random()-0.5);shuffled.forEach(emo=>{const b=document.createElement('button');b.className="bg-slate-700 p-4 rounded hover:bg-slate-600";b.innerText=emo.e;b.onclick=()=>{if(emo.w===target.w){b.style.backgroundColor='#10b981';window.gameWin();}else{b.style.backgroundColor='#ef4444';}};area.appendChild(b);});}
 
-window.clientName = localStorage.getItem('wr_client_name') || "Visitante";
-window.clientGender = localStorage.getItem('wr_client_gender') || "homem";
-window.clientAge = localStorage.getItem('wr_client_age') || "adulto";
-window.hasAcceptedTerms = sessionStorage.getItem('wr_terms_accepted') === 'true';
-window.activeTherapist = null;
-window.isWaiting = false;
-window.player = null;
-
-// Oculta chat na navegação se for criança (opcional, mas recomendado manter foco nas ferramentas)
-window.updateNav = function() {
-    if(window.clientAge === 'crianca') { document.getElementById('nav-chat-btn').style.display = 'none'; }
-    else { document.getElementById('nav-chat-btn').style.display = 'flex'; }
-}
-
-window.showTab = function(id) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id === 'kids-bubbles') window.startBubbles();
-}
-
-window.login = function() {
-    const n = document.getElementById('user-name-input').value.trim();
-    window.clientGender = document.getElementById('user-gender').value;
-    window.clientAge = document.getElementById('user-age').value;
-    
-    if(n) {
-        window.clientName = n;
-        localStorage.setItem('wr_client_name', n);
-        localStorage.setItem('wr_client_gender', window.clientGender);
-        localStorage.setItem('wr_client_age', window.clientAge);
-        document.querySelectorAll('.client-name').forEach(el => el.innerText = n);
-        
-        window.updateNav();
-        if(window.clientAge === 'crianca') window.showTab('home-kids');
-        else window.showTab('home');
-
-        if(window.player) {
-            window.player.playVideo();
-            window.player.unMute();
-            window.player.setVolume(20);
-            document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";
-        }
-    } else alert("Digite seu nome mágico!");
-}
-
-window.onYouTubeIframeAPIReady = function() { window.player=new YT.Player('bg-music-player',{height:'0',width:'0',videoId:'Cg0dAc4-UCY',playerVars:{'autoplay':0,'controls':0,'loop':1,'playlist':'Cg0dAc4-UCY'},events:{'onReady':(e)=>e.target.setVolume(20)}}); }
-window.toggleMusic = function() {
-    if(!window.player) return;
-    const btn = document.getElementById('music-icon');
-    if(window.player.isMuted()) { window.player.unMute(); window.player.setVolume(20); btn.className="fas fa-volume-up text-sky-400"; }
-    else { window.player.mute(); btn.className="fas fa-volume-mute text-slate-400"; }
-}
-
-// ==============================
-// FUNÇÕES INFANTIS
-// ==============================
-window.showEmotion = function(emocao) {
-    const msgs = {
-        'feliz': 'Que maravilha! A sua alegria faz o mundo brilhar mais forte!',
-        'triste': 'Está tudo bem chorar ou se sentir assim. Eu te dou um abraço virtual bem apertado.',
-        'bravo': 'Urr! A raiva é como um vulcão. Que tal respirarmos juntos no balão para acalmar?',
-        'medo': 'Eu estou aqui com você. Você é muito mais corajoso(a) do que imagina!'
-    };
-    alert(msgs[emocao]);
-}
-
-window.gerarHistoriaKids = async function() {
-    const animal = document.getElementById('story-animal').value;
-    const box = document.getElementById('story-box');
-    const loading = document.getElementById('story-loading');
-    box.classList.add('hidden');
-    loading.classList.remove('hidden');
-
-    try {
-        const prompt = `Escreva uma historinha mágica infantil de exatos 3 parágrafos sobre ${animal}. A história deve ter um tom reconfortante, mostrando superação de um medinho bobo e focando em amizade. Seja fofo e lúdico.`;
-        const res = await fetch(window.AI_PROXY_URL, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: [{role: "system", content: prompt}], temperature: 0.8, max_tokens: 500 })
-        });
-        const data = await res.json();
-        const texto = data.choices ? data.choices[0].message.content : "Era uma vez um bichinho mágico que adorava dormir. Fim!";
-        box.innerHTML = texto.replace(/\n/g, '<br>');
-    } catch(e) {
-        box.innerHTML = "Ops! A varinha mágica falhou, tente de novo.";
-    } finally {
-        loading.classList.add('hidden');
-        box.classList.remove('hidden');
-    }
-}
-
-let bubbleInterval;
-window.startBubbles = function() {
-    const container = document.getElementById('bubble-container');
-    container.innerHTML = '';
-    document.getElementById('bubble-score').innerText = '0';
-    let score = 0;
-    
-    bubbleInterval = setInterval(() => {
-        const b = document.createElement('div');
-        const size = Math.random() * 40 + 30;
-        b.className = 'bubble';
-        b.style.width = `${size}px`;
-        b.style.height = `${size}px`;
-        b.style.left = `${Math.random() * 80 + 10}%`;
-        b.style.animationDuration = `${Math.random() * 3 + 3}s`;
-        
-        b.onclick = function() {
-            score++;
-            document.getElementById('bubble-score').innerText = score;
-            b.remove();
-        };
-        
-        container.appendChild(b);
-        setTimeout(() => { if(b.parentElement) b.remove() }, 6000);
-    }, 600);
-}
-window.stopBubbles = function() { clearInterval(bubbleInterval); }
-
-window.gerarPoteAlegria = function() {
-    const frases = [
-        "Você é uma estrela brilhante!", "Seu sorriso é lindo!", "Você consegue fazer coisas difíceis!",
-        "Tudo bem errar, é assim que aprendemos!", "Hoje vai ser um dia super legal!", "Você tem um coração de ouro!"
-    ];
-    document.getElementById('jar-text').innerText = frases[Math.floor(Math.random() * frases.length)];
-    document.getElementById('jar-modal').classList.remove('hidden');
-}
-
-// ==============================
-// CHAT & ADULTOS
-// ==============================
-const therapists = [
-    {id:'lia', name:'Dra. Lia', color:'#ec4899', icon:'heart', schedule:'Seg-Sex (08:00 - 22:00)'},
-    {id:'yara', name:'Dra. Yara', color:'#8b5cf6', icon:'moon', schedule:'Dom-Sáb (22:00 - 08:00)'},
-    {id:'william', name:'William', color:'#0ea5e9', icon:'user-tie', schedule:'Seg-Sex (10-12h / 17-22h)'},
-    {id:'marcos', name:'Dr. Marcos', color:'#10b981', icon:'user-md', schedule:'Sáb (08-12h / 14-22h)'},
-    {id:'juliana', name:'Dra. Juliana', color:'#f59e0b', icon:'star-of-life', schedule:'Sáb 22:00 - Dom 22:00'}
-];
-
-window.checkAvailability = function(id) {
-    const d = new Date();
-    const day = d.getDay(); 
-    const h = d.getHours();
-    const isWeekday = day >= 1 && day <= 5;
-    let isOnline = false;
-    
-    if (id === 'lia' && isWeekday && h >= 8 && h < 22) isOnline = true;
-    else if (id === 'yara' && (h >= 22 || h < 8)) isOnline = true;
-    else if (id === 'william' && isWeekday && ((h >= 10 && h < 12) || (h >= 17 && h < 22))) return {s:'busy', t:'Ocupado (15 min)', c:'#f59e0b', allow:true};
-    else if (id === 'marcos' && day === 6 && ((h >= 8 && h < 12) || (h >= 14 && h < 22))) isOnline = true;
-    else if (id === 'juliana' && ((day === 6 && h >= 22) || (day === 0 && h < 22))) isOnline = true;
-
-    if (isOnline) return {s:'online', t:'Online', c:'#10b981', allow:true};
-    return {s:'offline', t:'Fora do Horário', c:'#94a3b8', allow:false};
-}
-
-window.triggerChatSelection = function() {
-    if(!window.hasAcceptedTerms) document.getElementById('consent-modal').classList.remove('hidden');
-    else window.renderTherapistList();
-}
-window.acceptTerms = function() {
-    window.hasAcceptedTerms = true;
-    sessionStorage.setItem('wr_terms_accepted', 'true');
-    document.getElementById('consent-modal').classList.add('hidden');
-    window.renderTherapistList();
-}
-window.declineTerms = function() {
-    document.getElementById('consent-modal').classList.add('hidden');
-    window.showTab('home');
-}
-
-window.renderTherapistList = function() {
-    const l = document.getElementById('therapist-list');
-    l.innerHTML = '';
-    therapists.forEach(t => {
-        const st = window.checkAvailability(t.id);
-        const c = document.createElement('div');
-        c.className = `flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow ? 'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700' : 'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;
-        c.onclick = () => { if(st.allow) window.startChat(t.id); else alert(`${t.name} atende no horário: ${t.schedule}`); };
-        c.innerHTML = `<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow ? t.color : '#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow ? 'text-slate-200' : 'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;
-        l.appendChild(c);
-    });
-    window.showTab('chat-selection');
-}
-
-window.getSystemPrompt = function(id) {
-    const base = "REGRA ABSOLUTA: Você é um humano de carne e osso. NUNCA diga ou dê a entender que é IA. Você atende pessoas em fragilidade.";
-    const p = {
-        'lia': `${base} Você é a Dra. Lia, terapeuta comportamental de 45 anos. Acolhedora, madura. Não resolva problemas logo de cara: valide emoções e faça perguntas curtas. Trate com carinho. Máx 500 caracteres.`,
-        'yara': `${base} Você é a Dra. Yara, plantonista da madrugada. Tom protetor. AVALIAÇÃO DE RISCO: Se relatarem dor física intensa ou risco de vida, adote tom firme e oriente a ligar 192 (SAMU) ou 188 (CVV). Máx 3 parágrafos curtos.`,
-        'marcos': `${base} Você é o Dr. Marcos. Analítico e seguro. Máx 3 parágrafos curtos.`,
-        'juliana': `${base} Você é a Dra. Juliana. Foco em regulação emocional. Máx 3 parágrafos curtos.`
-    };
-    return p[id] || base;
-}
-
-window.loadChatHistory = function(id) { return JSON.parse(localStorage.getItem(`chat_${window.clientName}_${id}`)) || []; }
-window.saveChatHistory = function(id, h) { localStorage.setItem(`chat_${window.clientName}_${id}`, JSON.stringify(h)); }
-
-window.startChat = function(id) {
-    const st = window.checkAvailability(id);
-    if(!st.allow) return;
-
-    window.activeTherapist = therapists.find(t => t.id === id);
-    document.getElementById('active-name').innerText = window.activeTherapist.name;
-    document.getElementById('active-avatar').style.backgroundColor = window.activeTherapist.color;
-    document.getElementById('active-avatar').innerHTML = `<i class="fas fa-${window.activeTherapist.icon}"></i>`;
-    document.getElementById('active-status-dot').style.background = st.c;
-    document.getElementById('active-status-text').innerText = st.t;
-
-    const input = document.getElementById('chat-input');
-    const submitBtn = document.getElementById('submit-btn');
-    const waBtn = document.getElementById('wa-btn');
-
-    let h = window.loadChatHistory(id);
-    if(h.length === 0 && id !== 'william') {
-        h.push({role: "system", content: `${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});
-        window.saveChatHistory(id, h);
-    }
-
-    const mc = document.getElementById('chat-messages');
-    mc.innerHTML = '';
-
-    if(id === 'william') {
-        input.disabled = true;
-        input.placeholder = "Atendimento restrito. Clique no WhatsApp ->";
-        submitBtn.classList.add('hidden');
-        waBtn.classList.remove('hidden');
-        mc.innerHTML = `<div class="message system-note mb-2">Dr. William está em atendimento.<br>Espera: 15 min.<br>Clique no ícone do WhatsApp para urgências.</div>`;
-    } else {
-        input.disabled = false;
-        input.placeholder = "Digite aqui...";
-        submitBtn.classList.remove('hidden');
-        waBtn.classList.add('hidden');
-    }
-
-    h.forEach(m => { if(m.role !== 'system') window.renderMessage(m.content, m.role === 'user' ? 'user' : 'therapist'); });
-    mc.scrollTop = mc.scrollHeight;
-    window.showTab('chat');
-}
-
-window.sendToWhatsapp = function() {
-    window.open(`https://wa.me/5541992531598?text=${encodeURIComponent(`Olá Fernanda, sou ${window.clientName}. Vim buscar atendimento com o William.`)}`, '_blank');
-}
-
-window.renderMessage = function(t, type) {
-    const d = document.createElement('div');
-    d.className = `message ${type}`;
-    d.innerHTML = t;
-    document.getElementById('chat-messages').appendChild(d);
-}
-
-// CÁLCULO DE ATRASO HUMANO DE LEITURA E DIGITAÇÃO (130 palavras/minuto)
-document.getElementById('chat-form').onsubmit = async(e) => {
-    e.preventDefault();
-    const input = document.getElementById('chat-input');
-    let t = input.value.trim();
-    if(!t || window.isWaiting || window.activeTherapist.id === 'william') return;
-
-    window.renderMessage(t, 'user');
-    let h = window.loadChatHistory(window.activeTherapist.id);
-    h.push({role: 'user', content: t});
-    window.saveChatHistory(window.activeTherapist.id, h);
-    input.value = '';
-    
-    window.isWaiting = true;
-    document.getElementById('typing-box').classList.remove('hidden');
-
-    const apiStartTime = Date.now();
-    const userWords = t.split(' ').length;
-    
-    try {
-        const res = await fetch(window.AI_PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: h, temperature: 0.7, max_tokens: 350 })
-        });
-        if(!res.ok) throw new Error();
-        const data = await res.json();
-        const responseText = data.choices && data.choices[0] ? data.choices[0].message.content : "Desculpe, a conexão oscilou. Pode repetir?";
-        
-        // Simulação de tempo Humano
-        const apiDuration = Date.now() - apiStartTime;
-        const botWords = responseText.split(' ').length;
-        const wordsPerSecond = 130 / 60; // 2.16 wps
-        const readTimeMs = (userWords / wordsPerSecond) * 1000;
-        const writeTimeMs = (botWords / wordsPerSecond) * 1000;
-        
-        // Espera mínima 10s + tempo de leitura + tempo de escrita - (tempo que a API já demorou)
-        let totalWaitMs = 10000 + readTimeMs + writeTimeMs;
-        let finalDelay = totalWaitMs - apiDuration;
-        if (finalDelay < 0) finalDelay = 0;
-
-        setTimeout(() => {
-            document.getElementById('typing-box').classList.add('hidden');
-            window.renderMessage(responseText, 'therapist');
-            h.push({role: 'assistant', content: responseText});
-            window.saveChatHistory(window.activeTherapist.id, h);
-            const c = document.getElementById('chat-messages');
-            c.scrollTop = c.scrollHeight;
-            window.isWaiting = false;
-        }, finalDelay);
-
-    } catch (e) {
-        document.getElementById('typing-box').classList.add('hidden');
-        window.renderMessage("Nossos sistemas de conexão caíram momentaneamente, mas estou tentando te ouvir. Aguarde um instante.", 'therapist');
-        window.isWaiting = false;
-    }
-};
-
-window.gerarCaixinha = async function() {
-    const mb = document.getElementById("msgBox");
-    const imgBox = document.getElementById("imgBox");
-    document.getElementById("resultadoBox").classList.remove("hidden");
-    mb.innerText = "Sintonizando energia e luz...";
-    imgBox.src = ""; 
-    try {
-        const c = "Gere uma única frase curta de conforto e esperança. Aja como um humano muito sábio e carinhoso.";
-        const res = await fetch(window.AI_PROXY_URL, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: [{role: "system", content: c}], temperature: 0.9, max_tokens: 100 })
-        });
-        const data = await res.json();
-        const texto = data.choices ? data.choices[0].message.content : "Paz no coração.";
-        mb.innerText = texto;
-        const imgPrompt = encodeURIComponent("peaceful nature landscape, relaxing, warm light, therapy, comforting, " + texto.substring(0, 40));
-        imgBox.src = `https://image.pollinations.ai/prompt/${imgPrompt}?width=800&height=600&nologo=true`;
-    } catch(e) {
-        mb.innerText = "A paz começa no momento em que você decide respirar fundo.";
-        imgBox.src = "https://image.pollinations.ai/prompt/peaceful%20nature%20landscape%20relaxing?width=800&height=600&nologo=true";
-    }
-}
-// Initialize Nav Status
-window.onload = function() {
-    if(window.clientName !== "Visitante") window.updateNav();
-};
+window.showAdminLogin=function(){window.showTab('admin-login-screen')}
+window.attemptAdminLogin=function(){const p=document.getElementById('admin-pass').value;if(p==="admin"){window.showTab('admin-dashboard');window.loadAdminDashboard()}else alert("Senha incorreta")}
+window.logoutAdmin=function(){window.showTab('home')}
+window.loadAdminDashboard=function(){const l=document.getElementById('admin-chat-list');l.innerHTML='';therapists.forEach(t=>{const h=window.loadChatHistory(t.id);if(h.length>0){const last=h.slice().reverse().find(m=>m.role!=='system');const p=last&&last.role==='user';const d=document.createElement('div');d.className="p-3 bg-slate-800 rounded border border-slate-700 cursor-pointer hover:bg-slate-700";d.onclick=()=>window.openAdminChat(t);d.innerHTML=`<div class="flex justify-between"><span class="font-bold text-sm text-white">${t.name}</span>${p?'<span class="admin-badge text-xs text-sky-400">Pendente</span>':''}</div><p class="text-[10px] text-slate-400 truncate">${last?last.content:'-'}</p>`;l.appendChild(d)}})}
+window.openAdminChat=function(t){window.adminTargetTherapist=t;document.getElementById('admin-response-area').classList.remove('hidden');document.getElementById('admin-target-name').innerText=`Em: ${t.name}`;window.updateAiStatusBtn();const h=window.loadChatHistory(t.id);const p=document.getElementById('admin-chat-preview');p.innerHTML=h.filter(m=>m.role!=='system').map(m=>`<div class="mb-1"><b class="${m.role==='user'?'text-sky-400':'text-emerald-400'}">${m.role==='user'?'Cliente':'Bot'}:</b> ${m.content}</div>`).join('');p.scrollTop=p.scrollHeight}
+window.toggleAiStatus=function(){if(!window.adminTargetTherapist)return;const i=window.adminTargetTherapist.id;window.aiPaused[i]=!window.aiPaused[i];window.updateAiStatusBtn()}
+window.updateAiStatusBtn=function(){const b=document.getElementById('ai-toggle-btn');if(window.aiPaused[window.adminTargetTherapist.id]){b.innerText="IA: PAUSADA";b.className="text-[10px] bg-red-600 px-2 py-1 rounded font-bold"}else{b.innerText="IA: ATIVA";b.className="text-[10px] bg-emerald-600 px-2 py-1 rounded font-bold"}}
+window.sendAdminReply=function(){const i=document.getElementById('admin-reply-input');const t=i.value.trim();if(!t||!window.adminTargetTherapist)return;const h=window.loadChatHistory(window.adminTargetTherapist.id);h.push({role:'assistant',content:t});window.saveChatHistory(window.adminTargetTherapist.id,h);i.value='';alert("Enviada!");window.loadAdminDashboard();window.openAdminChat(window.adminTargetTherapist)}
 </script>
 </body>
 </html>
