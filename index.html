@@ -30,13 +30,105 @@ window.triggerChatSelection=function(){if(!window.hasAcceptedTerms)document.getE
 window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setItem('wr_terms_accepted','true');document.getElementById('consent-modal').classList.add('hidden');window.renderTherapistList();}
 window.declineTerms=function(){document.getElementById('consent-modal').classList.add('hidden');window.showTab('home');}
 window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;l.appendChild(c);});window.showTab('chat-selection');}
-window.getSystemPrompt=function(id){const base="REGRA ABSOLUTA: Você é humano. NUNCA diga ser IA. Atende pessoas em fragilidade. Chame pelo primeiro nome.";const p={'lia':`${base} Dra. Lia, terapeuta 45 anos. Acolhedora. Responda até 500 caracteres.`,'yara':`${base} Dra. Yara, terapeuta da madrugada. Tom protetor.`,'marcos':`${base} Dr. Marcos, terapeuta analítico.`,'juliana':`${base} Dra. Juliana, foco em regulação emocional.`,'fernanda':`${base} Você é a Fernanda, recepcionista do Dr. William. Ajude com agendamentos.`};let prompt=p[id]||base;const u=window.userDataCache;if(u){prompt+=`\n\n[DADOS SECRETOS DA FICHA]: Nome: ${u.fullName}. Gênero: ${u.gender==='M'?'Mulher':'Homem'}. `;if(u.cycle&&u.cycle.notesList&&u.cycle.notesList.length>0)prompt+=`\nÚLTIMA NOTA NO DIÁRIO: "${u.cycle.notesList[0].text}". (Se a pessoa citou dores ou problemas, seja empático). `;if(u.tasks){const ativos=Object.values(u.tasks).filter(x=>x.active).length;prompt+=`\nROTINA DIÁRIA: O paciente tem ${ativos} tarefa(s) configurada(s) hoje. `;}prompt+=`\nREGRA: Se for o primeiro contato, faça perguntas sutis e uma por vez para descobrir Whatsapp e Demandas Principais.`}return prompt;}
+window.getSystemPrompt=function(id){
+const base="REGRA ABSOLUTA: Você é humano. NUNCA diga ser IA. Atende pessoas em fragilidade. Chame pelo primeiro nome. Aja de forma natural, empática e conversacional.";
+const p={'lia':`${base} Dra. Lia, terapeuta 45 anos. Acolhedora. Responda até 500 caracteres.`,'yara':`${base} Dra. Yara, terapeuta da madrugada. Tom protetor.`,'marcos':`${base} Dr. Marcos, terapeuta analítico.`,'juliana':`${base} Dra. Juliana, foco em regulação emocional.`,'fernanda':`${base} Você é a Fernanda, recepcionista do Dr. William. Ajude com agendamentos.`};
+let prompt=p[id]||base;
+const u=window.userDataCache;
+if(u){
+prompt+=`\n\n[CONTEXTO DO PACIENTE]:\nNome: ${u.fullName}.\nGênero: ${u.gender==='M'?'Mulher':'Homem'}. `;
+if(u.goals){prompt+=`\nMetas do paciente - Semana: ${u.goals.week||'-'}, Mês: ${u.goals.month||'-'}. `;}
+if(u.tasks){
+const tNames=Object.values(u.tasks).filter(x=>x.active).map(x=>x.name).join(', ');
+if(tNames)prompt+=`\nRotina diária: ${tNames}. `;}
+if(u.cycle&&u.cycle.notesList&&u.cycle.notesList.length>0){prompt+=`\nÚltimo registro no diário de sentimentos: "${u.cycle.notesList[0].text}". `;}
+try{
+const mLocal=JSON.parse(localStorage.getItem('mural_local')||'[]');
+if(mLocal.length>0){prompt+=`\nÚltimo desabafo no mural: "${mLocal[0].t}". `;}
+}catch(e){}
+prompt+=`\n\nUSE ESTAS INFORMAÇÕES DE FORMA SUTIL PARA DEMONSTRAR EMPATIA. Nunca diga 'li no seu mural' ou 'vi na sua rotina', aja como se lembrasse organicamente, como um terapeuta humano faria.`
+}
+return prompt;
+}
 window.getLocalHistory=function(id){return JSON.parse(localStorage.getItem(`chat_${window.clientId}_${id}`))||[];}
 window.startChat=async function(id){const st=window.checkAvailability(id);if(!st.allow)return;window.activeTherapist=therapists.find(t=>t.id===id);document.getElementById('active-name').innerText=window.activeTherapist.name;document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;document.getElementById('active-status-dot').style.background=st.c;document.getElementById('active-status-text').innerText=st.t;const input=document.getElementById('chat-input');const submitBtn=document.getElementById('submit-btn');const waBtn=document.getElementById('wa-btn');const micBtn=document.getElementById('mic-btn');if(id==='william'){input.disabled=true;input.placeholder="Atendimento restrito. Clique no WhatsApp ->";submitBtn.classList.add('hidden');micBtn.classList.add('hidden');waBtn.classList.remove('hidden');document.getElementById('chat-messages').innerHTML=`<div class="message system-note mb-2">Dr. William está em atendimento.<br>Espera: 15 min.<br>Clique no ícone do WhatsApp para falar com a recepção.</div>`;window.showTab('chat');return;}else{input.disabled=false;input.placeholder="Digite aqui...";submitBtn.classList.remove('hidden');micBtn.classList.remove('hidden');waBtn.classList.add('hidden');}const chatId=`${window.clientId}_${id}`;if(!db){let h=window.getLocalHistory(id);if(h.length===0){h.push({role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));}window.refreshChatDisplay(h);}else{window.activeChatRef=db.ref(`chats/${chatId}`);window.activeAiStatusRef=db.ref(`ai_status/${chatId}`);window.activeAiStatusRef.on('value',snap=>{const status=snap.val();window.isBotPaused=status?status.paused:false;});window.activeChatRef.on('value',(snapshot)=>{let h=snapshot.val();if(!h){h=[{role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`}];window.activeChatRef.set(h);}localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));window.refreshChatDisplay(h);if(window.isWaiting){const lastMsg=h[h.length-1];if(lastMsg.role==='assistant'){document.getElementById('typing-box').classList.add('hidden');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}}});}window.showTab('chat');}
 window.refreshChatDisplay=function(h){const mc=document.getElementById('chat-messages');mc.innerHTML='';h.forEach(m=>{if(m.role!=='system'){const uiContent=(m.isAudio)?`<div class="flex items-center gap-2"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:m.content;window.renderMessage(uiContent,m.role==='user'?'user':'therapist');}});mc.scrollTop=mc.scrollHeight;}
 window.renderMessage=function(t,type){const d=document.createElement('div');d.className=`message ${type}`;d.innerHTML=t;document.getElementById('chat-messages').appendChild(d);}
 window.sendToWhatsapp=function(){window.open(`https://wa.me/5541992531598?text=${encodeURIComponent(`Olá Fernanda, sou ${window.clientName}. Gostaria de agendar com o William.`)}`,'_blank');}
-window.submitChat=async function(t,isAudio=false){if(!t||window.isWaiting)return;const chatId=`${window.clientId}_${window.activeTherapist.id}`;const chatInput=document.getElementById('chat-input');if(chatInput)chatInput.value='';window.isWaiting=true;document.getElementById('submit-btn').disabled=true;document.getElementById('mic-btn').disabled=true;let h=[];if(db){const snap=await db.ref(`chats/${chatId}`).once('value');h=snap.val()||[];h.push({role:'user',content:t,isAudio:isAudio});await db.ref(`chats/${chatId}`).set(h);}else{h=window.getLocalHistory(window.activeTherapist.id);h.push({role:'user',content:t,isAudio:isAudio});localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));window.refreshChatDisplay(h);}const typingBox=document.getElementById('typing-box');if(window.isBotPaused){typingBox.classList.remove('hidden');typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta está acompanhando...';return;}const start=Date.now();const userWords=Math.max(t.split(/\s+/).length,1);try{const cleanH=h.map(m=>({role:m.role,content:m.content}));const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});if(!res.ok)throw new Error();const data=await res.json();const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";const apiTime=Date.now()-start;const botWords=Math.max(rt.split(/\s+/).length,1);let readDelay=(userWords*250)-apiTime;if(readDelay<0)readDelay=0;let typeDelay=botWords*40;if(typeDelay>6000)typeDelay=6000;if(typeDelay<1500)typeDelay=1500;setTimeout(()=>{if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}typingBox.innerHTML='Digitando <span class="animate-pulse">...</span>';typingBox.classList.remove('hidden');setTimeout(async()=>{if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}h.push({role:'assistant',content:rt});if(db){await db.ref(`chats/${chatId}`).set(h);}else{localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));window.refreshChatDisplay(h);typingBox.classList.add('hidden');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}},typeDelay);},readDelay);}catch(err){typingBox.classList.add('hidden');window.renderMessage("Nossos sistemas caíram, aguarde um instante.",'therapist');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}};
+window.submitChat=async function(t,isAudio=false){
+if(!t||window.isWaiting)return;
+const chatId=`${window.clientId}_${window.activeTherapist.id}`;
+const chatInput=document.getElementById('chat-input');
+if(chatInput)chatInput.value='';
+window.isWaiting=true;
+document.getElementById('submit-btn').disabled=true;
+document.getElementById('mic-btn').disabled=true;
+let h=[];
+if(db){
+const snap=await db.ref(`chats/${chatId}`).once('value');
+h=snap.val()||[];
+h.push({role:'user',content:t,isAudio:isAudio});
+await db.ref(`chats/${chatId}`).set(h);
+}else{
+h=window.getLocalHistory(window.activeTherapist.id);
+h.push({role:'user',content:t,isAudio:isAudio});
+localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));
+window.refreshChatDisplay(h);
+}
+const typingBox=document.getElementById('typing-box');
+if(window.isBotPaused){
+typingBox.classList.remove('hidden');
+typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta está acompanhando...';
+return;
+}
+const start=Date.now();
+try{
+const cleanH=h.map(m=>({role:m.role,content:m.content}));
+const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});
+if(!res.ok)throw new Error();
+const data=await res.json();
+const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
+const apiTime=Date.now()-start;
+
+// 1. Pausa de expectativa (10 segundos totais)
+let readDelay=10000-apiTime;
+if(readDelay<0)readDelay=0;
+
+// 2. Tempo de escrita realista (130 palavras por min -> aprox 461ms por palavra)
+const botWords=Math.max(rt.split(/\s+/).length,1);
+let typeDelay=Math.round(botWords*(60000/130));
+if(typeDelay>15000)typeDelay=15000;
+if(typeDelay<2000)typeDelay=2000;
+
+setTimeout(()=>{
+if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}
+typingBox.innerHTML='Digitando <span class="animate-pulse">...</span>';
+typingBox.classList.remove('hidden');
+
+setTimeout(async()=>{
+if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}
+h.push({role:'assistant',content:rt});
+if(db){
+await db.ref(`chats/${chatId}`).set(h);
+}else{
+localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));
+window.refreshChatDisplay(h);
+typingBox.classList.add('hidden');
+window.isWaiting=false;
+document.getElementById('submit-btn').disabled=false;
+document.getElementById('mic-btn').disabled=false;
+}
+},typeDelay);
+},readDelay);
+
+}catch(err){
+typingBox.classList.add('hidden');
+window.renderMessage("Nossos sistemas caíram, aguarde um instante.",'therapist');
+window.isWaiting=false;
+document.getElementById('submit-btn').disabled=false;
+document.getElementById('mic-btn').disabled=false;
+}
+};
 document.getElementById('chat-form').onsubmit=(e)=>{e.preventDefault();window.submitChat(document.getElementById('chat-input').value.trim(),false);};
 window.startVoice=function(){if(window.isWaiting)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return alert("Seu navegador não suporta microfone.");const rec=new SR();rec.lang='pt-BR';const btn=document.getElementById('mic-btn');rec.onstart=()=>{btn.classList.replace('bg-slate-600','bg-red-500');btn.classList.add('animate-pulse');};rec.onend=()=>{btn.classList.replace('bg-red-500','bg-slate-600');btn.classList.remove('animate-pulse');};rec.onresult=(e)=>{const txt=e.results[0][0].transcript;if(txt)window.submitChat(txt,true);};rec.start();};
 window.gerarCaixinha=async function(){const mb=document.getElementById("msgBox");const imgBox=document.getElementById("imgBox");const btn=document.getElementById("caixinha-btn");const resBox=document.getElementById("resultadoBox");resBox.classList.remove("hidden");mb.innerText="Sintonizando energia e luz...";imgBox.src="";btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';const temas=["conforto","motivação","ânimo","esperança"];const tema=temas[Math.floor(Math.random()*temas.length)];try{const c=`Escreva uma reflexão poética curta sobre ${tema}. Retorne APENAS um JSON: {"frase": "mensagem aqui", "prompt_imagem": "descrição em ingles de fundo abstrato"}`;const textRes=await fetch(window.AI_PROXY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"groq",messages:[{role:"system",content:c}],temperature:0.9,max_tokens:400})});const data=await textRes.json();let rawText=data.choices?data.choices[0].message.content:'{"frase": "A paz começa de dentro.", "prompt_imagem": "calm sunset landscape"}';let cleanText=rawText.substring(rawText.indexOf('{'),rawText.lastIndexOf('}')+1);let content;try{content=JSON.parse(cleanText);}catch(e){content={frase:"Abrace a sua jornada.",prompt_imagem:"beautiful nature minimal"};}mb.innerText=`"${content.frase}"`;if(window.GEMINI_API_KEY&&window.GEMINI_API_KEY!=="SUA_CHAVE_AQUI"){const imgRes=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${window.GEMINI_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({instances:{prompt:content.prompt_imagem+", cinematic, high resolution, no text"},parameters:{sampleCount:1}})});const imgData=await imgRes.json();if(imgData.predictions&&imgData.predictions[0]){imgBox.src=`data:image/jpeg;base64,${imgData.predictions[0].bytesBase64Encoded}`;}else{throw new Error("Erro Imagen");}}else{throw new Error("Sem Chave API");}}catch(e){const kw=['nature','calm','water','sunset'];imgBox.src=`https://source.unsplash.com/random/600x600/?${kw[Math.floor(Math.random()*kw.length)]}`;imgBox.onerror=()=>imgBox.src='https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=600&fit=crop';}finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-magic mr-2"></i>Gerar Nova Mensagem';}}
