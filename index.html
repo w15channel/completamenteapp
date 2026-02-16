@@ -51,6 +51,7 @@
 </main>
 <nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50"><button onclick="window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button><button onclick="window.triggerChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button></nav>
 <script>
+window.GEMINI_API_KEY = "SUA_CHAVE_AQUI"; // << COLOQUE SUA CHAVE AQUI
 window.AI_PROXY_URL="https://completamenteapp.vercel.app/api/ai";window.SHEET_ID="1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";window.SHEET_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxPmSrtdjfPuLtZma2hd84WMv42zcZx0IzuVpq3zUUvMtwEDEGD-94CQyibUtOZoWDC/exec";window.clientName=localStorage.getItem('wr_client_name')||"Visitante";window.clientGender=localStorage.getItem('wr_client_gender')||"homem";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';window.activeTherapist=null;window.isWaiting=false;window.messageCounter=0;window.aiPaused={};window.player=null;
 window.showTab=function(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='mural')window.loadMural();}
 window.login=function(){const n=document.getElementById('user-name-input').value.trim();window.clientGender=document.getElementById('user-gender').value;if(n){window.clientName=n.split(' ')[0];localStorage.setItem('wr_client_name',window.clientName);localStorage.setItem('wr_client_gender',window.clientGender);document.querySelectorAll('.client-name').forEach(el=>el.innerText=window.clientName);window.showTab('home');if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";}}else alert("Digite seu nome.");}
@@ -71,7 +72,77 @@ window.renderMessage=function(t,type){const d=document.createElement('div');d.cl
 window.submitChat=async function(t,isAudio=false){if(!t||window.isWaiting||window.activeTherapist.id==='william')return;const displayHtml=isAudio?`<div class="flex items-center gap-2 text-white"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:t;window.renderMessage(displayHtml,'user');let h=window.loadChatHistory(window.activeTherapist.id);h.push({role:'user',content:t,isAudio:isAudio});window.saveChatHistory(window.activeTherapist.id,h);const chatInput=document.getElementById('chat-input');if(chatInput)chatInput.value='';window.isWaiting=true;document.getElementById('submit-btn').disabled=true;document.getElementById('mic-btn').disabled=true;const typingBox=document.getElementById('typing-box');const start=Date.now();const userWords=Math.max(t.split(/\s+/).length,1);try{const cleanH=h.map(m=>({role:m.role,content:m.content}));const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});if(!res.ok)throw new Error();const data=await res.json();const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";const apiTime=Date.now()-start;const botWords=Math.max(rt.split(/\s+/).length,1);const wps=130/60;const readMs=(userWords/wps)*1000;const writeMs=(botWords/wps)*1000;const baseMs=10000;let hiatus=(baseMs+readMs)-apiTime;if(hiatus<0)hiatus=0;setTimeout(()=>{typingBox.classList.remove('hidden');setTimeout(()=>{typingBox.classList.add('hidden');window.renderMessage(rt,'therapist');h.push({role:'assistant',content:rt});window.saveChatHistory(window.activeTherapist.id,h);const c=document.getElementById('chat-messages');c.scrollTop=c.scrollHeight;window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;},writeMs);},hiatus);}catch(err){typingBox.classList.add('hidden');window.renderMessage("Nossos sistemas de conexão caíram momentaneamente, mas estou tentando te ouvir. Aguarde um instante.",'therapist');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}};
 document.getElementById('chat-form').onsubmit=(e)=>{e.preventDefault();window.submitChat(document.getElementById('chat-input').value.trim(),false);};
 window.startVoice=function(){if(window.isWaiting)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return alert("Seu navegador não suporta microfone.");const rec=new SR();rec.lang='pt-BR';const btn=document.getElementById('mic-btn');rec.onstart=()=>{btn.classList.replace('bg-slate-600','bg-red-500');btn.classList.add('animate-pulse');};rec.onend=()=>{btn.classList.replace('bg-red-500','bg-slate-600');btn.classList.remove('animate-pulse');};rec.onresult=(e)=>{const txt=e.results[0][0].transcript;if(txt)window.submitChat(txt,true);};rec.start();};
-window.gerarCaixinha=async function(){const mb=document.getElementById("msgBox");const imgBox=document.getElementById("imgBox");const btn=document.getElementById("caixinha-btn");const resBox=document.getElementById("resultadoBox");resBox.classList.remove("hidden");mb.innerText="Sintonizando energia e luz...";imgBox.src="";btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';const temas=["conforto para um dia difícil","motivação para começar um projeto","ânimo para quem está cansado","uma verdade gentil sobre a vida"];const tema=temas[Math.floor(Math.random()*temas.length)];try{const c=`Crie uma frase poética, curta e profunda de ${tema}. No máximo 15 palavras. Aja como um terapeuta humano sábio e carinhoso. Entregue apenas a frase.`;const res=await fetch(window.AI_PROXY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"groq",messages:[{role:"system",content:c}],temperature:0.9,max_tokens:100})});const data=await res.json();let texto=data.choices?data.choices[0].message.content:"A paz começa de dentro. Respire e confie no processo.";texto=texto.replace(/["']/g,'').trim();mb.innerText=`"${texto}"`;const kw=['nature','calm','water','sunset','forest','landscape','minimal','zen'];const k=kw[Math.floor(Math.random()*kw.length)];imgBox.src=`https://source.unsplash.com/random/600x600/?${k}`;imgBox.onerror=()=>imgBox.src='https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=600&fit=crop';}catch(e){mb.innerText='"A paz começa no momento em que você decide respirar fundo. Tudo vai ficar bem."';imgBox.src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=600&fit=crop";}finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-magic mr-2"></i>Gerar Outra';}}
+
+window.gerarCaixinha = async function() {
+    const mb = document.getElementById("msgBox");
+    const imgBox = document.getElementById("imgBox");
+    const btn = document.getElementById("caixinha-btn");
+    const resBox = document.getElementById("resultadoBox");
+    resBox.classList.remove("hidden");
+    mb.innerText = "Sintonizando energia e luz...";
+    imgBox.src = "";
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';
+    
+    const temas = ["conforto para um dia difícil", "motivação para começar um projeto", "ânimo para quem está cansado", "uma verdade gentil sobre a vida"];
+    const tema = temas[Math.floor(Math.random() * temas.length)];
+    
+    try {
+        const c = `Crie uma frase poética, curta e profunda de ${tema}. No máximo 15 palavras. Retorne APENAS um JSON válido no formato exato: {"frase": "...", "prompt_imagem": "descrição curta em inglês de fundo abstrato e elegante"}`;
+        
+        const textRes = await fetch(window.AI_PROXY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "groq", messages: [{ role: "system", content: c }], temperature: 0.9, max_tokens: 150 })
+        });
+        
+        const data = await textRes.json();
+        let rawText = data.choices ? data.choices[0].message.content : '{"frase": "A paz começa de dentro. Respire e confie no processo.", "prompt_imagem": "calm sunset landscape"}';
+        
+        // Limpar markdown
+        let cleanText = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
+        let content;
+        try {
+            content = JSON.parse(cleanText);
+        } catch(e) {
+            content = { frase: "Sinta a leveza de ser quem você é.", prompt_imagem: "beautiful nature minimal" };
+        }
+        
+        mb.innerText = `"${content.frase}"`;
+        
+        // Chamada à API Imagen do Google
+        if(window.GEMINI_API_KEY && window.GEMINI_API_KEY !== "SUA_CHAVE_AQUI") {
+            const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${window.GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    instances: { prompt: content.prompt_imagem + ", cinematic lighting, abstract elegant, high resolution, no text" },
+                    parameters: { sampleCount: 1 }
+                })
+            });
+            const imgData = await imgRes.json();
+            if(imgData.predictions && imgData.predictions[0]){
+                const b64 = imgData.predictions[0].bytesBase64Encoded;
+                imgBox.src = `data:image/jpeg;base64,${b64}`;
+            } else {
+                throw new Error("Erro Imagen API");
+            }
+        } else {
+            throw new Error("Sem Chave API");
+        }
+        
+    } catch (e) {
+        // Fallback Unsplash caso não tenha chave ou dê erro
+        const kw = ['nature','calm','water','sunset','forest','landscape','minimal','zen'];
+        const k = kw[Math.floor(Math.random()*kw.length)];
+        imgBox.src = `https://source.unsplash.com/random/600x600/?${k}`;
+        imgBox.onerror = () => imgBox.src = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=600&fit=crop';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>Gerar Nova Mensagem';
+    }
+}
+
 window.downloadMsg=async function(e){const btn=e.currentTarget;const old=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Salvando...';try{const canvas=await html2canvas(document.getElementById('capture_area'),{scale:2,useCORS:true,allowTaint:true});const link=document.createElement('a');link.download='WR-Terapia-Mensagem.png';link.href=canvas.toDataURL('image/png');link.click();}catch(err){alert("Erro ao salvar imagem. Tente novamente.");}finally{btn.innerHTML=old;}}
 window.gerarLeitura=async function(){const tema=document.getElementById('book-theme').value;const container=document.getElementById('book-container');const loading=document.getElementById('book-loading');const titleEl=document.getElementById('book-title');const contentEl=document.getElementById('book-content');container.classList.add('hidden');loading.classList.remove('hidden');const prompt=`Escreva um capítulo curto e inspirador de um livro sobre "${tema}". Foco em bem-estar. Comece com Título Criativo (sem a palavra 'Capítulo'). Use tags HTML <p>.`;try{const res=await fetch(window.AI_PROXY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"system",content:prompt}],temperature:0.8,max_tokens:800})});const data=await res.json();const fullText=data.choices?data.choices[0].message.content:"<p>Erro na conexão. Tente novamente.</p>";let cleanText=fullText.replace(/```html/g,'').replace(/```/g,'');let lines=cleanText.split('\n');let title=lines[0].replace(/<[^>]*>/g,'');let body=cleanText;if(title.length<100){titleEl.innerText=title;body=lines.slice(1).join('\n');}else{titleEl.innerText=tema;}contentEl.innerHTML=body;loading.classList.add('hidden');container.classList.remove('hidden');}catch(e){loading.classList.add('hidden');alert("Erro na biblioteca. Tente novamente mais tarde.");}}
 window.saveMuralMessage=async function(){const input=document.getElementById('mural-input');const text=input.value.trim();if(!text)return;const localMsgs=JSON.parse(localStorage.getItem('mural_local')||'[]');localMsgs.unshift({d:new Date().toLocaleDateString('pt-BR'),t:text,local:true});localStorage.setItem('mural_local',JSON.stringify(localMsgs));if(window.SHEET_SCRIPT_URL){const btn=input.nextElementSibling;const oldHtml=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';btn.disabled=true;try{await fetch(window.SHEET_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:text})});alert("Mensagem enviada!");}catch(e){alert("Salvo localmente. Erro script.");}finally{btn.innerHTML=oldHtml;btn.disabled=false;}}input.value='';window.loadMural();}
