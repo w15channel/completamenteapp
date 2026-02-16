@@ -6,12 +6,14 @@ function parseAllowlist() {
   return (process.env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((item) => item.trim().replace(/\/$/, ''))
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 
 function setCors(req, res) {
   const allowlist = parseAllowlist();
   const origin = (req.headers.origin || '').replace(/\/$/, '');
+  const origin = req.headers.origin;
 
   if (allowlist.length === 0) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -65,6 +67,7 @@ async function requestGroq({ messages, temperature, max_tokens }) {
   }
 
   const response = await requestWithTimeout(GROQ_URL, {
+  const response = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${key}`,
@@ -112,6 +115,19 @@ async function requestGemini({ messages, temperature, max_tokens }) {
       }),
     }
   );
+  const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(key)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: toGeminiContents(messages),
+      generationConfig: {
+        temperature,
+        maxOutputTokens: max_tokens,
+      },
+    }),
+  });
 
   if (!response.ok) {
     const body = await response.text();
@@ -150,6 +166,7 @@ module.exports = async function handler(req, res) {
 
   const body = readRequestBody(req);
   const { messages = [], temperature = 0.7, max_tokens = 300 } = body;
+  const { messages = [], temperature = 0.7, max_tokens = 300 } = req.body || {};
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages é obrigatório.' });
