@@ -1,192 +1,116 @@
+// URLs das APIs
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-const REQUEST_TIMEOUT_MS = 12000;
 
-function parseAllowlist() {
-  return (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map((item) => item.trim().replace(/\/$/, ''))
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
+// Configuração de CORS (Permite que o GitHub acesse a Vercel)
 function setCors(req, res) {
-  const allowlist = parseAllowlist();
-  const origin = (req.headers.origin || '').replace(/\/$/, '');
+  const allowlist = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
   const origin = req.headers.origin;
 
-  if (allowlist.length === 0) {
+  if (allowlist.length === 0 || allowlist.includes('*')) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return true;
-  }
-
-  if (origin && allowlist.includes(origin)) {
+  } else if (origin && allowlist.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    return true;
   }
 
-  return false;
-}
-
-function toGeminiContents(messages = []) {
-  return messages
-    .filter((item) => item && item.content)
-    .map((item) => ({
-      role: item.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: item.content }],
-    }));
-}
-
-function readRequestBody(req) {
-  if (!req || req.body == null) return {};
-  if (typeof req.body === 'string') {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
-    }
-  }
-  return req.body;
-}
-
-async function requestWithTimeout(url, options) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function requestGroq({ messages, temperature, max_tokens }) {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
-    throw new Error('GROQ_API_KEY não configurada.');
-  }
-
-  const response = await requestWithTimeout(GROQ_URL, {
-  const response = await fetch(GROQ_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages,
-      temperature,
-      max_tokens,
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Groq falhou (${response.status}): ${body}`);
-  }
-
-  const data = await response.json();
-  return {
-    provider: 'groq',
-    choices: data.choices || [],
-  };
-}
-
-async function requestGemini({ messages, temperature, max_tokens }) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) {
-    throw new Error('GEMINI_API_KEY não configurada.');
-  }
-
-  const response = await requestWithTimeout(
-    `${GEMINI_URL}?key=${encodeURIComponent(key)}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: toGeminiContents(messages),
-        generationConfig: {
-          temperature,
-          maxOutputTokens: max_tokens,
-        },
-      }),
-    }
-  );
-  const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: toGeminiContents(messages),
-      generationConfig: {
-        temperature,
-        maxOutputTokens: max_tokens,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Gemini falhou (${response.status}): ${body}`);
-  }
-
-  const data = await response.json();
-  const text =
-    data?.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || '')
-      .join('')
-      .trim() || 'Estou te ouvindo...';
-
-  return {
-    provider: 'gemini',
-    choices: [{ message: { content: text } }],
-  };
-}
-
-module.exports = async function handler(req, res) {
-  const corsAllowed = setCors(req, res);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
 
+// Formata mensagens do formato padrão (OpenAI/Groq) para o formato do Gemini
+function formatForGemini(messages) {
+  return messages.map(msg => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+}
+
+export default async function handler(req, res) {
+  // Lida com a requisição de segurança inicial dos navegadores (CORS Preflight)
+  setCors(req, res);
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  if (!corsAllowed) {
-    return res.status(403).json({ error: 'Origem não permitida.' });
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Use POST.' });
+    return res.status(405).json({ error: 'Apenas requisições POST são permitidas.' });
   }
 
-  const body = readRequestBody(req);
-  const { messages = [], temperature = 0.7, max_tokens = 300 } = body;
-  const { messages = [], temperature = 0.7, max_tokens = 300 } = req.body || {};
+  const { messages = [], temperature = 0.7, max_tokens = 800 } = req.body || {};
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages é obrigatório.' });
+  if (!messages || messages.length === 0) {
+    return res.status(400).json({ error: 'O array de mensagens está vazio ou ausente.' });
   }
 
+  // TENTATIVA 1: GROQ (Llama 3)
   try {
-    const data = await requestGroq({ messages, temperature, max_tokens });
-    return res.status(200).json(data);
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) throw new Error("Chave da Groq não encontrada na Vercel.");
+
+    // Configurando um limite de tempo (timeout) de 10 segundos
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const groqResponse = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: messages,
+        temperature: temperature,
+        max_tokens: max_tokens
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    if (groqResponse.ok) {
+      const data = await groqResponse.json();
+      return res.status(200).json(data); // Devolve o formato padrão
+    } else {
+      throw new Error(`Groq retornou erro: ${groqResponse.status}`);
+    }
+
   } catch (groqError) {
+    console.warn("Falha na Groq, acionando fallback para Gemini...", groqError.message);
+
+    // TENTATIVA 2: GEMINI (Fallback)
     try {
-      const data = await requestGemini({ messages, temperature, max_tokens });
-      return res.status(200).json(data);
-    } catch (geminiError) {
-      return res.status(502).json({
-        error: 'Falha ao consultar provedores de IA.',
-        details: {
-          groq: groqError.message,
-          gemini: geminiError.message,
-        },
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) throw new Error("Chave do Gemini não encontrada na Vercel.");
+
+      const geminiResponse = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: formatForGemini(messages),
+          generationConfig: {
+            temperature: temperature,
+            maxOutputTokens: max_tokens,
+          }
+        })
       });
+
+      if (!geminiResponse.ok) {
+        throw new Error(`Gemini retornou erro: ${geminiResponse.status}`);
+      }
+
+      const geminiData = await geminiResponse.json();
+      
+      // O Gemini devolve a resposta num formato diferente. Precisamos "traduzir" para o formato que seu site já entende.
+      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui formular uma resposta.";
+      
+      return res.status(200).json({
+        choices: [{ message: { content: text } }]
+      });
+
+    } catch (geminiError) {
+      console.error("Ambas as APIs falharam.", geminiError.message);
+      return res.status(500).json({ error: "Os servidores de IA estão indisponíveis no momento." });
     }
   }
-};
+}
