@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Quicksand:wght@400;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
-:root{--bg-dark:#0f172a;--card-bg:#1e293b;--primary:#0ea5e9;--text-light:#f1f5f9;--text-dim:#94a3b8;--gold:#c4a661}*{box-sizing:border-box}body{font-family:'Inter',sans-serif;background-color:var(--bg-dark);color:var(--text-light);margin:0;padding:0;position:fixed;inset:0;display:flex;flex-direction:column}.heading-font{font-family:'Quicksand',sans-serif}.glass-card{background:rgba(30,41,59,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.5)}main{flex:1;position:relative;width:100%;max-width:480px;margin:0 auto}.tab-content{display:none;position:absolute;inset:0;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}.tab-content.active{display:flex;flex-direction:column;animation:fadeIn .3s ease-out}@keyframes fadeIn{from{opacity:0}to{opacity:1}}#chat.tab-content{padding:0;overflow:hidden}.chat-layout{display:flex;flex-direction:column;height:100%}.chat-messages-area{flex:1;overflow-y:auto;padding:1rem;background:rgba(15,23,42,0.5)}.message{max-width:85%;padding:12px 16px;border-radius:1.2rem;font-size:.95rem;line-height:1.5;margin-bottom:12px}.message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto}.message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}.message.audio-msg{font-style:italic;display:flex;align-items:center;gap:8px;color:#cbd5e1}.message.system-note{align-self:center;background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.8rem;text-align:center;border:1px solid rgba(239,68,68,0.4);width:90%}.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.memory-card{background-color:#334155;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border:2px solid #475569;color:transparent;transition:all .3s ease;transform-style:preserve-3d}.memory-card.flipped,.memory-card.matched{background-color:#f1f5f9;border-color:var(--primary);color:#333;transform:rotateY(180deg)}.memory-card.matched{background-color:#10b981;border-color:#059669;color:#fff;cursor:default}.puzzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;aspect-ratio:1;background:#334155;padding:4px;border-radius:8px}.puzzle-tile{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;cursor:pointer;border-radius:4px;user-select:none;transition:transform .2s}.puzzle-tile.empty{background:transparent;cursor:default}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.status-online{background-color:#10b981;box-shadow:0 0 5px #10b981}.status-busy{background-color:#f59e0b;box-shadow:0 0 5px #f59e0b}.status-offline{background-color:#94a3b8}.admin-trigger{opacity:.1;transition:opacity .3s;cursor:pointer}.admin-trigger:hover{opacity:1}.book-page{background-color:#fdf6e3;color:#2c1810;font-family:'Merriweather',serif;padding:2rem;border-radius:4px;box-shadow:inset 20px 0 50px rgba(0,0,0,0.1),5px 5px 15px rgba(0,0,0,0.3);border-left:5px solid #d4c5b0;line-height:1.8;position:relative;overflow:hidden;min-height:400px}.book-page::before{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0) 10%,rgba(0,0,0,0) 90%,rgba(0,0,0,0.05) 100%);pointer-events:none}.slide-frame{position:relative;width:100%;aspect-ratio:1;border-radius:1rem;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);border:1px solid rgba(196,166,97,0.2)}.slide-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0.65}.slide-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.9) 100%)}.slide-content{position:relative;z-index:3;height:100%;padding:2rem;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.slide-text{font-family:'Playfair Display',serif;font-size:1.6rem;line-height:1.4;color:#fff;margin-bottom:1rem;font-style:italic;text-shadow:2px 2px 4px rgba(0,0,0,0.8)}.slide-footer{margin-top:auto;font-size:0.6rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;font-weight:800;font-family:'Inter',sans-serif}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}.btn-game{@apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95}input,select,textarea{background-color:#334155;color:#fff;border-color:#475569}input::placeholder,textarea::placeholder{color:#94a3b8}input:disabled{opacity:0.6; cursor:not-allowed}
+:root{--bg-dark:#0f172a;--card-bg:#1e293b;--primary:#0ea5e9;--text-light:#f1f5f9;--text-dim:#94a3b8;--gold:#c4a661}*{box-sizing:border-box}body{font-family:'Inter',sans-serif;background-color:var(--bg-dark);color:var(--text-light);margin:0;padding:0;position:fixed;inset:0;display:flex;flex-direction:column}.heading-font{font-family:'Quicksand',sans-serif}.glass-card{background:rgba(30,41,59,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.5)}main{flex:1;position:relative;width:100%;max-width:480px;margin:0 auto}.tab-content{display:none;position:absolute;inset:0;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}.tab-content.active{display:flex;flex-direction:column;animation:fadeIn .3s ease-out}@keyframes fadeIn{from{opacity:0}to{opacity:1}}#chat.tab-content{padding:0;overflow:hidden}.chat-layout{display:flex;flex-direction:column;height:100%}.chat-messages-area{flex:1;overflow-y:auto;padding:1rem;background:rgba(15,23,42,0.5)}.message{max-width:85%;padding:12px 16px;border-radius:1.2rem;font-size:.95rem;line-height:1.5;margin-bottom:12px}.message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto}.message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}.message.audio-msg{font-style:italic;display:flex;align-items:center;gap:8px;color:#cbd5e1}.message.system-note{align-self:center;background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.8rem;text-align:center;border:1px solid rgba(239,68,68,0.4);width:90%}.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.memory-card{background-color:#334155;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border:2px solid #475569;color:transparent;transition:all .3s ease;transform-style:preserve-3d}.memory-card.flipped,.memory-card.matched{background-color:#f1f5f9;border-color:var(--primary);color:#333;transform:rotateY(180deg)}.memory-card.matched{background-color:#10b981;border-color:#059669;color:#fff;cursor:default}.puzzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;aspect-ratio:1;background:#334155;padding:4px;border-radius:8px}.puzzle-tile{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;cursor:pointer;border-radius:4px;user-select:none;transition:transform .2s}.puzzle-tile.empty{background:transparent;cursor:default}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.status-online{background-color:#10b981;box-shadow:0 0 5px #10b981}.status-busy{background-color:#f59e0b;box-shadow:0 0 5px #f59e0b}.status-offline{background-color:#94a3b8}.admin-trigger{opacity:.1;transition:opacity .3s;cursor:pointer}.admin-trigger:hover{opacity:1}.book-page{background-color:#fdf6e3;color:#2c1810;font-family:'Merriweather',serif;padding:2rem;border-radius:4px;box-shadow:inset 20px 0 50px rgba(0,0,0,0.1),5px 5px 15px rgba(0,0,0,0.3);border-left:5px solid #d4c5b0;line-height:1.8;position:relative;overflow:hidden;min-height:400px}.book-page::before{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0) 10%,rgba(0,0,0,0) 90%,rgba(0,0,0,0.05) 100%);pointer-events:none}.slide-frame{position:relative;width:100%;aspect-ratio:1;border-radius:1rem;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);border:1px solid rgba(196,166,97,0.2)}.slide-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0.65}.slide-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.9) 100%)}.slide-content{position:relative;z-index:3;height:100%;padding:2rem;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.slide-text{font-family:'Playfair Display',serif;font-size:0.95rem;line-height:1.6;color:#fff;margin-bottom:1rem;font-style:italic;text-shadow:2px 2px 4px rgba(0,0,0,0.8);text-align:justify;overflow-y:auto;max-height:85%}.slide-footer{margin-top:auto;font-size:0.6rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;font-weight:800;font-family:'Inter',sans-serif}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}.btn-game{@apply w-full py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95}input,select,textarea{background-color:#334155;color:#fff;border-color:#475569}input::placeholder,textarea::placeholder{color:#94a3b8}input:disabled{opacity:0.6; cursor:not-allowed}
 </style>
 <script src="https://www.youtube.com/iframe_api"></script>
 </head>
@@ -40,7 +40,7 @@
 <section id="home" class="tab-content"><div class="glass-card p-6 mb-4"><p class="text-xs text-slate-400">Muito bom te ver aqui,</p><h2 class="text-xl font-bold text-white heading-font mb-6 client-name">Visitante</h2><div class="grid grid-cols-2 gap-4"><button onclick="window.triggerChatSelection()" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comment-medical text-2xl text-sky-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Conversar</span></button><button onclick="window.showTab('agenda')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-calendar-check text-2xl text-emerald-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Agendar</span></button><button onclick="window.showTab('mural')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-comments text-2xl text-amber-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Mural</span></button><button onclick="window.showTab('hope')" class="p-4 bg-slate-700/50 rounded-2xl border border-slate-600 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all"><i class="fas fa-lightbulb text-2xl text-yellow-400"></i><span class="text-[10px] font-bold uppercase text-slate-300">Caixinha Surpresa</span></button></div><div class="grid grid-cols-2 gap-4 mt-4"><button onclick="window.showTab('relaxation')" class="p-4 bg-purple-900/30 rounded-2xl border border-purple-800/50 flex flex-col items-center gap-2 hover:bg-purple-900/50 transition-all"><i class="fas fa-spa text-xl text-purple-400"></i><span class="text-[9px] font-bold uppercase text-purple-300">Relaxar</span></button><button onclick="window.startDescompressao()" class="p-4 bg-rose-900/30 rounded-2xl border border-rose-800/50 flex flex-col items-center gap-2 hover:bg-rose-900/50 transition-all"><i class="fas fa-brain text-xl text-rose-400"></i><span class="text-[9px] font-bold uppercase text-rose-300">Descompressão</span></button></div><button onclick="window.showTab('library')" class="w-full mt-4 p-4 bg-indigo-900/30 rounded-2xl border border-indigo-800/50 flex flex-col items-center gap-2 hover:bg-indigo-900/50 transition-all"><i class="fas fa-book-open text-xl text-indigo-400"></i><span class="text-[9px] font-bold uppercase text-indigo-300">Biblioteca Mágica</span></button></div><div class="mt-auto pt-8 pb-4 text-center flex flex-col items-center justify-center gap-2"><p class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Desenvolvido por WR-TECNOLOGIA | William Ribeiro</p><i onclick="window.showAdminLogin()" class="fas fa-lock text-slate-700 text-xs admin-trigger" title="Admin"></i></div></section>
 <section id="library" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-indigo-400">Biblioteca Mágica</h2></div><div class="mb-4 text-center flex-none"><p class="text-xs text-slate-400 mb-2">Escolha um tema e deixe nosso sistema te apresentar um capítulo exclusivo.</p></div><div class="flex-none mb-4"><select id="book-theme" class="w-full p-3 rounded-xl text-sm bg-slate-800 text-slate-200 border border-slate-600 focus:ring-2 focus:ring-indigo-500"><option value="Autoconhecimento">Autoconhecimento</option><option value="Resiliência">Resiliência</option><option value="Ansiedade e Calma">Ansiedade e Calma</option><option value="Relacionamentos Saudáveis">Relacionamentos Saudáveis</option><option value="Propósito de Vida">Propósito de Vida</option><option value="Sono e Descanso">Sono e Descanso</option><option value="Foco e Disciplina">Foco e Disciplina</option></select><button onclick="window.gerarLeitura()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"><i class="fas fa-pen-fancy mr-2"></i>Ler um Capítulo</button></div><div id="book-container" class="flex-1 overflow-y-auto hidden animate-fade-in"><div class="book-page"><h3 id="book-title" class="text-xl font-bold mb-4 text-center border-b border-stone-400 pb-2"></h3><div id="book-content" class="text-sm text-justify"></div><p class="text-center mt-8 text-xs text-stone-500 italic">~ Fim do Capítulo ~</p></div></div><div id="book-loading" class="hidden flex-1 flex flex-col items-center justify-center text-indigo-300"><i class="fas fa-feather-alt fa-spin text-4xl mb-3"></i><p class="text-sm animate-pulse">Buscando seu Capítulo...</p></div></div></section>
 <section id="admin-login-screen" class="tab-content justify-center items-center"><div class="glass-card p-6 w-full text-center"><div class="flex justify-between items-center mb-4"><button onclick="window.showTab('home')" class="text-slate-400"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-white">Acesso Administrativo</h2><div class="w-4"></div></div><input type="password" id="admin-pass" placeholder="Senha" class="w-full p-3 mb-4 rounded-xl text-center"><button onclick="window.attemptAdminLogin()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Entrar</button></div></section>
-<section id="admin-dashboard" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700"><h2 class="font-bold text-emerald-400">Painel do Terapeuta</h2><button onclick="window.logoutAdmin()" class="text-xs text-red-400">Sair</button></div><p class="text-xs text-slate-400 mb-2">Conversas Ativas:</p><div id="admin-chat-list" class="flex-1 overflow-y-auto space-y-2"></div><div id="admin-response-area" class="hidden mt-4 pt-4 border-t border-slate-700"><div class="flex justify-between items-center mb-2"><span id="admin-target-name" class="text-xs font-bold text-white"></span><button onclick="window.toggleAiStatus()" id="ai-toggle-btn" class="text-[10px] bg-sky-600 px-2 py-1 rounded">IA: ATIVA</button></div><div id="admin-chat-preview" class="h-32 overflow-y-auto bg-slate-900/50 rounded p-2 mb-2 text-xs text-slate-300"></div><div class="flex gap-2"><input type="text" id="admin-reply-input" placeholder="Responder..." class="flex-1 text-sm p-2 rounded"><button onclick="window.sendAdminReply()" class="bg-emerald-600 text-white p-2 rounded"><i class="fas fa-paper-plane"></i></button></div></div></div></section>
+<section id="admin-dashboard" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700"><h2 class="font-bold text-emerald-400">Painel Geral Híbrido</h2><button onclick="window.logoutAdmin()" class="text-xs text-red-400">Sair</button></div><p class="text-xs text-slate-400 mb-2">Visão de Todos os Pacientes Online:</p><div id="admin-chat-list" class="flex-1 overflow-y-auto space-y-2"></div><div id="admin-response-area" class="hidden mt-4 pt-4 border-t border-slate-700"><div class="flex justify-between items-center mb-2"><span id="admin-target-name" class="text-xs font-bold text-white"></span><button onclick="window.toggleAiStatus()" id="ai-toggle-btn" class="text-[10px] bg-sky-600 px-2 py-1 rounded">IA: ATIVA</button></div><div id="admin-chat-preview" class="h-32 overflow-y-auto bg-slate-900/50 rounded p-2 mb-2 text-xs text-slate-300"></div><div class="flex gap-2"><input type="text" id="admin-reply-input" placeholder="Assumir o controle..." class="flex-1 text-sm p-2 rounded"><button onclick="window.sendAdminReply()" class="bg-emerald-600 text-white p-2 rounded px-4 font-bold shadow-lg"><i class="fas fa-paper-plane"></i></button></div></div></div></section>
 <section id="agenda" class="tab-content"><div class="glass-card p-4 h-full flex flex-col"><div class="flex items-center gap-3 mb-4 flex-none"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 heading-font">Agendamento</h2></div><div class="flex-1 rounded-xl overflow-hidden border border-slate-600 bg-white"><iframe src="https://calendly.com/wrterapia/atendimentos" width="100%" height="100%" frameborder="0"></iframe></div><p class="text-[10px] text-slate-500 mt-3 text-center italic">Agenda automática.</p></div></section>
 <section id="chat-selection" class="tab-content"><div class="glass-card p-6 h-full overflow-y-auto"><div class="flex items-center gap-3 mb-4"><button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600"><i class="fas fa-arrow-left text-slate-300"></i></button><h2 class="font-bold text-sky-400 text-lg">Nossa Equipe</h2></div><div id="therapist-list" class="space-y-3 pb-20"></div></div></section>
 <section id="chat" class="tab-content"><div class="chat-layout h-full"><div class="p-4 border-b border-slate-700 flex items-center gap-3 bg-slate-800/95 flex-none z-10"><div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div><div class="flex-1"><p id="active-name" class="font-bold text-white text-sm"></p><div class="flex items-center"><span id="active-status-dot" class="status-dot"></span><span id="active-status-text" class="text-[9px] uppercase font-bold text-slate-400">Status</span></div></div><button onclick="window.showTab('chat-selection')" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="chat-messages-area"></div><div class="flex-none bg-slate-800 border-t border-slate-700 pb-2"><div id="typing-box" class="px-4 py-2 hidden text-xs text-sky-400 italic font-medium bg-slate-900/30">Digitando <span class="animate-pulse">...</span></div><div class="p-3"><form id="chat-form" class="flex items-center gap-2"><input type="text" id="chat-input" placeholder="Digite aqui..." class="flex-1 bg-slate-700 border-0 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 placeholder-slate-400 transition-all"><button type="button" id="mic-btn" onclick="window.startVoice()" class="w-10 h-10 bg-slate-600 text-white rounded-full shadow-md flex items-center justify-center hover:bg-slate-500 transition-colors"><i class="fas fa-microphone"></i></button><button type="button" id="wa-btn" onclick="window.sendToWhatsapp()" class="hidden w-10 h-10 bg-emerald-600 text-white rounded-full shadow-md hover:bg-emerald-500 transition-colors flex items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button><button type="submit" id="submit-btn" class="w-10 h-10 bg-sky-600 text-white rounded-full shadow-md hover:bg-sky-500 transition-colors flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></form></div></div></div></section>
@@ -52,8 +52,26 @@
 <nav class="flex-none bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 flex justify-around z-50"><button onclick="window.showTab('home')" class="text-sky-500 flex flex-col items-center gap-1 hover:text-sky-400 transition-colors"><i class="fas fa-home"></i><span class="text-[9px] font-bold tracking-widest">INÍCIO</span></button><button onclick="window.triggerChatSelection()" class="text-slate-500 flex flex-col items-center gap-1 hover:text-slate-300 transition-colors"><i class="fas fa-comment"></i><span class="text-[9px] font-bold tracking-widest">CHAT</span></button></nav>
 <script>
 window.GEMINI_API_KEY = "SUA_CHAVE_AQUI"; // << COLOQUE SUA CHAVE AQUI
-window.AI_PROXY_URL="https://completamenteapp.vercel.app/api/ai";window.SHEET_ID="1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";window.SHEET_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxPmSrtdjfPuLtZma2hd84WMv42zcZx0IzuVpq3zUUvMtwEDEGD-94CQyibUtOZoWDC/exec";window.clientName=localStorage.getItem('wr_client_name')||"Visitante";window.clientGender=localStorage.getItem('wr_client_gender')||"homem";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';window.activeTherapist=null;window.isWaiting=false;window.messageCounter=0;window.aiPaused={};window.player=null;
-window.showTab=function(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='mural')window.loadMural();}
+window.AI_PROXY_URL="https://completamenteapp.vercel.app/api/ai";window.SHEET_ID="1cus7Hm0a4FSU9SiPAoszA6KlrhWrhKYbQwSd7YPsYeY";window.SHEET_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxPmSrtdjfPuLtZma2hd84WMv42zcZx0IzuVpq3zUUvMtwEDEGD-94CQyibUtOZoWDC/exec";window.clientName=localStorage.getItem('wr_client_name')||"Visitante";window.clientGender=localStorage.getItem('wr_client_gender')||"homem";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';window.activeTherapist=null;window.isWaiting=false;window.adminTarget=null;window.player=null;
+
+// Sincronização e Timers Globais
+window.clientSyncTimer = null;
+window.adminSyncTimer = null;
+window.totalChatsMemory = 0;
+window.lastChatLength = 0;
+window.adminTargetChatLength = 0;
+
+window.showTab=function(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    
+    // Limpar timers para otimizar desempenho
+    if(id !== 'chat' && window.clientSyncTimer) clearInterval(window.clientSyncTimer);
+    if(id !== 'admin-dashboard' && window.adminSyncTimer) clearInterval(window.adminSyncTimer);
+    
+    if(id==='mural') window.loadMural();
+}
+
 window.login=function(){const n=document.getElementById('user-name-input').value.trim();window.clientGender=document.getElementById('user-gender').value;if(n){window.clientName=n.split(' ')[0];localStorage.setItem('wr_client_name',window.clientName);localStorage.setItem('wr_client_gender',window.clientGender);document.querySelectorAll('.client-name').forEach(el=>el.innerText=window.clientName);window.showTab('home');if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";}}else alert("Digite seu nome.");}
 window.onYouTubeIframeAPIReady=function(){window.player=new YT.Player('bg-music-player',{height:'0',width:'0',videoId:'Cg0dAc4-UCY',playerVars:{'autoplay':0,'controls':0,'loop':1,'playlist':'Cg0dAc4-UCY'},events:{'onReady':(e)=>e.target.setVolume(30)}});}
 window.toggleMusic=function(){if(!window.player)return;const btn=document.getElementById('music-icon');const state=window.player.getPlayerState();if(state===1||state===3){window.player.pauseVideo();btn.className="fas fa-volume-mute text-slate-400";}else{window.player.playVideo();window.player.unMute();window.player.setVolume(30);btn.className="fas fa-volume-up text-sky-400";}}
@@ -64,12 +82,137 @@ window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setIte
 window.declineTerms=function(){document.getElementById('consent-modal').classList.add('hidden');window.showTab('home');}
 window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;l.appendChild(c);});window.showTab('chat-selection');}
 window.getSystemPrompt=function(id){const base="REGRA ABSOLUTA: Você é um ser humano de carne e osso. NUNCA diga ou dê a entender que é IA, modelo ou bot. Se perguntarem sua profissão, você DEVE dizer que é um(a) TERAPEUTA. NUNCA diga que é psicólogo ou psicóloga. Você atende pessoas em fragilidade. Chame a pessoa SEMPRE e SOMENTE pelo primeiro nome.";const p={'lia':`${base} Você é a Dra. Lia, terapeuta comportamental de 45 anos. Acolhedora. Não resolva problemas logo de cara: valide emoções e faça perguntas curtas. Trate com carinho. Responda em até 500 caracteres.`,'yara':`${base} Você é a Dra. Yara, terapeuta da madrugada. Tom protetor. AVALIAÇÃO DE RISCO: Se relatarem dor física intensa ou ideação suicida/risco de vida, adote tom firme e oriente IMEDIATAMENTE a ligar 192 (SAMU) ou 188 (CVV). Máximo 3 parágrafos curtos.`,'marcos':`${base} Você é o Dr. Marcos, terapeuta. Analítico, seguro e estabilizador. Máximo 3 parágrafos curtos.`,'juliana':`${base} Você é a Dra. Juliana, terapeuta. Foco em regulação emocional. Máximo 3 parágrafos curtos.`};return p[id]||base;}
+
 window.loadChatHistory=function(id){return JSON.parse(localStorage.getItem(`chat_${window.clientName}_${id}`))||[];}
 window.saveChatHistory=function(id,h){localStorage.setItem(`chat_${window.clientName}_${id}`,JSON.stringify(h));}
-window.startChat=function(id){const st=window.checkAvailability(id);if(!st.allow)return;window.activeTherapist=therapists.find(t=>t.id===id);document.getElementById('active-name').innerText=window.activeTherapist.name;document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;document.getElementById('active-status-dot').style.background=st.c;document.getElementById('active-status-text').innerText=st.t;const input=document.getElementById('chat-input');const submitBtn=document.getElementById('submit-btn');const waBtn=document.getElementById('wa-btn');const micBtn=document.getElementById('mic-btn');let h=window.loadChatHistory(id);if(h.length===0&&id!=='william'){h.push({role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});window.saveChatHistory(id,h);}const mc=document.getElementById('chat-messages');mc.innerHTML='';if(id==='william'){input.disabled=true;input.placeholder="Atendimento restrito. Clique no WhatsApp ->";submitBtn.classList.add('hidden');micBtn.classList.add('hidden');waBtn.classList.remove('hidden');mc.innerHTML=`<div class="message system-note mb-2">Dr. William está em atendimento.<br>Espera: 15 min.<br>Clique no ícone do WhatsApp para falar com a recepção.</div>`;}else{input.disabled=false;input.placeholder="Digite aqui...";submitBtn.classList.remove('hidden');micBtn.classList.remove('hidden');waBtn.classList.add('hidden');}h.forEach(m=>{if(m.role!=='system'){const uiContent=(m.isAudio)?`<div class="flex items-center gap-2"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:m.content;window.renderMessage(uiContent,m.role==='user'?'user':'therapist');}});mc.scrollTop=mc.scrollHeight;window.showTab('chat');}
+
+// Verificação Global da IA
+window.isAiPaused = function(userName, therapistId) { return localStorage.getItem(`pause_${userName}_${therapistId}`) === 'true'; }
+window.setAiPaused = function(userName, therapistId, state) { localStorage.setItem(`pause_${userName}_${therapistId}`, state ? 'true' : 'false'); }
+
+window.startChat=function(id){
+    const st=window.checkAvailability(id);if(!st.allow)return;
+    window.activeTherapist=therapists.find(t=>t.id===id);
+    document.getElementById('active-name').innerText=window.activeTherapist.name;
+    document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;
+    document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;
+    document.getElementById('active-status-dot').style.background=st.c;
+    document.getElementById('active-status-text').innerText=st.t;
+    const input=document.getElementById('chat-input');
+    const submitBtn=document.getElementById('submit-btn');
+    const waBtn=document.getElementById('wa-btn');
+    const micBtn=document.getElementById('mic-btn');
+    
+    let h=window.loadChatHistory(id);
+    if(h.length===0&&id!=='william'){
+        h.push({role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});
+        window.saveChatHistory(id,h);
+    }
+    
+    if(id==='william'){
+        input.disabled=true;input.placeholder="Atendimento restrito. Clique no WhatsApp ->";
+        submitBtn.classList.add('hidden');micBtn.classList.add('hidden');waBtn.classList.remove('hidden');
+        document.getElementById('chat-messages').innerHTML=`<div class="message system-note mb-2">Dr. William está em atendimento.<br>Espera: 15 min.<br>Clique no ícone do WhatsApp para falar com a recepção.</div>`;
+    }else{
+        input.disabled=false;input.placeholder="Digite aqui...";
+        submitBtn.classList.remove('hidden');micBtn.classList.remove('hidden');waBtn.classList.add('hidden');
+    }
+    
+    window.refreshChatDisplay(h);
+    window.lastChatLength = h.length;
+    window.showTab('chat');
+
+    // Sincronização em tempo real para o cliente (receber msg do admin)
+    if(window.clientSyncTimer) clearInterval(window.clientSyncTimer);
+    window.clientSyncTimer = setInterval(() => {
+        if(window.activeTherapist && !window.isWaiting) {
+            let ch = window.loadChatHistory(window.activeTherapist.id);
+            if(ch.length > window.lastChatLength) {
+                window.refreshChatDisplay(ch);
+                window.lastChatLength = ch.length;
+            }
+        }
+    }, 1500);
+}
+
+window.refreshChatDisplay = function(h) {
+    const mc = document.getElementById('chat-messages');
+    mc.innerHTML = '';
+    h.forEach(m => {
+        if(m.role !== 'system'){
+            const uiContent = (m.isAudio)?`<div class="flex items-center gap-2"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:m.content;
+            window.renderMessage(uiContent, m.role === 'user' ? 'user' : 'therapist');
+        }
+    });
+    mc.scrollTop = mc.scrollHeight;
+}
+
 window.sendToWhatsapp=function(){window.open(`https://wa.me/5541992531598?text=${encodeURIComponent(`Olá Fernanda, sou ${window.clientName}. Gostaria de agendar ou verificar a fila com o William.`)}`,'_blank');}
 window.renderMessage=function(t,type){const d=document.createElement('div');d.className=`message ${type}`;d.innerHTML=t;document.getElementById('chat-messages').appendChild(d);}
-window.submitChat=async function(t,isAudio=false){if(!t||window.isWaiting||window.activeTherapist.id==='william')return;const displayHtml=isAudio?`<div class="flex items-center gap-2 text-white"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:t;window.renderMessage(displayHtml,'user');let h=window.loadChatHistory(window.activeTherapist.id);h.push({role:'user',content:t,isAudio:isAudio});window.saveChatHistory(window.activeTherapist.id,h);const chatInput=document.getElementById('chat-input');if(chatInput)chatInput.value='';window.isWaiting=true;document.getElementById('submit-btn').disabled=true;document.getElementById('mic-btn').disabled=true;const typingBox=document.getElementById('typing-box');const start=Date.now();const userWords=Math.max(t.split(/\s+/).length,1);try{const cleanH=h.map(m=>({role:m.role,content:m.content}));const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});if(!res.ok)throw new Error();const data=await res.json();const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";const apiTime=Date.now()-start;const botWords=Math.max(rt.split(/\s+/).length,1);const wps=130/60;const readMs=(userWords/wps)*1000;const writeMs=(botWords/wps)*1000;const baseMs=10000;let hiatus=(baseMs+readMs)-apiTime;if(hiatus<0)hiatus=0;setTimeout(()=>{typingBox.classList.remove('hidden');setTimeout(()=>{typingBox.classList.add('hidden');window.renderMessage(rt,'therapist');h.push({role:'assistant',content:rt});window.saveChatHistory(window.activeTherapist.id,h);const c=document.getElementById('chat-messages');c.scrollTop=c.scrollHeight;window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;},writeMs);},hiatus);}catch(err){typingBox.classList.add('hidden');window.renderMessage("Nossos sistemas de conexão caíram momentaneamente, mas estou tentando te ouvir. Aguarde um instante.",'therapist');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}};
+
+window.submitChat=async function(t,isAudio=false){
+    if(!t||window.isWaiting||window.activeTherapist.id==='william')return;
+    const displayHtml=isAudio?`<div class="flex items-center gap-2 text-white"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:t;
+    
+    let h=window.loadChatHistory(window.activeTherapist.id);
+    h.push({role:'user',content:t,isAudio:isAudio});
+    window.saveChatHistory(window.activeTherapist.id,h);
+    window.refreshChatDisplay(h);
+    window.lastChatLength = h.length;
+    
+    const chatInput=document.getElementById('chat-input');
+    if(chatInput)chatInput.value='';
+    window.isWaiting=true;
+    document.getElementById('submit-btn').disabled=true;
+    document.getElementById('mic-btn').disabled=true;
+    
+    // VERIFICAR SE O ADMIN PAUSOU A IA
+    if(window.isAiPaused(window.clientName, window.activeTherapist.id)) {
+        window.isWaiting = false;
+        document.getElementById('submit-btn').disabled=false;
+        document.getElementById('mic-btn').disabled=false;
+        return; // Apenas salva no localStorage para o Admin responder
+    }
+
+    const typingBox=document.getElementById('typing-box');
+    const start=Date.now();
+    const userWords=Math.max(t.split(/\s+/).length,1);
+    
+    try{
+        const cleanH=h.map(m=>({role:m.role,content:m.content}));
+        const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});
+        if(!res.ok)throw new Error();
+        const data=await res.json();
+        const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
+        const apiTime=Date.now()-start;
+        const botWords=Math.max(rt.split(/\s+/).length,1);
+        const wps=130/60;const readMs=(userWords/wps)*1000;const writeMs=(botWords/wps)*1000;
+        let hiatus=(10000+readMs)-apiTime;if(hiatus<0)hiatus=0;
+        
+        setTimeout(()=>{
+            // Checa novamente caso o admin tenha pausado enquanto a IA pensava
+            if(window.isAiPaused(window.clientName, window.activeTherapist.id)) {
+                window.isWaiting=false; document.getElementById('submit-btn').disabled=false; document.getElementById('mic-btn').disabled=false; return;
+            }
+            typingBox.classList.remove('hidden');
+            setTimeout(()=>{
+                typingBox.classList.add('hidden');
+                let hFinal = window.loadChatHistory(window.activeTherapist.id); // Recarrega caso haja novidades
+                hFinal.push({role:'assistant',content:rt});
+                window.saveChatHistory(window.activeTherapist.id,hFinal);
+                window.refreshChatDisplay(hFinal);
+                window.lastChatLength = hFinal.length;
+                window.isWaiting=false;
+                document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;
+            },writeMs);
+        },hiatus);
+    }catch(err){
+        typingBox.classList.add('hidden');
+        window.renderMessage("Nossos sistemas de conexão caíram momentaneamente, mas estou tentando te ouvir. Aguarde um instante.",'therapist');
+        window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;
+    }
+};
+
 document.getElementById('chat-form').onsubmit=(e)=>{e.preventDefault();window.submitChat(document.getElementById('chat-input').value.trim(),false);};
 window.startVoice=function(){if(window.isWaiting)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return alert("Seu navegador não suporta microfone.");const rec=new SR();rec.lang='pt-BR';const btn=document.getElementById('mic-btn');rec.onstart=()=>{btn.classList.replace('bg-slate-600','bg-red-500');btn.classList.add('animate-pulse');};rec.onend=()=>{btn.classList.replace('bg-red-500','bg-slate-600');btn.classList.remove('animate-pulse');};rec.onresult=(e)=>{const txt=e.results[0][0].transcript;if(txt)window.submitChat(txt,true);};rec.start();};
 
@@ -88,54 +231,38 @@ window.gerarCaixinha = async function() {
     const tema = temas[Math.floor(Math.random() * temas.length)];
     
     try {
-        const c = `Crie uma frase poética, curta e profunda de ${tema}. No máximo 15 palavras. Retorne APENAS um JSON válido no formato exato: {"frase": "...", "prompt_imagem": "descrição curta em inglês de fundo abstrato e elegante"}`;
+        const c = `Escreva uma reflexão poética, profunda e reconfortante sobre ${tema}. A mensagem DEVE ter no mínimo 300 e no máximo 500 caracteres. Retorne APENAS um JSON válido no formato exato: {"frase": "sua mensagem poética aqui...", "prompt_imagem": "descrição curta em inglês de fundo abstrato e elegante"}`;
         
         const textRes = await fetch(window.AI_PROXY_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ model: "groq", messages: [{ role: "system", content: c }], temperature: 0.9, max_tokens: 150 })
+            body: JSON.stringify({ model: "groq", messages: [{ role: "system", content: c }], temperature: 0.9, max_tokens: 400 })
         });
         
         const data = await textRes.json();
-        let rawText = data.choices ? data.choices[0].message.content : '{"frase": "A paz começa de dentro. Respire e confie no processo.", "prompt_imagem": "calm sunset landscape"}';
+        let rawText = data.choices ? data.choices[0].message.content : '{"frase": "A paz começa de dentro. Quando tudo parecer barulho, busque o seu silêncio. Respire fundo e confie no processo, cada passo é uma nova descoberta.", "prompt_imagem": "calm sunset landscape"}';
         
-        // Limpar markdown
         let cleanText = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
         let content;
-        try {
-            content = JSON.parse(cleanText);
-        } catch(e) {
-            content = { frase: "Sinta a leveza de ser quem você é.", prompt_imagem: "beautiful nature minimal" };
-        }
+        try { content = JSON.parse(cleanText); } catch(e) { content = { frase: "Abrace a sua jornada. Cada pequeno esforço importa mais do que você imagina.", prompt_imagem: "beautiful nature minimal" }; }
         
         mb.innerText = `"${content.frase}"`;
         
-        // Chamada à API Imagen do Google
         if(window.GEMINI_API_KEY && window.GEMINI_API_KEY !== "SUA_CHAVE_AQUI") {
             const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${window.GEMINI_API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    instances: { prompt: content.prompt_imagem + ", cinematic lighting, abstract elegant, high resolution, no text" },
-                    parameters: { sampleCount: 1 }
-                })
+                body: JSON.stringify({ instances: { prompt: content.prompt_imagem + ", cinematic lighting, abstract elegant, high resolution, no text" }, parameters: { sampleCount: 1 } })
             });
             const imgData = await imgRes.json();
             if(imgData.predictions && imgData.predictions[0]){
-                const b64 = imgData.predictions[0].bytesBase64Encoded;
-                imgBox.src = `data:image/jpeg;base64,${b64}`;
-            } else {
-                throw new Error("Erro Imagen API");
-            }
-        } else {
-            throw new Error("Sem Chave API");
-        }
+                imgBox.src = `data:image/jpeg;base64,${imgData.predictions[0].bytesBase64Encoded}`;
+            } else { throw new Error("Erro Imagen API"); }
+        } else { throw new Error("Sem Chave API"); }
         
     } catch (e) {
-        // Fallback Unsplash caso não tenha chave ou dê erro
         const kw = ['nature','calm','water','sunset','forest','landscape','minimal','zen'];
-        const k = kw[Math.floor(Math.random()*kw.length)];
-        imgBox.src = `https://source.unsplash.com/random/600x600/?${k}`;
+        imgBox.src = `https://source.unsplash.com/random/600x600/?${kw[Math.floor(Math.random()*kw.length)]}`;
         imgBox.onerror = () => imgBox.src = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=600&fit=crop';
     } finally {
         btn.disabled = false;
@@ -166,14 +293,145 @@ window.initBubblePop=function(c){c.innerHTML=`<div class="text-center text-white
 window.initStarCount=function(c){c.innerHTML=`<div class="text-center text-white"><p class="mb-4">Encontre 4 estrelas mágicas</p><div id="star-area" class="grid grid-cols-4 gap-4 w-64 mx-auto"></div></div>`;const area=document.getElementById('star-area');const items=['moon','cloud','sun','snowflake','bolt'];let arr=['star','star','star','star'];while(arr.length<16)arr.push(items[Math.floor(Math.random()*items.length)]);arr.sort(()=>Math.random()-0.5);let starsFound=0;arr.forEach(item=>{const b=document.createElement('button');b.className="text-2xl p-2 bg-slate-700 rounded transition-colors";b.innerHTML=`<i class="fas fa-${item}"></i>`;b.onclick=()=>{if(item==='star'){b.style.backgroundColor='#10b981';b.style.color='white';b.disabled=true;starsFound++;if(starsFound===4)window.gameWin();}else{b.style.backgroundColor='#ef4444';setTimeout(()=>b.style.backgroundColor='#334155',500);}};area.appendChild(b);});}
 window.initEmojiMatch=function(c){const emotions=[{w:'Alegria',e:'😄'},{w:'Tristeza',e:'😢'},{w:'Raiva',e:'😡'},{w:'Amor',e:'❤️'}];const target=emotions[Math.floor(Math.random()*emotions.length)];c.innerHTML=`<div class="text-center text-white"><p class="mb-4">Clique no emoji que representa: <br><b class="text-sky-400 text-2xl">${target.w}</b></p><div id="emoji-area" class="flex gap-4 justify-center text-4xl mt-4"></div></div>`;const area=document.getElementById('emoji-area');let shuffled=[...emotions].sort(()=>Math.random()-0.5);shuffled.forEach(emo=>{const b=document.createElement('button');b.className="bg-slate-700 p-4 rounded hover:bg-slate-600";b.innerText=emo.e;b.onclick=()=>{if(emo.w===target.w){b.style.backgroundColor='#10b981';window.gameWin();}else{b.style.backgroundColor='#ef4444';}};area.appendChild(b);});}
 
+/* ================== PAINEL ADMIN GLOBAL ================== */
+
 window.showAdminLogin=function(){window.showTab('admin-login-screen')}
-window.attemptAdminLogin=function(){const p=document.getElementById('admin-pass').value;if(p==="admin"){window.showTab('admin-dashboard');window.loadAdminDashboard()}else alert("Senha incorreta")}
+window.attemptAdminLogin=function(){
+    const p=document.getElementById('admin-pass').value;
+    if(p==="admin"){
+        window.showTab('admin-dashboard');
+        window.loadAdminDashboard();
+        
+        // Sincronização em tempo real para o admin ver todos
+        if(!window.adminSyncTimer) {
+            window.adminSyncTimer = setInterval(() => {
+                if(document.getElementById('admin-dashboard').classList.contains('active')) {
+                    window.loadAdminDashboard(true);
+                    window.refreshAdminChatBox();
+                }
+            }, 1500);
+        }
+    }else alert("Senha incorreta");
+}
 window.logoutAdmin=function(){window.showTab('home')}
-window.loadAdminDashboard=function(){const l=document.getElementById('admin-chat-list');l.innerHTML='';therapists.forEach(t=>{const h=window.loadChatHistory(t.id);if(h.length>0){const last=h.slice().reverse().find(m=>m.role!=='system');const p=last&&last.role==='user';const d=document.createElement('div');d.className="p-3 bg-slate-800 rounded border border-slate-700 cursor-pointer hover:bg-slate-700";d.onclick=()=>window.openAdminChat(t);d.innerHTML=`<div class="flex justify-between"><span class="font-bold text-sm text-white">${t.name}</span>${p?'<span class="admin-badge text-xs text-sky-400">Pendente</span>':''}</div><p class="text-[10px] text-slate-400 truncate">${last?last.content:'-'}</p>`;l.appendChild(d)}})}
-window.openAdminChat=function(t){window.adminTargetTherapist=t;document.getElementById('admin-response-area').classList.remove('hidden');document.getElementById('admin-target-name').innerText=`Em: ${t.name}`;window.updateAiStatusBtn();const h=window.loadChatHistory(t.id);const p=document.getElementById('admin-chat-preview');p.innerHTML=h.filter(m=>m.role!=='system').map(m=>`<div class="mb-1"><b class="${m.role==='user'?'text-sky-400':'text-emerald-400'}">${m.role==='user'?'Cliente':'Bot'}:</b> ${m.content}</div>`).join('');p.scrollTop=p.scrollHeight}
-window.toggleAiStatus=function(){if(!window.adminTargetTherapist)return;const i=window.adminTargetTherapist.id;window.aiPaused[i]=!window.aiPaused[i];window.updateAiStatusBtn()}
-window.updateAiStatusBtn=function(){const b=document.getElementById('ai-toggle-btn');if(window.aiPaused[window.adminTargetTherapist.id]){b.innerText="IA: PAUSADA";b.className="text-[10px] bg-red-600 px-2 py-1 rounded font-bold"}else{b.innerText="IA: ATIVA";b.className="text-[10px] bg-emerald-600 px-2 py-1 rounded font-bold"}}
-window.sendAdminReply=function(){const i=document.getElementById('admin-reply-input');const t=i.value.trim();if(!t||!window.adminTargetTherapist)return;const h=window.loadChatHistory(window.adminTargetTherapist.id);h.push({role:'assistant',content:t});window.saveChatHistory(window.adminTargetTherapist.id,h);i.value='';alert("Enviada!");window.loadAdminDashboard();window.openAdminChat(window.adminTargetTherapist)}
+
+window.loadAdminDashboard=function(isPolling = false){
+    let chats = [];
+    let currentChecksum = 0;
+    
+    // Varredura de todos os usuários no localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('chat_')) {
+            const h = JSON.parse(localStorage.getItem(key)) || [];
+            if(h.length > 0) {
+                const parts = key.split('_');
+                chats.push({ key, userName: parts[1], therapistId: parts[2], h });
+                currentChecksum += h.length;
+            }
+        }
+    }
+    
+    // Evitar piscar a tela se não houver mensagens novas
+    if(isPolling && window.totalChatsMemory === currentChecksum) return; 
+    window.totalChatsMemory = currentChecksum;
+    
+    const l = document.getElementById('admin-chat-list');
+    l.innerHTML = '';
+    if(chats.length === 0) {
+        l.innerHTML = '<p class="text-xs text-slate-500">Nenhuma conversa encontrada em andamento.</p>';
+        return;
+    }
+    
+    // Ordenar as conversas com mais interações
+    chats.sort((a,b) => b.h.length - a.h.length); 
+    
+    chats.forEach(c => {
+        const last = c.h.slice().reverse().find(m => m.role !== 'system');
+        const p = last && last.role === 'user';
+        const t = therapists.find(th => th.id === c.therapistId);
+        
+        const d = document.createElement('div');
+        d.className = "p-3 bg-slate-800 rounded border border-slate-700 cursor-pointer hover:bg-slate-700 mb-2 shadow";
+        d.onclick = () => window.openAdminChat(c.userName, c.therapistId);
+        d.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-sm text-sky-400">${c.userName}</span>
+                <span class="text-xs text-slate-400">c/ ${t ? t.name : c.therapistId}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <p class="text-[10px] text-slate-300 truncate w-3/4">${last ? last.content : '-'}</p>
+                ${p ? '<span class="admin-badge text-[9px] bg-amber-600 text-white px-1 rounded animate-pulse">Aguardando</span>' : ''}
+            </div>
+        `;
+        l.appendChild(d);
+    });
+}
+
+window.openAdminChat=function(userName, therapistId){
+    const t = therapists.find(th => th.id === therapistId);
+    window.adminTarget = { userName, therapistId, therapistName: t.name };
+    document.getElementById('admin-response-area').classList.remove('hidden');
+    document.getElementById('admin-target-name').innerText = `Respondendo ${userName} (c/ ${t.name})`;
+    window.updateAiStatusBtn();
+    
+    window.adminTargetChatLength = 0; // Força renderizar
+    window.refreshAdminChatBox();
+}
+
+window.refreshAdminChatBox = function() {
+    if(!window.adminTarget) return;
+    const key = `chat_${window.adminTarget.userName}_${window.adminTarget.therapistId}`;
+    const h = JSON.parse(localStorage.getItem(key)) || [];
+    
+    if(h.length !== window.adminTargetChatLength) {
+        const p = document.getElementById('admin-chat-preview');
+        p.innerHTML = h.filter(m => m.role !== 'system').map(m => `
+            <div class="mb-1 text-sm"><b class="${m.role === 'user' ? 'text-sky-400' : 'text-emerald-400'}">${m.role === 'user' ? window.adminTarget.userName : 'Bot (Ou Você)'}:</b> ${m.content}</div>
+        `).join('');
+        p.scrollTop = p.scrollHeight;
+        window.adminTargetChatLength = h.length;
+    }
+}
+
+window.toggleAiStatus=function(){
+    if(!window.adminTarget) return;
+    const isPaused = window.isAiPaused(window.adminTarget.userName, window.adminTarget.therapistId);
+    window.setAiPaused(window.adminTarget.userName, window.adminTarget.therapistId, !isPaused);
+    window.updateAiStatusBtn();
+}
+
+window.updateAiStatusBtn=function(){
+    if(!window.adminTarget) return;
+    const b = document.getElementById('ai-toggle-btn');
+    if (window.isAiPaused(window.adminTarget.userName, window.adminTarget.therapistId)) {
+        b.innerText = "IA: PAUSADA (VOCÊ ESTÁ NO CONTROLE)";
+        b.className = "text-[10px] bg-red-600 px-2 py-1 rounded font-bold";
+    } else {
+        b.innerText = "IA: ATIVA E OPERANTE";
+        b.className = "text-[10px] bg-emerald-600 px-2 py-1 rounded font-bold";
+    }
+}
+
+window.sendAdminReply=function(){
+    const i = document.getElementById('admin-reply-input');
+    const txt = i.value.trim();
+    if (!txt || !window.adminTarget) return;
+    
+    const key = `chat_${window.adminTarget.userName}_${window.adminTarget.therapistId}`;
+    const h = JSON.parse(localStorage.getItem(key)) || [];
+    h.push({ role: 'assistant', content: txt });
+    localStorage.setItem(key, JSON.stringify(h));
+    
+    i.value = '';
+    
+    // Sempre que o Admin responder, automaticamente ele pausa a IA daquele usuário
+    window.setAiPaused(window.adminTarget.userName, window.adminTarget.therapistId, true);
+    window.updateAiStatusBtn();
+    
+    window.loadAdminDashboard(false); // Força refresh imediato da lista
+    window.refreshAdminChatBox();     // Força refresh imediato do chat preview
+}
 </script>
 </body>
 </html>
