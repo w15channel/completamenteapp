@@ -1,15 +1,18 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const REQUEST_TIMEOUT_MS = 12000;
 
 function parseAllowlist() {
   return (process.env.ALLOWED_ORIGINS || '')
     .split(',')
+    .map((item) => item.trim().replace(/\/$/, ''))
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
 function setCors(req, res) {
   const allowlist = parseAllowlist();
+  const origin = (req.headers.origin || '').replace(/\/$/, '');
   const origin = req.headers.origin;
 
   if (allowlist.length === 0) {
@@ -34,12 +37,36 @@ function toGeminiContents(messages = []) {
     }));
 }
 
+function readRequestBody(req) {
+  if (!req || req.body == null) return {};
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
+  }
+  return req.body;
+}
+
+async function requestWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function requestGroq({ messages, temperature, max_tokens }) {
   const key = process.env.GROQ_API_KEY;
   if (!key) {
     throw new Error('GROQ_API_KEY não configurada.');
   }
 
+  const response = await requestWithTimeout(GROQ_URL, {
   const response = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
@@ -72,6 +99,22 @@ async function requestGemini({ messages, temperature, max_tokens }) {
     throw new Error('GEMINI_API_KEY não configurada.');
   }
 
+  const response = await requestWithTimeout(
+    `${GEMINI_URL}?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: toGeminiContents(messages),
+        generationConfig: {
+          temperature,
+          maxOutputTokens: max_tokens,
+        },
+      }),
+    }
+  );
   const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(key)}`, {
     method: 'POST',
     headers: {
@@ -121,6 +164,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Use POST.' });
   }
 
+  const body = readRequestBody(req);
+  const { messages = [], temperature = 0.7, max_tokens = 300 } = body;
   const { messages = [], temperature = 0.7, max_tokens = 300 } = req.body || {};
 
   if (!Array.isArray(messages) || messages.length === 0) {

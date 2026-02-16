@@ -36,3 +36,8 @@ Troque `SEU-PROJETO-VERCEL` pelo domínio real do deploy na Vercel.
 3. Publicar no GitHub Pages.
 4. Testar conversa normal (Groq ativo).
 5. Simular falha da Groq (remover chave temporariamente na Vercel) e confirmar fallback Gemini.
+
+## Confiabilidade (fallback em produção)
+- O backend em `/api/ai` agora tenta Groq com timeout e, se falhar, usa Gemini automaticamente.
+- O frontend também aceita múltiplos endpoints de proxy: URL manual em `localStorage["wr_ai_proxy_url"]`, URL principal e fallback local (`/api/ai`).
+- Isso reduz risco de indisponibilidade quando um endpoint específico estiver fora.
