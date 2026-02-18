@@ -3,6 +3,13 @@ import { InferenceClient } from "@huggingface/inference";
 const VERCEL_LANGUAGE_URL =
   process.env.VERCEL_LANGUAGE_API_URL || "https://api.v0.dev/v1/chat/completions";
 
+const HUGGINGFACE_CHAT_URL =
+  process.env.HF_CHAT_URL || "https://router.huggingface.co/v1/chat/completions";
+
+const GROQ_CHAT_URL = process.env.GROQ_CHAT_URL || "https://api.groq.com/openai/v1/chat/completions";
+
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+
 const MESSAGE_SEQUENCE = [
   "mensagem direta",
   "mensagem com pergunta",
@@ -59,51 +66,204 @@ function normalizeMessages(messages = []) {
     .map((msg) => ({ role: msg.role, content: msg.content }));
 }
 
-async function handleLanguage(req, res, messages, temperature, maxTokens) {
-  const apiKey = process.env.VERCEL_LANGUAGE_API_KEY || process.env.VERCEL_API_KEY;
+function createTimeoutController(ms = 20000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timeout)
+  };
+}
 
-  if (!apiKey) {
-    return res
-      .status(500)
-      .json({ error: "Chave da API de linguagem da Vercel não encontrada." });
+function normalizeProviderResponse(providerName, raw) {
+  if (!raw?.choices?.[0]?.message?.content) {
+    throw new Error(`${providerName}: resposta inválida.`);
   }
 
-  const systemPrompt = buildLanguageSystemPrompt(messages);
-  const normalizedMessages = normalizeMessages(messages);
-  const finalMessages = [{ role: "system", content: systemPrompt }, ...normalizedMessages];
+  return {
+    id: raw.id || `${providerName}-${Date.now()}`,
+    object: "chat.completion",
+    created: raw.created || Math.floor(Date.now() / 1000),
+    model: raw.model || providerName,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: "assistant",
+          content: raw.choices[0].message.content
+        },
+        finish_reason: raw.choices[0].finish_reason || "stop"
+      }
+    ],
+    provider: providerName,
+    usage: raw.usage || undefined
+  };
+}
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+async function requestOpenAICompatible({ providerName, url, apiKey, model, messages, temperature, maxTokens }) {
+  const timeout = createTimeoutController();
 
   try {
-    const response = await fetch(VERCEL_LANGUAGE_URL, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.VERCEL_LANGUAGE_MODEL || "openai/gpt-4o-mini",
-        messages: finalMessages,
+        model,
+        messages,
         temperature,
         max_tokens: maxTokens
       }),
-      signal: controller.signal
+      signal: timeout.signal
     });
 
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: "Falha na API de linguagem da Vercel.",
-        details: data
-      });
+      throw new Error(`${providerName}: HTTP ${response.status} ${JSON.stringify(data)}`);
     }
 
-    return res.status(200).json(data);
+    return normalizeProviderResponse(providerName, data);
   } finally {
-    clearTimeout(timeout);
+    timeout.clear();
   }
+}
+
+async function requestGemini({ apiKey, messages, temperature, maxTokens }) {
+  const timeout = createTimeoutController();
+  const promptText = messages
+    .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+    .join("\n");
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens
+          }
+        }),
+        signal: timeout.signal
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(`gemini: HTTP ${response.status} ${JSON.stringify(data)}`);
+    }
+
+    const content = data?.candidates?.[0]?.content?.parts
+      ?.map((part) => part?.text || "")
+      .join("")
+      .trim();
+
+    return normalizeProviderResponse("gemini", {
+      model: GEMINI_MODEL,
+      choices: [
+        {
+          message: {
+            content: content || "Desculpe, não consegui concluir agora."
+          }
+        }
+      ]
+    });
+  } finally {
+    timeout.clear();
+  }
+}
+
+async function handleLanguage(req, res, messages, temperature, maxTokens) {
+  const systemPrompt = buildLanguageSystemPrompt(messages);
+  const normalizedMessages = normalizeMessages(messages);
+  const finalMessages = [{ role: "system", content: systemPrompt }, ...normalizedMessages];
+
+  const attempts = [
+    {
+      enabled: Boolean(process.env.SK_MODEL),
+      name: "sk_model",
+      run: () =>
+        requestOpenAICompatible({
+          providerName: "sk_model",
+          url: VERCEL_LANGUAGE_URL,
+          apiKey: process.env.SK_MODEL,
+          model: process.env.VERCEL_LANGUAGE_MODEL || "openai/gpt-4o-mini",
+          messages: finalMessages,
+          temperature,
+          maxTokens
+        })
+    },
+    {
+      enabled: Boolean(process.env.HF_TOKEN),
+      name: "huggingface",
+      run: () =>
+        requestOpenAICompatible({
+          providerName: "huggingface",
+          url: HUGGINGFACE_CHAT_URL,
+          apiKey: process.env.HF_TOKEN,
+          model: process.env.HF_CHAT_MODEL || "HuggingFaceH4/zephyr-7b-beta",
+          messages: finalMessages,
+          temperature,
+          maxTokens
+        })
+    },
+    {
+      enabled: Boolean(process.env.GROQ_API_KEY),
+      name: "groq",
+      run: () =>
+        requestOpenAICompatible({
+          providerName: "groq",
+          url: GROQ_CHAT_URL,
+          apiKey: process.env.GROQ_API_KEY,
+          model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+          messages: finalMessages,
+          temperature,
+          maxTokens
+        })
+    },
+    {
+      enabled: Boolean(process.env.GEMINI_API_KEY),
+      name: "gemini",
+      run: () =>
+        requestGemini({
+          apiKey: process.env.GEMINI_API_KEY,
+          messages: finalMessages,
+          temperature,
+          maxTokens
+        })
+    }
+  ].filter((attempt) => attempt.enabled);
+
+  if (attempts.length === 0) {
+    return res.status(500).json({
+      error:
+        "Nenhuma chave de IA configurada. Defina ao menos uma: SK_MODEL, HF_TOKEN, GROQ_API_KEY ou GEMINI_API_KEY."
+    });
+  }
+
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      const data = await attempt.run();
+      return res.status(200).json(data);
+    } catch (error) {
+      console.error(`Falha no provedor ${attempt.name}:`, error);
+      errors.push({ provider: attempt.name, message: error.message });
+    }
+  }
+
+  return res.status(503).json({
+    error: "Todos os provedores de IA falharam.",
+    details: errors
+  });
 }
 
 async function handleImage(req, res, prompt) {
