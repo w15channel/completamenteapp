@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@huggingface/inference": "^2.8.1",
-    "openai": "^5.12.2"
+    "@huggingface/inference": "^2.8.1"
   }
 }

@@ -1,8 +1,7 @@
 import { InferenceClient } from "@huggingface/inference";
-import OpenAI from "openai";
 
-const HF_ROUTER_BASE_URL = "https://router.huggingface.co/v1";
-const HF_TEXT_MODEL = process.env.HF_TEXT_MODEL || "moonshotai/Kimi-K2-Thinking:novita";
+const VERCEL_LANGUAGE_URL =
+  process.env.VERCEL_LANGUAGE_API_URL || "https://api.v0.dev/v1/chat/completions";
 
 const MESSAGE_SEQUENCE = [
   "mensagem direta",
@@ -50,8 +49,7 @@ function buildLanguageSystemPrompt(messages = []) {
     `Passo atual obrigatório: ${sequenceStep}.`,
     `Sequência completa (cíclica): ${MESSAGE_SEQUENCE.join(" -> ")}.`,
     "Se fizer pergunta, manter objetiva e acolhedora.",
-    "Evitar listas, emojis e explicações longas.",
-    "Nunca dizer que você é IA."
+    "Evitar listas, emojis e explicações longas."
   ].join(" ");
 }
 
@@ -61,33 +59,54 @@ function normalizeMessages(messages = []) {
     .map((msg) => ({ role: msg.role, content: msg.content }));
 }
 
-async function handleLanguage(res, messages, temperature, maxTokens) {
-  const hfToken = process.env.HF_TOKEN;
+async function handleLanguage(req, res, messages, temperature, maxTokens) {
+  const apiKey = process.env.VERCEL_LANGUAGE_API_KEY || process.env.VERCEL_API_KEY;
 
-  if (!hfToken) {
-    return res.status(500).json({ error: "HF_TOKEN não encontrado para geração de texto." });
+  if (!apiKey) {
+    return res
+      .status(500)
+      .json({ error: "Chave da API de linguagem da Vercel não encontrada." });
   }
-
-  const client = new OpenAI({
-    baseURL: HF_ROUTER_BASE_URL,
-    apiKey: hfToken
-  });
 
   const systemPrompt = buildLanguageSystemPrompt(messages);
   const normalizedMessages = normalizeMessages(messages);
   const finalMessages = [{ role: "system", content: systemPrompt }, ...normalizedMessages];
 
-  const chatCompletion = await client.chat.completions.create({
-    model: HF_TEXT_MODEL,
-    messages: finalMessages,
-    temperature,
-    max_tokens: maxTokens
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
-  return res.status(200).json(chatCompletion);
+  try {
+    const response = await fetch(VERCEL_LANGUAGE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: process.env.VERCEL_LANGUAGE_MODEL || "openai/gpt-4o-mini",
+        messages: finalMessages,
+        temperature,
+        max_tokens: maxTokens
+      }),
+      signal: controller.signal
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: "Falha na API de linguagem da Vercel.",
+        details: data
+      });
+    }
+
+    return res.status(200).json(data);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-async function handleImage(res, prompt) {
+async function handleImage(req, res, prompt) {
   const hfToken = process.env.HF_TOKEN;
   if (!hfToken) {
     return res.status(500).json({ error: "HF_TOKEN não encontrado." });
@@ -131,19 +150,16 @@ export default async function handler(req, res) {
   try {
     if (task === "image") {
       const finalPrompt = (prompt || "Astronaut riding a horse").trim();
-      return await handleImage(res, finalPrompt);
+      return await handleImage(req, res, finalPrompt);
     }
 
     if (!messages || messages.length === 0) {
       return res.status(400).json({ error: "O array de mensagens está vazio ou ausente." });
     }
 
-    return await handleLanguage(res, messages, temperature, maxTokens);
+    return await handleLanguage(req, res, messages, temperature, maxTokens);
   } catch (error) {
     console.error("Erro interno /api/ai:", error);
-    return res.status(500).json({
-      error: "Erro interno no serviço de IA.",
-      details: error?.message || "Erro desconhecido"
-    });
+    return res.status(500).json({ error: "Erro interno no serviço de IA." });
   }
 }
