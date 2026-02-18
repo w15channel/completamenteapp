@@ -1,18 +1,24 @@
 {
-  "name": "completamenteapp",
-  "version": "1.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Plataforma de Apoio Terapêutico Híbrido - WR TERAPIA",
+  "name": "wr-terapia-api",
+  "version": "1.0.0",
+  "description": "Proxy de Inteligência Artificial para WR Terapia",
   "main": "api/ai.js",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "node api/ai.js"
+    "start": "node api/ai.js",
+    "dev": "vercel dev"
   },
+  "keywords": [
+    "terapia",
+    "ai",
+    "proxy",
+    "wr-tec"
+  ],
+  "author": "William Ribeiro - WR TEC",
+  "license": "MIT",
   "dependencies": {
-    "@huggingface/inference": "^2.8.1"
-  },
-  "engines": {
-    "node": ">=18.x"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
   }
 }
