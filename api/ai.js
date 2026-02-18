@@ -12,94 +12,79 @@ function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
     }).finally(() => clearTimeout(timeout));
 }
 
+function toGeminiRole(role) {
+    return role === 'assistant' ? 'model' : 'user';
+}
+
+function buildGeminiUrl(model, apiKey) {
+    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+}
+
+function extractGeminiText(data) {
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
-    const { messages, temperature = 0.7 } = req.body;
-    const defaultModel = process.env.SK_MODEL || 'llama-3.3-70b-versatile';
+    const { messages } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    const providers = [
-        {
-            name: 'GROQ',
-            kind: 'openai_compatible',
-            url: 'https://api.groq.com/openai/v1/chat/completions',
-            key: process.env.GROQ_API_KEY,
-            model: defaultModel
-        },
-        {
-            name: 'GEMINI',
-            kind: 'gemini',
-            url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            key: process.env.GEMINI_API_KEY,
-            model: 'gemini-1.5-flash'
-        },
-        {
-            name: 'HUGGINGFACE',
-            kind: 'openai_compatible',
-            url: 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
-            key: process.env.HF_TOKEN,
-            model: defaultModel
-        }
-    ];
+    if (!apiKey) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY não configurada.' });
+    }
 
-    for (const provider of providers) {
-        if (!provider.key) continue;
+    const modelCandidates = [
+        process.env.SK_MODEL,
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash'
+    ].filter(Boolean);
 
+    for (const model of modelCandidates) {
         try {
-            console.log(`Tentando provedor: ${provider.name} (timeout ${REQUEST_TIMEOUT_MS}ms)...`);
+            const url = buildGeminiUrl(model, apiKey);
+            console.log(`Tentando Gemini / modelo: ${model} (timeout ${REQUEST_TIMEOUT_MS}ms)...`);
 
-            const options = provider.kind === 'gemini'
-                ? {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: messages.map(m => ({
-                            role: toGeminiRole(m.role),
-                            parts: [{ text: m.content }]
-                        }))
-                    })
-                }
-                : {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${provider.key}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: provider.model,
-                        messages,
-                        temperature
-                    })
-                };
-
-            const response = await withTimeout(provider.url, options);
+            const response = await withTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: messages.map(m => ({
+                        role: toGeminiRole(m.role),
+                        parts: [{ text: m.content }]
+                    }))
+                })
+            });
 
             if (!response.ok) {
-                console.warn(`${provider.name} falhou com status ${response.status}. Tentando próximo...`);
+                const errorText = await response.text();
+                console.warn(
+                    `Gemini (${model}) falhou com status ${response.status}. ` +
+                    `Detalhe: ${errorText.slice(0, 180)}. Tentando próximo modelo...`
+                );
                 continue;
             }
 
             const data = await response.json();
-            const text = provider.kind === 'gemini'
-                ? data?.candidates?.[0]?.content?.parts?.[0]?.text
-                : data?.choices?.[0]?.message?.content;
+            const text = extractGeminiText(data);
 
             if (!text) {
-                console.warn(`${provider.name} respondeu sem texto utilizável. Tentando próximo...`);
+                console.warn(`Gemini (${model}) respondeu sem texto utilizável. Tentando próximo modelo...`);
                 continue;
             }
 
             return res.status(200).json({
                 choices: [{ message: { content: text } }],
-                provider: provider.name
+                provider: 'GEMINI',
+                model
             });
         } catch (error) {
             const reason = error.name === 'AbortError'
                 ? `timeout de ${REQUEST_TIMEOUT_MS}ms`
                 : error.message;
-            console.error(`Erro ao conectar com ${provider.name}: ${reason}`);
+            console.error(`Erro ao conectar com Gemini (${model}): ${reason}`);
         }
     }
 
-    return res.status(500).json({ error: 'Nenhum provedor de IA disponível no momento.' });
+    return res.status(500).json({ error: 'Gemini indisponível no momento.' });
 }
