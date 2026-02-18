@@ -58,9 +58,31 @@ window.submitChat = async function(t, isAudio = false) {
             volumeInstruction = "Mantenha um tom de conversa natural. Não use listas e nem textos excessivamente longos.";
         }
 
+        const attendantLanguageInstruction = [
+            "Regra obrigatória para todos os atendentes:",
+            "- Produzir frases curtas (máximo de 200 caracteres por frase).",
+            "- Manter linguagem ligada a problemas pessoais trazidos pelo paciente.",
+            "- Usar tom pessoal, informal e acolhedor.",
+            "- Preferir verbos no infinitivo pessoal quando possível.",
+            "- Falar diretamente com o paciente em segunda pessoa do singular (você).",
+            "- Avaliar o tom e a urgência emocional do paciente antes de responder.",
+            "- Seguir a sequência de interação e reiniciar o ciclo ao final:",
+            "  1) mensagem direta;",
+            "  2) mensagem com pergunta;",
+            "  3) reforço da resposta;",
+            "  4) outro reforço da resposta;",
+            "  5) reforço com pergunta;",
+            "  6) novo reforço da resposta;",
+            "  7) mensagem de preocupação;",
+            "  8) avaliar novamente o tom da necessidade do paciente e repetir o padrão."
+        ].join("\n");
+
         const messagesForAI = h.map((m, idx) => {
             if (idx === h.length - 1) {
-                return { role: m.role, content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]` };
+                return {
+                    role: m.role,
+                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
+                };
             }
             return { role: m.role, content: m.content };
         });
