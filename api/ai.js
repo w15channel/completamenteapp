@@ -54,7 +54,7 @@ export default async function handler(req, res) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: messages.map(m => ({
-                            role: m.role === 'assistant' ? 'model' : 'user',
+                            role: toGeminiRole(m.role),
                             parts: [{ text: m.content }]
                         }))
                     })
