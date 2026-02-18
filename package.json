@@ -1,24 +1,8 @@
 {
   "name": "wr-terapia-api",
   "version": "1.0.0",
-  "description": "Proxy de Inteligência Artificial para WR Terapia",
   "main": "api/ai.js",
-  "scripts": {
-    "start": "node api/ai.js",
-    "dev": "vercel dev"
-  },
-  "keywords": [
-    "terapia",
-    "ai",
-    "proxy",
-    "wr-tec"
-  ],
-  "author": "William Ribeiro - WR TEC",
-  "license": "MIT",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.1",
-    "express": "^4.18.2",
     "node-fetch": "^2.7.0"
   }
 }
