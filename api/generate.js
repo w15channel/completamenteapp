@@ -1,202 +1,142 @@
-import { InferenceClient } from "@huggingface/inference";
+/**
+ * WR TERAPIA - Motor de Humanização Orgânica
+ * v2.0 - Foco em Proporcionalidade e Imperceptibilidade
+ */
 
-// --- CONFIGURAÇÕES DE AMBIENTE ---
-const VERCEL_LANGUAGE_URL = process.env.VERCEL_LANGUAGE_API_URL || "https://api.v0.dev/v1/chat/completions";
-const HUGGINGFACE_CHAT_URL = process.env.HF_CHAT_URL || "https://router.huggingface.co/v1/chat/completions";
-const GROQ_CHAT_URL = process.env.GROQ_CHAT_URL || "https://api.groq.com/openai/v1/chat/completions";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+window.submitChat = async function(t, isAudio = false) {
+    if (!t || window.isWaiting) return;
 
-// Sequência de tom de voz para a dinâmica terapêutica
-const MESSAGE_SEQUENCE = [
-  "mensagem direta",
-  "mensagem com pergunta",
-  "reforço da resposta",
-  "outro reforço da resposta",
-  "mensagem com reforço e pergunta",
-  "mensagem de reforço da resposta",
-  "mensagem de preocupação",
-  "dinâmica de avaliação do tom da necessidade do sujeito"
-];
+    const chatId = `${window.clientId}_${window.activeTherapist.id}`;
+    const chatInput = document.getElementById('chat-input');
+    const typingBox = document.getElementById('typing-box');
+    const submitBtn = document.getElementById('submit-btn');
+    const micBtn = document.getElementById('mic-btn');
 
-// --- AUXILIARES ---
-
-function setCors(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-}
-
-function getSequenceStep(messages = []) {
-  const assistantReplies = messages.filter((msg) => msg.role === "assistant").length;
-  return MESSAGE_SEQUENCE[assistantReplies % MESSAGE_SEQUENCE.length];
-}
-
-function buildLanguageSystemPrompt(messages = []) {
-  const sequenceStep = getSequenceStep(messages);
-  return [
-    "Você responde em português brasileiro para apoio emocional.",
-    "Use frases curtas, com no máximo 200 caracteres.",
-    "Conecte a mensagem a problemas pessoais reais do usuário.",
-    "Mantenha tom informal, pessoal e direto.",
-    "Use segunda pessoa do singular (você).",
-    "Siga estritamente a sequência de estilo e avance um passo por resposta.",
-    `Passo atual obrigatório: ${sequenceStep}.`,
-    "Se fizer pergunta, manter objetiva e acolhedora.",
-    "Evitar listas, emojis exagerados e explicações longas."
-  ].join(" ");
-}
-
-function normalizeMessages(messages = []) {
-  return messages
-    .filter((msg) => msg?.role && typeof msg?.content === "string")
-    .map((msg) => ({ role: msg.role, content: msg.content }));
-}
-
-// --- PROVEDORES DE IA ---
-
-async function requestOpenAICompatible({ providerName, url, apiKey, model, messages, temperature, maxTokens }) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens
-      }),
-      signal: controller.signal
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(`${providerName} Error: ${data.error?.message || response.statusText}`);
+    // Limpeza imediata do input para feedback visual de envio
+    if (chatInput) chatInput.value = '';
     
-    return {
-      content: data.choices[0].message.content,
-      provider: providerName
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+    window.isWaiting = true;
+    if (submitBtn) submitBtn.disabled = true;
+    if (micBtn) micBtn.disabled = true;
 
-async function requestGemini({ apiKey, messages, temperature, maxTokens }) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-  
-  // Converte histórico para o formato do Gemini
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
+    // --- 1. ANÁLISE DE PROPORÇÃO (Métrica Humana) ---
+    const userMessageLength = t.trim().length; // Caracteres
+    const userWordCount = t.trim().split(/\s+/).length; // Palavras
+    let h = [];
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents,
-      generationConfig: { temperature, maxOutputTokens: maxTokens }
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(`Gemini Error: ${data.error?.message || 'Unknown'}`);
-
-  return {
-    content: data.candidates[0].content.parts[0].text,
-    provider: "gemini"
-  };
-}
-
-// --- HANDLERS PRINCIPAIS ---
-
-async function handleLanguage(req, res, messages, temperature, maxTokens) {
-  const systemPrompt = buildLanguageSystemPrompt(messages);
-  const normalized = normalizeMessages(messages);
-  const finalMessages = [{ role: "system", content: systemPrompt }, ...normalized];
-
-  // Ordem de tentativa: Groq (Rápido) -> Gemini (Inteligente) -> HuggingFace (Backup)
-  const attempts = [
-    {
-      enabled: !!process.env.GROQ_API_KEY,
-      run: () => requestOpenAICompatible({
-        providerName: "groq",
-        url: GROQ_CHAT_URL,
-        apiKey: process.env.GROQ_API_KEY,
-        model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
-        messages: finalMessages,
-        temperature, maxTokens
-      })
-    },
-    {
-      enabled: !!process.env.GEMINI_API_KEY,
-      run: () => requestGemini({
-        apiKey: process.env.GEMINI_API_KEY,
-        messages: finalMessages,
-        temperature, maxTokens
-      })
+    // Persistência da mensagem do usuário
+    if (db) {
+        const snap = await db.ref(`chats/${chatId}`).once('value');
+        h = snap.val() || [];
+        h.push({ role: 'user', content: t, isAudio: isAudio });
+        await db.ref(`chats/${chatId}`).set(h);
+    } else {
+        h = window.getLocalHistory(window.activeTherapist.id);
+        h.push({ role: 'user', content: t, isAudio: isAudio });
+        localStorage.setItem(`chat_${chatId}`, JSON.stringify(h));
+        window.refreshChatDisplay(h);
     }
-  ].filter(a => a.enabled);
 
-  for (const attempt of attempts) {
+    // Se o bot estiver pausado (atendimento humano assumido)
+    if (window.isBotPaused) {
+        typingBox.classList.remove('hidden');
+        typingBox.innerHTML = '<i class="fas fa-user-md mr-1"></i> William está acompanhando...';
+        return;
+    }
+
+    const startTimestamp = Date.now();
+
     try {
-      const result = await attempt.run();
-      return res.status(200).json({
-        choices: [{ message: { content: result.content } }],
-        provider: result.provider
-      });
-    } catch (e) {
-      console.error("Tentativa de provedor falhou:", e.message);
-      continue;
+        // --- 2. REGRA DE OURO: Instrução de Volume Dinâmico ---
+        // Aqui dizemos à IA como se comportar baseada no tamanho da pergunta
+        let volumeInstruction = "";
+        if (userWordCount <= 4) {
+            volumeInstruction = "O paciente foi breve (saudação ou frase curta). Responda com no máximo 2 frases. Seja direto e acolhedor.";
+        } else if (userWordCount > 25) {
+            volumeInstruction = "O paciente desabafou. Ofereça uma escuta profunda, valide os sentimentos e responda com um volume de texto similar ao dele.";
+        } else {
+            volumeInstruction = "Mantenha um tom de conversa natural. Não use listas e nem textos excessivamente longos.";
+        }
+
+        const messagesForAI = h.map((m, idx) => {
+            if (idx === h.length - 1) {
+                return { role: m.role, content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]` };
+            }
+            return { role: m.role, content: m.content };
+        });
+
+        // Chamada para a API
+        const res = await fetch(window.AI_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                messages: messagesForAI, 
+                temperature: 0.8, // Mais criatividade/humanidade
+                max_tokens: userWordCount < 5 ? 120 : 500 
+            })
+        });
+
+        if (!res.ok) throw new Error("Falha na comunicação.");
+        const data = await res.json();
+        const rt = data.choices[0].message.content;
+        
+        const apiDuration = Date.now() - startTimestamp;
+
+        // --- 3. LÓGICA DE TEMPO REALÍSTICO ---
+        
+        // A) Delay de Leitura (O tempo que o terapeuta leva para ler o que o paciente mandou)
+        // Se a mensagem for curta: 2s. Se for longa: até 9s.
+        let readWait = userWordCount < 6 ? 2500 : 8500;
+        readWait = Math.max(readWait - apiDuration, 500);
+
+        // B) Delay de Escrita (Simulando a digitação humana)
+        // Média de 130 palavras por minuto.
+        const responseWordCount = rt.split(/\s+/).length;
+        let typeWait = Math.round((responseWordCount / 130) * 60000);
+        
+        // Limitadores para não frustrar o usuário (máximo 14 segundos de "digitando")
+        if (typeWait > 14000) typeWait = 14000;
+        if (typeWait < 2000) typeWait = 2000;
+
+        // Execução da sequência humana
+        setTimeout(() => {
+            if (window.isBotPaused) return;
+            
+            typingBox.innerHTML = 'Digitando <span class="animate-pulse">...</span>';
+            typingBox.classList.remove('hidden');
+
+            setTimeout(async () => {
+                if (window.isBotPaused) return;
+
+                h.push({ role: 'assistant', content: rt });
+
+                if (db) {
+                    await db.ref(`chats/${chatId}`).set(h);
+                } else {
+                    localStorage.setItem(`chat_${chatId}`, JSON.stringify(h));
+                    window.refreshChatDisplay(h);
+                }
+
+                typingBox.classList.add('hidden');
+                window.isWaiting = false;
+                if (submitBtn) submitBtn.disabled = false;
+                if (micBtn) micBtn.disabled = false;
+
+                // Scroll para a última mensagem
+                const mc = document.getElementById('chat-messages');
+                if (mc) mc.scrollTop = mc.scrollHeight;
+
+            }, typeWait);
+        }, readWait);
+
+    } catch (err) {
+        console.error("Erro na geração orgânica:", err);
+        typingBox.classList.add('hidden');
+        window.isWaiting = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (micBtn) micBtn.disabled = false;
     }
-  }
+};
 
-  return res.status(503).json({ error: "Todos os serviços de IA estão indisponíveis no momento." });
-}
-
-async function handleImage(req, res, prompt) {
-  const hfToken = process.env.HF_TOKEN;
-  if (!hfToken) return res.status(500).json({ error: "Configuração de imagem ausente." });
-
-  try {
-    const client = new InferenceClient(hfToken);
-    const imageBlob = await client.textToImage({
-      model: "black-forest-labs/FLUX.1-schnell", // Modelo mais moderno e rápido
-      inputs: prompt,
-      parameters: { num_inference_steps: 4 }
-    });
-
-    const buffer = Buffer.from(await imageBlob.arrayBuffer());
-    return res.status(200).json({
-      image_base64: buffer.toString("base64"),
-      mime_type: "image/webp"
-    });
-  } catch (e) {
-    return res.status(500).json({ error: "Erro ao gerar imagem: " + e.message });
-  }
-}
-
-// --- SERVERLESS EXPORT ---
-
-export default async function handler(req, res) {
-  setCors(req, res);
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-  const { task = "chat", messages, prompt, temperature = 0.7, max_tokens = 400 } = req.body;
-
-  try {
-    if (task === "image") {
-      return await handleImage(req, res, prompt);
-    }
-    return await handleLanguage(req, res, messages, temperature, max_tokens);
-  } catch (error) {
-    console.error("Erro Geral:", error);
-    return res.status(500).json({ error: "Erro interno no servidor." });
-  }
-}
+// Log de Inicialização no console para controle do Admin
+console.log("🚀 Método de Linguagem Orgânica WR-TEC Ativado.");
