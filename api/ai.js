@@ -131,6 +131,28 @@ async function requestOpenAICompatible({ providerName, url, apiKey, model, messa
   }
 }
 
+async function runProviderWithRetries({ attempt, retries = 1, retryDelayMs = 700 }) {
+  let lastError;
+
+  for (let tryIndex = 0; tryIndex <= retries; tryIndex += 1) {
+    try {
+      return await attempt.run();
+    } catch (error) {
+      lastError = error;
+      const isLastTry = tryIndex === retries;
+
+      if (!isLastTry) {
+        console.warn(
+          `Tentativa ${tryIndex + 1} falhou para ${attempt.name}. Nova tentativa em ${retryDelayMs}ms.`
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 async function requestGemini({ apiKey, messages, temperature, maxTokens }) {
   const timeout = createTimeoutController();
   const promptText = messages
@@ -252,7 +274,11 @@ async function handleLanguage(req, res, messages, temperature, maxTokens) {
 
   for (const attempt of attempts) {
     try {
-      const data = await attempt.run();
+      const data = await runProviderWithRetries({
+        attempt,
+        retries: Number(process.env.PROVIDER_RETRIES || 1),
+        retryDelayMs: Number(process.env.PROVIDER_RETRY_DELAY_MS || 700)
+      });
       return res.status(200).json(data);
     } catch (error) {
       console.error(`Falha no provedor ${attempt.name}:`, error);
