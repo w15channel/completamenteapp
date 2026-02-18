@@ -1,9 +1,18 @@
 {
   "name": "completamenteapp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
+  "description": "Plataforma de Apoio Terapêutico Híbrido - WR TERAPIA",
+  "main": "api/ai.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/ai.js"
+  },
   "dependencies": {
     "@huggingface/inference": "^2.8.1"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
