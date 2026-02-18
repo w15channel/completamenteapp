@@ -2,6 +2,9 @@
 
 ## O que foi ajustado
 - O frontend usa o domínio atual da Vercel como prioridade para o proxy (`window.location.origin/api/ai`).
+- O backend `/api/ai` agora usa **Hugging Face** para:
+  - **Linguagem:** OpenAI SDK com `baseURL: https://router.huggingface.co/v1`, chave `HF_TOKEN` e modelo `moonshotai/Kimi-K2-Thinking:novita`.
+  - **Imagem:** Hugging Face Inference (`@huggingface/inference`) com `provider: fal-ai`, modelo `Qwen/Qwen-Image-2512` e chave `HF_TOKEN`.
 - O backend `/api/ai` agora usa:
   - **Linguagem:** API da Vercel (chave em variável de ambiente).
   - **Imagem:** Hugging Face Inference (`@huggingface/inference`) com `HF_TOKEN`.
@@ -16,6 +19,9 @@
 ## Variáveis na Vercel
 Cadastre no projeto da Vercel:
 
+- `HF_TOKEN`
+- `HF_TEXT_MODEL` (opcional)
+  - padrão: `moonshotai/Kimi-K2-Thinking:novita`
 - `VERCEL_LANGUAGE_API_KEY` (sua chave `ak_...`)
 - `VERCEL_LANGUAGE_API_URL` (opcional)
   - padrão: `https://api.v0.dev/v1/chat/completions`
@@ -55,5 +61,6 @@ Resposta:
 ## Checklist pós-deploy
 1. Publicar o deploy na Vercel com as variáveis acima.
 2. Confirmar que o frontend está carregando no domínio da Vercel.
+3. Testar chat (HF Router com `HF_TOKEN`).
 3. Testar chat (linguagem via Vercel API).
 4. Testar geração de imagem (Hugging Face com `HF_TOKEN`).

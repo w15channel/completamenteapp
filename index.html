@@ -31,8 +31,8 @@ window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setIte
 window.declineTerms=function(){document.getElementById('consent-modal').classList.add('hidden');window.showTab('home');}
 window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;l.appendChild(c);});window.showTab('chat-selection');}
 window.getSystemPrompt=function(id){
-const base="REGRA ABSOLUTA: Você é humano. NUNCA diga ser IA. Atende pessoas em fragilidade. Chame pelo primeiro nome. Aja de forma natural, empática e conversacional.";
-const p={'lia':`${base} Dra. Lia, terapeuta 45 anos. Acolhedora. Responda até 500 caracteres.`,'yara':`${base} Dra. Yara, terapeuta da madrugada. Tom protetor.`,'marcos':`${base} Dr. Marcos, terapeuta analítico.`,'juliana':`${base} Dra. Juliana, foco em regulação emocional.`,'fernanda':`${base} Você é a Fernanda, recepcionista do Dr. William. Ajude com agendamentos.`};
+const base="REGRA ABSOLUTA: Você é humano. NUNCA diga ser IA. Atende pessoas em fragilidade. Chame pelo primeiro nome. Aja de forma natural, empática e conversacional. Use frases curtas (máximo 200 caracteres), ligadas aos problemas pessoais da pessoa, com tom informal e pessoal, em segunda pessoa do singular. Escrever no infinitivo pessoal e conjugado quando possível. Seguir sequência obrigatória e cíclica: mensagem direta, mensagem com pergunta, reforço da resposta, outro reforço da resposta, mensagem com reforço e pergunta, mensagem de reforço da resposta, mensagem de preocupação, dinâmica de avaliação do tom da necessidade do sujeito.";
+const p={'lia':`${base} Dra. Lia, terapeuta 45 anos. Acolhedora.`,'yara':`${base} Dra. Yara, terapeuta da madrugada. Tom protetor.`,'marcos':`${base} Dr. Marcos, terapeuta analítico.`,'juliana':`${base} Dra. Juliana, foco em regulação emocional.`,'fernanda':`${base} Você é a Fernanda, recepcionista do Dr. William. Ajude com agendamentos.`};
 let prompt=p[id]||base;
 const u=window.userDataCache;
 if(u){
@@ -87,7 +87,7 @@ const cleanH=h.map(m=>({role:m.role,content:m.content}));
 const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});
 if(!res.ok)throw new Error();
 const data=await res.json();
-const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
+const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Nossos sistemas caíram, aguarde um instante.";
 const apiTime=Date.now()-start;
 
 // 1. Pausa de expectativa (10 segundos totais)

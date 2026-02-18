@@ -1,4 +1,8 @@
 import { InferenceClient } from "@huggingface/inference";
+import OpenAI from "openai";
+
+const HF_ROUTER_BASE_URL = "https://router.huggingface.co/v1";
+const HF_TEXT_MODEL = process.env.HF_TEXT_MODEL || "moonshotai/Kimi-K2-Thinking:novita";
 
 const VERCEL_LANGUAGE_URL =
   process.env.VERCEL_LANGUAGE_API_URL || "https://api.v0.dev/v1/chat/completions";
@@ -49,6 +53,101 @@ function buildLanguageSystemPrompt(messages = []) {
     `Passo atual obrigatório: ${sequenceStep}.`,
     `Sequência completa (cíclica): ${MESSAGE_SEQUENCE.join(" -> ")}.`,
     "Se fizer pergunta, manter objetiva e acolhedora.",
+    "Evitar listas, emojis e explicações longas.",
+    "Nunca dizer que você é IA."
+  ].join(" ");
+}
+
+function normalizeMessages(messages = []) {
+  return messages
+    .filter((msg) => msg?.role && typeof msg?.content === "string")
+    .map((msg) => ({ role: msg.role, content: msg.content }));
+}
+
+async function handleLanguage(res, messages, temperature, maxTokens) {
+  const hfToken = process.env.HF_TOKEN;
+
+  if (!hfToken) {
+    return res.status(500).json({ error: "HF_TOKEN não encontrado para geração de texto." });
+  }
+
+  const client = new OpenAI({
+    baseURL: HF_ROUTER_BASE_URL,
+    apiKey: hfToken
+  });
+
+  const systemPrompt = buildLanguageSystemPrompt(messages);
+  const normalizedMessages = normalizeMessages(messages);
+  const finalMessages = [{ role: "system", content: systemPrompt }, ...normalizedMessages];
+
+  const chatCompletion = await client.chat.completions.create({
+    model: HF_TEXT_MODEL,
+    messages: finalMessages,
+    temperature,
+    max_tokens: maxTokens
+  });
+
+  return res.status(200).json(chatCompletion);
+}
+
+async function handleImage(res, prompt) {
+  const hfToken = process.env.HF_TOKEN;
+  if (!hfToken) {
+    return res.status(500).json({ error: "HF_TOKEN não encontrado." });
+  }
+
+  const client = new InferenceClient(hfToken);
+  const imageBlob = await client.textToImage({
+    provider: "fal-ai",
+    model: "Qwen/Qwen-Image-2512",
+    inputs: prompt,
+    parameters: { num_inference_steps: 5 }
+  });
+
+  const arrayBuffer = await imageBlob.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+  return res.status(200).json({
+    image_base64: base64,
+    mime_type: imageBlob.type || "image/png"
+  });
+}
+
+export default async function handler(req, res) {
+  setCors(req, res);
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Apenas requisições POST são permitidas." });
+  }
+
+  const {
+    task = "chat",
+    prompt = "",
+    messages = [],
+    temperature = 0.7,
+    max_tokens: maxTokens = 220
+  } = req.body || {};
+
+  try {
+    if (task === "image") {
+      const finalPrompt = (prompt || "Astronaut riding a horse").trim();
+      return await handleImage(res, finalPrompt);
+    }
+
+    if (!messages || messages.length === 0) {
+      return res.status(400).json({ error: "O array de mensagens está vazio ou ausente." });
+    }
+
+    return await handleLanguage(res, messages, temperature, maxTokens);
+  } catch (error) {
+    console.error("Erro interno /api/ai:", error);
+    return res.status(500).json({
+      error: "Erro interno no serviço de IA.",
+      details: error?.message || "Erro desconhecido"
+    });
     "Evitar listas, emojis e explicações longas."
   ].join(" ");
 }
