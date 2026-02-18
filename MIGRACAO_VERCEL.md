@@ -1,43 +1,56 @@
-# Migração de chaves para Vercel (Groq + Gemini fallback)
+# Migração para domínio da Vercel + APIs de IA
 
 ## O que foi ajustado
-- O frontend não usa mais chave exposta no `index.html`.
-- O site agora chama um proxy seguro em `/api/ai` hospedado na Vercel.
-- O proxy tenta **Groq primeiro** e, se falhar, usa **Gemini** automaticamente.
+- O frontend usa o domínio atual da Vercel como prioridade para o proxy (`window.location.origin/api/ai`).
+- O backend `/api/ai` agora usa **Hugging Face** para:
+  - **Linguagem:** OpenAI SDK com `baseURL: https://router.huggingface.co/v1`, chave `HF_TOKEN` e modelo `moonshotai/Kimi-K2-Thinking:novita`.
+  - **Imagem:** Hugging Face Inference (`@huggingface/inference`) com `provider: fal-ai`, modelo `Qwen/Qwen-Image-2512` e chave `HF_TOKEN`.
+- A geração de linguagem segue o padrão solicitado:
+  - frases curtas;
+  - foco em problemas pessoais;
+  - até 200 caracteres;
+  - tom informal e pessoal;
+  - segunda pessoa do singular;
+  - sequência cíclica de estilos de resposta.
 
 ## Variáveis na Vercel
 Cadastre no projeto da Vercel:
 
-- `GROQ_API_KEY`
-- `GEMINI_API_KEY`
-- `ALLOWED_ORIGINS` (opcional, recomendado)
-  - Exemplo: `https://seuusuario.github.io,https://www.seudominio.com`
+- `HF_TOKEN`
+- `HF_TEXT_MODEL` (opcional)
+  - padrão: `moonshotai/Kimi-K2-Thinking:novita`
+- `ALLOWED_ORIGINS` (opcional)
 
-> Se `ALLOWED_ORIGINS` não for definido, o endpoint aceita qualquer origem (`*`).
+## Payloads aceitos em `/api/ai`
 
-## Ajuste obrigatório no frontend
-No arquivo `index.html`, atualize a constante:
-
-```js
-window.AI_PROXY_URL="https://SEU-PROJETO-VERCEL.vercel.app/api/ai";
+### 1) Linguagem (chat)
+```json
+{
+  "task": "chat",
+  "messages": [{ "role": "user", "content": "texto" }],
+  "temperature": 0.7,
+  "max_tokens": 220
+}
 ```
 
-Troque `SEU-PROJETO-VERCEL` pelo domínio real do deploy na Vercel.
+### 2) Imagem
+```json
+{
+  "task": "image",
+  "prompt": "Astronaut riding a horse"
+}
+```
 
-## Fluxo de fallback
-1. Frontend envia `messages` para `AI_PROXY_URL`.
-2. API da Vercel chama Groq.
-3. Se Groq falhar (erro/timeout/sem chave), chama Gemini.
-4. API retorna resposta no formato compatível com o frontend (`choices[0].message.content`).
+Resposta:
+```json
+{
+  "image_base64": "...",
+  "mime_type": "image/png"
+}
+```
 
 ## Checklist pós-deploy
-1. Fazer deploy na Vercel com as variáveis configuradas.
-2. Atualizar `window.AI_PROXY_URL` para o domínio final.
-3. Publicar no GitHub Pages.
-4. Testar conversa normal (Groq ativo).
-5. Simular falha da Groq (remover chave temporariamente na Vercel) e confirmar fallback Gemini.
-
-## Confiabilidade (fallback em produção)
-- O backend em `/api/ai` agora tenta Groq com timeout e, se falhar, usa Gemini automaticamente.
-- O frontend também aceita múltiplos endpoints de proxy: URL manual em `localStorage["wr_ai_proxy_url"]`, URL principal e fallback local (`/api/ai`).
-- Isso reduz risco de indisponibilidade quando um endpoint específico estiver fora.
+1. Publicar o deploy na Vercel com as variáveis acima.
+2. Confirmar que o frontend está carregando no domínio da Vercel.
+3. Testar chat (HF Router com `HF_TOKEN`).
+4. Testar geração de imagem (Hugging Face com `HF_TOKEN`).
