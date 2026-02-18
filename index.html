@@ -89,12 +89,13 @@ if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> 
 typingBox.innerHTML='Digitando <span class="animate-pulse">...</span>';
 typingBox.classList.remove('hidden');
 
+const typingDurationPromise=new Promise(resolve=>setTimeout(resolve,30000));
 const res=await requestPromise;
 if(!res.ok)throw new Error();
 const data=await res.json();
 const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
 
-await new Promise(resolve=>setTimeout(resolve,30000));
+await typingDurationPromise;
 if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}
 h.push({role:'assistant',content:rt});
 if(db){
