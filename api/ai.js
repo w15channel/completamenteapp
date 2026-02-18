@@ -4,6 +4,9 @@ import OpenAI from "openai";
 const HF_ROUTER_BASE_URL = "https://router.huggingface.co/v1";
 const HF_TEXT_MODEL = process.env.HF_TEXT_MODEL || "moonshotai/Kimi-K2-Thinking:novita";
 
+const VERCEL_LANGUAGE_URL =
+  process.env.VERCEL_LANGUAGE_API_URL || "https://api.v0.dev/v1/chat/completions";
+
 const MESSAGE_SEQUENCE = [
   "mensagem direta",
   "mensagem com pergunta",
@@ -145,5 +148,117 @@ export default async function handler(req, res) {
       error: "Erro interno no serviço de IA.",
       details: error?.message || "Erro desconhecido"
     });
+    "Evitar listas, emojis e explicações longas."
+  ].join(" ");
+}
+
+function normalizeMessages(messages = []) {
+  return messages
+    .filter((msg) => msg?.role && typeof msg?.content === "string")
+    .map((msg) => ({ role: msg.role, content: msg.content }));
+}
+
+async function handleLanguage(req, res, messages, temperature, maxTokens) {
+  const apiKey = process.env.VERCEL_LANGUAGE_API_KEY || process.env.VERCEL_API_KEY;
+
+  if (!apiKey) {
+    return res
+      .status(500)
+      .json({ error: "Chave da API de linguagem da Vercel não encontrada." });
+  }
+
+  const systemPrompt = buildLanguageSystemPrompt(messages);
+  const normalizedMessages = normalizeMessages(messages);
+  const finalMessages = [{ role: "system", content: systemPrompt }, ...normalizedMessages];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(VERCEL_LANGUAGE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: process.env.VERCEL_LANGUAGE_MODEL || "openai/gpt-4o-mini",
+        messages: finalMessages,
+        temperature,
+        max_tokens: maxTokens
+      }),
+      signal: controller.signal
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: "Falha na API de linguagem da Vercel.",
+        details: data
+      });
+    }
+
+    return res.status(200).json(data);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function handleImage(req, res, prompt) {
+  const hfToken = process.env.HF_TOKEN;
+  if (!hfToken) {
+    return res.status(500).json({ error: "HF_TOKEN não encontrado." });
+  }
+
+  const client = new InferenceClient(hfToken);
+  const imageBlob = await client.textToImage({
+    provider: "fal-ai",
+    model: "Qwen/Qwen-Image-2512",
+    inputs: prompt,
+    parameters: { num_inference_steps: 5 }
+  });
+
+  const arrayBuffer = await imageBlob.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+  return res.status(200).json({
+    image_base64: base64,
+    mime_type: imageBlob.type || "image/png"
+  });
+}
+
+export default async function handler(req, res) {
+  setCors(req, res);
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Apenas requisições POST são permitidas." });
+  }
+
+  const {
+    task = "chat",
+    prompt = "",
+    messages = [],
+    temperature = 0.7,
+    max_tokens: maxTokens = 220
+  } = req.body || {};
+
+  try {
+    if (task === "image") {
+      const finalPrompt = (prompt || "Astronaut riding a horse").trim();
+      return await handleImage(req, res, finalPrompt);
+    }
+
+    if (!messages || messages.length === 0) {
+      return res.status(400).json({ error: "O array de mensagens está vazio ou ausente." });
+    }
+
+    return await handleLanguage(req, res, messages, temperature, maxTokens);
+  } catch (error) {
+    console.error("Erro interno /api/ai:", error);
+    return res.status(500).json({ error: "Erro interno no serviço de IA." });
   }
 }
