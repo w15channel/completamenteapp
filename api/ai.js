@@ -1,93 +1,90 @@
 const fetch = require('node-fetch');
 
+const REQUEST_TIMEOUT_MS = 5000;
+
+function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    return fetch(url, {
+        ...options,
+        signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
+}
+
+function toGeminiRole(role) {
+    return role === 'assistant' ? 'model' : 'user';
+}
+
+function buildGeminiUrl(model, apiKey) {
+    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+}
+
+function extractGeminiText(data) {
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
     const { messages } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    // Lista de prioridade dos modelos (Fallback)
-    const providers = [
-        {
-            name: 'GROQ',
-            url: 'https://api.groq.com/openai/v1/chat/completions',
-            key: process.env.GROQ_API_KEY,
-            model: 'llama-3.3-70b-versatile'
-        },
-        {
-            name: 'GEMINI',
-            url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            key: process.env.GEMINI_API_KEY,
-            model: 'gemini-1.5-flash'
-        },
-        {
-            name: 'HUGGINGFACE',
-            url: 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
-            key: process.env.HF_TOKEN,
-            model: 'mistral-7b'
-        }
-    ];
+    if (!apiKey) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY não configurada.' });
+    }
 
-    // Tenta cada provedor em ordem
-    for (const provider of providers) {
-        if (!provider.key) continue; // Pula se a chave não estiver configurada
+    const modelCandidates = [
+        process.env.SK_MODEL,
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash'
+    ].filter(Boolean);
 
+    for (const model of modelCandidates) {
         try {
-            console.log(`Tentando provedor: ${provider.name}...`);
-            
-            let response;
-            if (provider.name === 'GEMINI') {
-                // O Gemini tem um formato de JSON diferente
-                response = await fetch(provider.url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: messages.map(m => ({
-                            role: m.role === 'assistant' ? 'model' : 'user',
-                            parts: [{ text: m.content }]
-                        }))
-                    })
-                });
-            } else {
-                // Formato padrão (Groq / OpenAI / HF)
-                response = await fetch(provider.url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${provider.key}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: provider.model,
-                        messages: messages,
-                        temperature: 0.7
-                    })
-                });
+            const url = buildGeminiUrl(model, apiKey);
+            console.log(`Tentando Gemini / modelo: ${model} (timeout ${REQUEST_TIMEOUT_MS}ms)...`);
+
+            const response = await withTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: messages.map(m => ({
+                        role: toGeminiRole(m.role),
+                        parts: [{ text: m.content }]
+                    }))
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn(
+                    `Gemini (${model}) falhou com status ${response.status}. ` +
+                    `Detalhe: ${errorText.slice(0, 180)}. Tentando próximo modelo...`
+                );
+                continue;
             }
 
-            if (response.ok) {
-                const data = await response.json();
-                let text = "";
+            const data = await response.json();
+            const text = extractGeminiText(data);
 
-                // Extrai o texto dependendo do provedor
-                if (provider.name === 'GEMINI') {
-                    text = data.candidates[0].content.parts[0].text;
-                } else {
-                    text = data.choices[0].message.content;
-                }
-
-                // Se conseguimos a resposta, enviamos de volta ao site
-                return res.status(200).json({
-                    choices: [{ message: { content: text } }],
-                    provider: provider.name // Para sabermos qual respondeu
-                });
-
-            } else {
-                console.warn(`${provider.name} falhou com status ${response.status}. Tentando próximo...`);
+            if (!text) {
+                console.warn(`Gemini (${model}) respondeu sem texto utilizável. Tentando próximo modelo...`);
+                continue;
             }
+
+            return res.status(200).json({
+                choices: [{ message: { content: text } }],
+                provider: 'GEMINI',
+                model
+            });
         } catch (error) {
-            console.error(`Erro ao conectar com ${provider.name}:`, error.message);
+            const reason = error.name === 'AbortError'
+                ? `timeout de ${REQUEST_TIMEOUT_MS}ms`
+                : error.message;
+            console.error(`Erro ao conectar com Gemini (${model}): ${reason}`);
         }
     }
 
-    // Se todos falharem
-    return res.status(500).json({ error: 'Nenhum provedor de IA disponível no momento.' });
+    return res.status(500).json({ error: 'Gemini indisponível no momento.' });
 }
