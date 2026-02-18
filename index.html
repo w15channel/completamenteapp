@@ -81,31 +81,20 @@ typingBox.classList.remove('hidden');
 typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta está acompanhando...';
 return;
 }
-const start=Date.now();
-try{
 const cleanH=h.map(m=>({role:m.role,content:m.content}));
-const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});
-if(!res.ok)throw new Error();
-const data=await res.json();
-const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
-const apiTime=Date.now()-start;
-
-// 1. Pausa de expectativa (10 segundos totais)
-let readDelay=10000-apiTime;
-if(readDelay<0)readDelay=0;
-
-// 2. Tempo de escrita realista (130 palavras por min -> aprox 461ms por palavra)
-const botWords=Math.max(rt.split(/\s+/).length,1);
-let typeDelay=Math.round(botWords*(60000/130));
-if(typeDelay>15000)typeDelay=15000;
-if(typeDelay<2000)typeDelay=2000;
-
-setTimeout(()=>{
+const requestPromise=fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:cleanH,temperature:0.7,max_tokens:350})});
+try{
+await new Promise(resolve=>setTimeout(resolve,30000));
 if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}
 typingBox.innerHTML='Digitando <span class="animate-pulse">...</span>';
 typingBox.classList.remove('hidden');
 
-setTimeout(async()=>{
+const res=await requestPromise;
+if(!res.ok)throw new Error();
+const data=await res.json();
+const rt=data.choices&&data.choices[0]?data.choices[0].message.content:"Desculpe, a conexão oscilou. Pode repetir?";
+
+await new Promise(resolve=>setTimeout(resolve,30000));
 if(window.isBotPaused){typingBox.innerHTML='<i class="fas fa-user-md mr-1"></i> O Terapeuta assumiu...';return;}
 h.push({role:'assistant',content:rt});
 if(db){
@@ -113,14 +102,11 @@ await db.ref(`chats/${chatId}`).set(h);
 }else{
 localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));
 window.refreshChatDisplay(h);
+}
 typingBox.classList.add('hidden');
 window.isWaiting=false;
 document.getElementById('submit-btn').disabled=false;
 document.getElementById('mic-btn').disabled=false;
-}
-},typeDelay);
-},readDelay);
-
 }catch(err){
 typingBox.classList.add('hidden');
 window.renderMessage("Nossos sistemas caíram, aguarde um instante.",'therapist');
