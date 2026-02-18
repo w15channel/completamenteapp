@@ -1,93 +1,156 @@
 const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Somente POST');
+const REQUEST_TIMEOUT_MS = 5000;
 
-    const { messages } = req.body;
+function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    // Lista de prioridade dos modelos (Fallback)
-    const providers = [
+    return fetch(url, {
+        ...options,
+        signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
+}
+
+function toGeminiRole(role) {
+    if (role === 'assistant') return 'model';
+    return 'user';
+}
+
+function extractTextByProvider(providerName, data) {
+    if (providerName === 'GEMINI') {
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    return data?.choices?.[0]?.message?.content || '';
+}
+
+function getModelCandidates() {
+    const skCandidates = (process.env.SK_MODEL || '')
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean);
+
+    return {
+        GROQ: [...new Set([...skCandidates, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'])],
+        GEMINI: ['gemini-1.5-flash-latest', 'gemini-1.5-flash'],
+        HUGGINGFACE: [...new Set([...skCandidates, 'meta-llama/Llama-3.1-8B-Instruct'])]
+    };
+}
+
+function getProviders() {
+    const models = getModelCandidates();
+
+    return [
         {
             name: 'GROQ',
-            url: 'https://api.groq.com/openai/v1/chat/completions',
             key: process.env.GROQ_API_KEY,
-            model: 'llama-3.3-70b-versatile'
+            models: models.GROQ,
+            request: ({ model, messages, temperature }) => ({
+                url: 'https://api.groq.com/openai/v1/chat/completions',
+                options: {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ model, messages, temperature })
+                }
+            })
         },
         {
             name: 'GEMINI',
-            url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
             key: process.env.GEMINI_API_KEY,
-            model: 'gemini-1.5-flash'
-        },
-        {
-            name: 'HUGGINGFACE',
-            url: 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
-            key: process.env.HF_TOKEN,
-            model: 'mistral-7b'
-        }
-    ];
-
-    // Tenta cada provedor em ordem
-    for (const provider of providers) {
-        if (!provider.key) continue; // Pula se a chave não estiver configurada
-
-        try {
-            console.log(`Tentando provedor: ${provider.name}...`);
-            
-            let response;
-            if (provider.name === 'GEMINI') {
-                // O Gemini tem um formato de JSON diferente
-                response = await fetch(provider.url, {
+            models: models.GEMINI,
+            request: ({ model, messages }) => ({
+                url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                options: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: messages.map(m => ({
-                            role: m.role === 'assistant' ? 'model' : 'user',
+                            role: toGeminiRole(m.role),
                             parts: [{ text: m.content }]
                         }))
                     })
-                });
-            } else {
-                // Formato padrão (Groq / OpenAI / HF)
-                response = await fetch(provider.url, {
+                }
+            })
+        },
+        {
+            name: 'HUGGINGFACE',
+            key: process.env.HF_TOKEN,
+            models: models.HUGGINGFACE,
+            request: ({ model, messages, temperature }) => ({
+                url: 'https://router.huggingface.co/v1/chat/completions',
+                options: {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${provider.key}`,
+                        Authorization: `Bearer ${process.env.HF_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: provider.model,
-                        messages: messages,
-                        temperature: 0.7
+                        model,
+                        messages,
+                        temperature
                     })
+                }
+            })
+        }
+    ];
+}
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).send('Somente POST');
+
+    const { messages, temperature = 0.7 } = req.body;
+
+    const providers = getProviders();
+
+    for (const provider of providers) {
+        if (!provider.key) continue;
+
+        for (const model of provider.models) {
+            try {
+                console.log(`Tentando provedor: ${provider.name} / modelo: ${model} (timeout ${REQUEST_TIMEOUT_MS}ms)...`);
+
+                const { url, options } = provider.request({
+                    model,
+                    messages,
+                    temperature
                 });
-            }
 
-            if (response.ok) {
-                const data = await response.json();
-                let text = "";
+                const response = await withTimeout(url, options);
 
-                // Extrai o texto dependendo do provedor
-                if (provider.name === 'GEMINI') {
-                    text = data.candidates[0].content.parts[0].text;
-                } else {
-                    text = data.choices[0].message.content;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.warn(
+                        `${provider.name} (${model}) falhou com status ${response.status}. ` +
+                        `Detalhe: ${errorText.slice(0, 180)}. Tentando próximo...`
+                    );
+                    continue;
                 }
 
-                // Se conseguimos a resposta, enviamos de volta ao site
+                const data = await response.json();
+                const text = extractTextByProvider(provider.name, data);
+
+                if (!text) {
+                    console.warn(`${provider.name} (${model}) respondeu sem texto utilizável. Tentando próximo...`);
+                    continue;
+                }
+
                 return res.status(200).json({
                     choices: [{ message: { content: text } }],
-                    provider: provider.name // Para sabermos qual respondeu
+                    provider: provider.name,
+                    model
                 });
-
-            } else {
-                console.warn(`${provider.name} falhou com status ${response.status}. Tentando próximo...`);
+            } catch (error) {
+                const reason = error.name === 'AbortError'
+                    ? `timeout de ${REQUEST_TIMEOUT_MS}ms`
+                    : error.message;
+                console.error(`Erro ao conectar com ${provider.name} (${model}): ${reason}`);
             }
-        } catch (error) {
-            console.error(`Erro ao conectar com ${provider.name}:`, error.message);
         }
     }
 
-    // Se todos falharem
     return res.status(500).json({ error: 'Nenhum provedor de IA disponível no momento.' });
 }
