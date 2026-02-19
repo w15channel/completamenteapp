@@ -14,11 +14,21 @@ function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
     }).finally(() => clearTimeout(timeout));
 }
 
+function getGroqApiKey() {
+    const key = (process.env.GROQ_API_KEY || process.env.GROQ_KEY || '').trim();
+    if (!key || key === 'SUA_CHAVE_AQUI') return null;
+    return key;
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
-    if (!process.env.GROQ_API_KEY) {
-        return res.status(500).json({ error: 'GROQ_API_KEY não configurada.' });
+    const apiKey = getGroqApiKey();
+    if (!apiKey) {
+        return res.status(500).json({
+            error: 'GROQ_API_KEY não configurada.',
+            hint: 'Adicione GROQ_API_KEY (ou GROQ_KEY) nas variáveis de ambiente do deploy.'
+        });
     }
 
     const {
@@ -36,7 +46,7 @@ export default async function handler(req, res) {
         const response = await withTimeout(GROQ_URL, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                Authorization: `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -49,6 +59,15 @@ export default async function handler(req, res) {
 
         if (!response.ok) {
             const errorText = await response.text();
+
+            if (response.status === 401 || response.status === 403) {
+                return res.status(502).json({
+                    error: 'Falha de autenticação no provedor de IA.',
+                    hint: 'Verifique se a chave GROQ_API_KEY está correta, ativa e sem espaços extras.',
+                    provider_status: response.status
+                });
+            }
+
             return res.status(response.status).json({
                 error: 'Falha ao gerar resposta com Groq.',
                 details: errorText
