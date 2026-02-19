@@ -60,7 +60,7 @@ window.submitChat = async function(t, isAudio = false) {
 
         const attendantLanguageInstruction = [
             "Regra obrigatória para todos os atendentes:",
-            "- Produzir frases curtas (máximo de 200 caracteres por frase).",
+            "- Produzir frases curtas (máximo de 100 caracteres por frase).",
             "- Manter linguagem ligada a problemas pessoais trazidos pelo paciente.",
             "- Usar tom pessoal, informal e acolhedor.",
             "- Preferir verbos no infinitivo pessoal quando possível.",
@@ -74,7 +74,9 @@ window.submitChat = async function(t, isAudio = false) {
             "  5) reforço com pergunta;",
             "  6) novo reforço da resposta;",
             "  7) mensagem de preocupação;",
-            "  8) avaliar novamente o tom da necessidade do paciente e repetir o padrão."
+            "  8) avaliar novamente o tom da necessidade do paciente e repetir o padrão.",
+            "- Limite máximo por etapa da sequência (em caracteres):",
+            "  1) 40; 2) 100; 3) 40; 4) 80; 5) 120; 6) 30; 7) 20; 8) 40; 9) 80; e repetir ciclo."
         ].join("\n");
 
         const messagesForAI = h.map((m, idx) => {
