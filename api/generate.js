@@ -83,11 +83,31 @@ window.submitChat = async function(t, isAudio = false) {
             ? "Não é a primeira interação do atendente; manter apenas o ciclo contínuo."
             : "É a primeira interação do atendente; iniciar com saudação amigável e receptiva antes do ciclo.";
 
+            "- Produzir frases curtas (máximo de 100 caracteres por frase).",
+            "- Manter linguagem ligada a problemas pessoais trazidos pelo paciente.",
+            "- Usar tom pessoal, informal e acolhedor.",
+            "- Preferir verbos no infinitivo pessoal quando possível.",
+            "- Falar diretamente com o paciente em segunda pessoa do singular (você).",
+            "- Avaliar o tom e a urgência emocional do paciente antes de responder.",
+            "- Seguir a sequência de interação e reiniciar o ciclo ao final:",
+            "  1) mensagem direta;",
+            "  2) mensagem com pergunta;",
+            "  3) reforço da resposta;",
+            "  4) outro reforço da resposta;",
+            "  5) reforço com pergunta;",
+            "  6) novo reforço da resposta;",
+            "  7) mensagem de preocupação;",
+            "  8) avaliar novamente o tom da necessidade do paciente e repetir o padrão.",
+            "- Limite máximo por etapa da sequência (em caracteres):",
+            "  1) 40; 2) 100; 3) 40; 4) 80; 5) 120; 6) 30; 7) 20; 8) 40; 9) 80; e repetir ciclo."
+        ].join("\n");
+
         const messagesForAI = h.map((m, idx) => {
             if (idx === h.length - 1) {
                 return {
                     role: m.role,
                     content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
+                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
                 };
             }
             return { role: m.role, content: m.content };
