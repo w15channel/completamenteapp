@@ -60,6 +60,29 @@ window.submitChat = async function(t, isAudio = false) {
 
         const attendantLanguageInstruction = [
             "Regra obrigatória para todos os atendentes:",
+            "- Produzir frases curtas e ligadas a questões pessoais.",
+            "- Usar tom pessoal, informal e acolhedor.",
+            "- Preferir infinitivo pessoal e construções conjugadas naturais.",
+            "- Falar com o paciente em segunda pessoa do singular (você).",
+            "- Limitar cada frase a no máximo 250 caracteres, exceto quando a etapa exigir 300.",
+            "- Regra de diálogo: na primeira interação do atendente com a pessoa, enviar saudação amigável e receptiva.",
+            "- Após a saudação inicial, seguir ciclo contínuo:",
+            "  1) mensagem com pergunta e parecer de preocupação/acolhimento;",
+            "  2) comentar e argumentar;",
+            "  3) reforçar e validar o que a pessoa compartilhou;",
+            "  4) validar e fazer pergunta sobre o assunto;",
+            "  5) demonstrar afeto e acolhimento;",
+            "  6) demonstrar preocupação sobre o que foi dito;",
+            "  7) avaliar o tom da necessidade da pessoa;",
+            "  8) repetir o padrão em ciclo.",
+            "- Limites por etapa do ciclo (caracteres): 120, 150, 200, 100, 250, 120, 300, 150, 200 e repetir."
+        ].join("\n");
+
+        const hasAssistantMessages = h.some((message) => message.role === 'assistant');
+        const firstInteractionInstruction = hasAssistantMessages
+            ? "Não é a primeira interação do atendente; manter apenas o ciclo contínuo."
+            : "É a primeira interação do atendente; iniciar com saudação amigável e receptiva antes do ciclo.";
+
             "- Produzir frases curtas (máximo de 100 caracteres por frase).",
             "- Manter linguagem ligada a problemas pessoais trazidos pelo paciente.",
             "- Usar tom pessoal, informal e acolhedor.",
@@ -83,6 +106,7 @@ window.submitChat = async function(t, isAudio = false) {
             if (idx === h.length - 1) {
                 return {
                     role: m.role,
+                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
                     content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
                 };
             }
