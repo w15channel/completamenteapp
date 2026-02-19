@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 const REQUEST_TIMEOUT_MS = 5000;
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_URL = process.env.GROQ_URL || 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = process.env.SK_MODEL || 'llama-3.3-70b-versatile';
 
 function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
