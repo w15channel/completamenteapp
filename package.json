@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "api/ai.js",
+  "scripts": {
+    "start": "node api/ai.js"
+  },
   "dependencies": {
     "node-fetch": "^2.7.0"
   }
