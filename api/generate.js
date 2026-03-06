@@ -42,14 +42,35 @@ window.submitChat = async function (t, isAudio = false) {
     const startTimestamp = Date.now();
 
     try {
+        const userMessages = h.filter((message) => message.role === 'user').map((message) => message.content || '');
+        const assistantCount = h.filter((message) => message.role === 'assistant').length;
+        const totalUserWords = userMessages.join(' ').trim().split(/\s+/).filter(Boolean).length;
+
+        const punctuationRate = /[!?]/.test(t) ? 'usa interrogação/exclamação com frequência' : 'pouco uso de exclamação e interrogação';
+        const upperCaseRate = (t.match(/[A-ZÀ-Ú]/g) || []).length >= 5 ? 'gosta de ênfase em maiúsculas' : 'ênfase mais sutil';
+        const emojiRate = /[\u{1F300}-\u{1FAFF}]/u.test(t) ? 'usa emojis' : 'não usa emojis';
+        const colloquialMarkers = /\b(tô|ta|pq|vc|cê|tipo|né|mano|cara|vamo|tbm)\b/i.test(t)
+            ? 'linguagem mais coloquial'
+            : 'linguagem mais neutra';
+
         let volumeInstruction = '';
-        if (userWordCount <= 4) {
-            volumeInstruction = 'O paciente foi breve. Responda com no máximo 2 frases e acolhimento direto.';
-        } else if (userWordCount > 25) {
-            volumeInstruction = 'O paciente desabafou. Valide sentimentos e use volume de texto proporcional.';
+        if (assistantCount === 0) {
+            volumeInstruction = 'Primeira resposta do dia: no máximo 300 caracteres, até 2 frases curtas e acolhimento equilibrado.';
+        } else if (userWordCount <= 6) {
+            volumeInstruction = 'Paciente foi objetivo. Responda com até 220 caracteres, 1 ou 2 frases curtas.';
+        } else if (userWordCount > 30 || totalUserWords > 140) {
+            volumeInstruction = 'Paciente abriu espaço e trouxe mais detalhes. Responda com profundidade proporcional, até 900 caracteres.';
         } else {
-            volumeInstruction = 'Mantenha conversa natural, sem listas longas e sem excesso de formalidade.';
+            volumeInstruction = 'Mantenha conversa natural e progressiva, entre 220 e 450 caracteres, sem blocos longos.';
         }
+
+        const syntacticMirroringInstruction = [
+            'Espelhamento sintático obrigatório (espelhar forma, não conteúdo):',
+            `- Perfil observado do paciente: ${punctuationRate}; ${upperCaseRate}; ${emojiRate}; ${colloquialMarkers}.`,
+            '- Replique ritmo, tamanho médio de frase e nível de formalidade do paciente.',
+            '- Reutilize de forma natural expressões e conectivos recorrentes do paciente quando fizer sentido.',
+            '- Nunca copie frases literalmente e nunca mude o assunto para espelhar contexto.'
+        ].join('\n');
 
         const attendantLanguageInstruction = [
             `Você é ${window.activeTherapist.name}, profissional de saúde mental e atendente virtual principal.`,
@@ -62,7 +83,8 @@ window.submitChat = async function (t, isAudio = false) {
             '- Fale em segunda pessoa (você) e mantenha foco no tema trazido pelo paciente.',
             '- Evite jargão técnico desnecessário e respostas mecânicas.',
             '- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
-            '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.'
+            '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
+            '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.'
         ].join('\n');
 
         const hasAssistantMessages = h.some((message) => message.role === 'assistant');
@@ -74,7 +96,7 @@ window.submitChat = async function (t, isAudio = false) {
             if (idx === h.length - 1) {
                 return {
                     role: m.role,
-                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
+                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${syntacticMirroringInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
                 };
             }
             return { role: m.role, content: m.content };
@@ -86,7 +108,7 @@ window.submitChat = async function (t, isAudio = false) {
             body: JSON.stringify({
                 messages: messagesForAI,
                 temperature: 0.8,
-                max_tokens: userWordCount < 5 ? 120 : 500
+                max_tokens: assistantCount === 0 ? 160 : (userWordCount < 7 ? 140 : (userWordCount > 30 ? 420 : 260))
             })
         });
 
