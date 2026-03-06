@@ -1,9 +1,9 @@
 /**
  * WR TERAPIA - Motor de Humanização Orgânica
- * v2.0 - Foco em Proporcionalidade e Imperceptibilidade
+ * v2.1 - Diretrizes comportamentais dos atendentes
  */
 
-window.submitChat = async function(t, isAudio = false) {
+window.submitChat = async function (t, isAudio = false) {
     if (!t || window.isWaiting) return;
 
     const chatId = `${window.clientId}_${window.activeTherapist.id}`;
@@ -12,144 +12,100 @@ window.submitChat = async function(t, isAudio = false) {
     const submitBtn = document.getElementById('submit-btn');
     const micBtn = document.getElementById('mic-btn');
 
-    // Limpeza imediata do input para feedback visual de envio
     if (chatInput) chatInput.value = '';
-    
+
     window.isWaiting = true;
     if (submitBtn) submitBtn.disabled = true;
     if (micBtn) micBtn.disabled = true;
 
-    // --- 1. ANÁLISE DE PROPORÇÃO (Métrica Humana) ---
-    const userMessageLength = t.trim().length; // Caracteres
-    const userWordCount = t.trim().split(/\s+/).length; // Palavras
+    const userWordCount = t.trim().split(/\s+/).length;
     let h = [];
 
-    // Persistência da mensagem do usuário
     if (db) {
         const snap = await db.ref(`chats/${chatId}`).once('value');
         h = snap.val() || [];
-        h.push({ role: 'user', content: t, isAudio: isAudio });
+        h.push({ role: 'user', content: t, isAudio });
         await db.ref(`chats/${chatId}`).set(h);
     } else {
         h = window.getLocalHistory(window.activeTherapist.id);
-        h.push({ role: 'user', content: t, isAudio: isAudio });
+        h.push({ role: 'user', content: t, isAudio });
         localStorage.setItem(`chat_${chatId}`, JSON.stringify(h));
         window.refreshChatDisplay(h);
     }
 
-    // Se o bot estiver pausado (atendimento humano assumido)
     if (window.isBotPaused) {
         typingBox.classList.remove('hidden');
-        typingBox.innerHTML = '<i class="fas fa-user-md mr-1"></i> William está acompanhando...';
+        typingBox.innerHTML = '<i class="fas fa-user-md mr-1"></i> Equipe humana está acompanhando...';
         return;
     }
 
     const startTimestamp = Date.now();
 
     try {
-        // --- 2. REGRA DE OURO: Instrução de Volume Dinâmico ---
-        // Aqui dizemos à IA como se comportar baseada no tamanho da pergunta
-        let volumeInstruction = "";
+        let volumeInstruction = '';
         if (userWordCount <= 4) {
-            volumeInstruction = "O paciente foi breve (saudação ou frase curta). Responda com no máximo 2 frases. Seja direto e acolhedor.";
+            volumeInstruction = 'O paciente foi breve. Responda com no máximo 2 frases e acolhimento direto.';
         } else if (userWordCount > 25) {
-            volumeInstruction = "O paciente desabafou. Ofereça uma escuta profunda, valide os sentimentos e responda com um volume de texto similar ao dele.";
+            volumeInstruction = 'O paciente desabafou. Valide sentimentos e use volume de texto proporcional.';
         } else {
-            volumeInstruction = "Mantenha um tom de conversa natural. Não use listas e nem textos excessivamente longos.";
+            volumeInstruction = 'Mantenha conversa natural, sem listas longas e sem excesso de formalidade.';
         }
 
         const attendantLanguageInstruction = [
-            "Regra obrigatória para todos os atendentes:",
-            "- Produzir frases curtas e ligadas a questões pessoais.",
-            "- Usar tom pessoal, informal e acolhedor.",
-            "- Preferir infinitivo pessoal e construções conjugadas naturais.",
-            "- Falar com o paciente em segunda pessoa do singular (você).",
-            "- Limitar cada frase a no máximo 250 caracteres, exceto quando a etapa exigir 300.",
-            "- Regra de diálogo: na primeira interação do atendente com a pessoa, enviar saudação amigável e receptiva.",
-            "- Após a saudação inicial, seguir ciclo contínuo:",
-            "  1) mensagem com pergunta e parecer de preocupação/acolhimento;",
-            "  2) comentar e argumentar;",
-            "  3) reforçar e validar o que a pessoa compartilhou;",
-            "  4) validar e fazer pergunta sobre o assunto;",
-            "  5) demonstrar afeto e acolhimento;",
-            "  6) demonstrar preocupação sobre o que foi dito;",
-            "  7) avaliar o tom da necessidade da pessoa;",
-            "  8) repetir o padrão em ciclo.",
-            "- Limites por etapa do ciclo (caracteres): 120, 150, 200, 100, 250, 120, 300, 150, 200 e repetir."
-        ].join("\n");
+            `Você é ${window.activeTherapist.name}, profissional de saúde mental e atendente virtual principal.`,
+            'Diretrizes de comportamento (não alterar estrutura do sistema, apenas a comunicação):',
+            '- Seja acolhedor no início para criar vínculo e, depois, investigativo para entender a queixa.',
+            '- Não encaminhe o paciente para outro profissional durante a conversa.',
+            '- Comunicação natural, humana e não formal.',
+            '- Estruture frases com frequência usando padrão: preposição + pronome + verbo no infinitivo.',
+            '- Exemplos de estilo: "para eu entender", "por você falar", "sem ele perceber", "até nós descobrirmos", "para eu ajudar".',
+            '- Fale em segunda pessoa (você) e mantenha foco no tema trazido pelo paciente.',
+            '- Evite jargão técnico desnecessário e respostas mecânicas.',
+            '- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
+            '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.'
+        ].join('\n');
 
         const hasAssistantMessages = h.some((message) => message.role === 'assistant');
         const firstInteractionInstruction = hasAssistantMessages
-            ? "Não é a primeira interação do atendente; manter apenas o ciclo contínuo."
-            : "É a primeira interação do atendente; iniciar com saudação amigável e receptiva antes do ciclo.";
-
-            "- Produzir frases curtas (máximo de 100 caracteres por frase).",
-            "- Manter linguagem ligada a problemas pessoais trazidos pelo paciente.",
-            "- Usar tom pessoal, informal e acolhedor.",
-            "- Preferir verbos no infinitivo pessoal quando possível.",
-            "- Falar diretamente com o paciente em segunda pessoa do singular (você).",
-            "- Avaliar o tom e a urgência emocional do paciente antes de responder.",
-            "- Seguir a sequência de interação e reiniciar o ciclo ao final:",
-            "  1) mensagem direta;",
-            "  2) mensagem com pergunta;",
-            "  3) reforço da resposta;",
-            "  4) outro reforço da resposta;",
-            "  5) reforço com pergunta;",
-            "  6) novo reforço da resposta;",
-            "  7) mensagem de preocupação;",
-            "  8) avaliar novamente o tom da necessidade do paciente e repetir o padrão.",
-            "- Limite máximo por etapa da sequência (em caracteres):",
-            "  1) 40; 2) 100; 3) 40; 4) 80; 5) 120; 6) 30; 7) 20; 8) 40; 9) 80; e repetir ciclo."
-        ].join("\n");
+            ? 'Não é a primeira interação; manter continuidade natural do atendimento.'
+            : 'É a primeira interação; iniciar com saudação receptiva e acolhedora.';
 
         const messagesForAI = h.map((m, idx) => {
             if (idx === h.length - 1) {
                 return {
                     role: m.role,
                     content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
-                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
                 };
             }
             return { role: m.role, content: m.content };
         });
 
-        // Chamada para a API
         const res = await fetch(window.AI_PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                messages: messagesForAI, 
-                temperature: 0.8, // Mais criatividade/humanidade
-                max_tokens: userWordCount < 5 ? 120 : 500 
+            body: JSON.stringify({
+                messages: messagesForAI,
+                temperature: 0.8,
+                max_tokens: userWordCount < 5 ? 120 : 500
             })
         });
 
-        if (!res.ok) throw new Error("Falha na comunicação.");
+        if (!res.ok) throw new Error('Falha na comunicação.');
         const data = await res.json();
         const rt = data.choices[0].message.content;
-        
-        const apiDuration = Date.now() - startTimestamp;
 
-        // --- 3. LÓGICA DE TEMPO REALÍSTICO ---
-        
-        // A) Delay de Leitura (O tempo que o terapeuta leva para ler o que o paciente mandou)
-        // Se a mensagem for curta: 2s. Se for longa: até 9s.
+        const apiDuration = Date.now() - startTimestamp;
         let readWait = userWordCount < 6 ? 2500 : 8500;
         readWait = Math.max(readWait - apiDuration, 500);
 
-        // B) Delay de Escrita (Simulando a digitação humana)
-        // Média de 130 palavras por minuto.
         const responseWordCount = rt.split(/\s+/).length;
         let typeWait = Math.round((responseWordCount / 130) * 60000);
-        
-        // Limitadores para não frustrar o usuário (máximo 14 segundos de "digitando")
         if (typeWait > 14000) typeWait = 14000;
         if (typeWait < 2000) typeWait = 2000;
 
-        // Execução da sequência humana
         setTimeout(() => {
             if (window.isBotPaused) return;
-            
+
             typingBox.innerHTML = 'Digitando <span class="animate-pulse">...</span>';
             typingBox.classList.remove('hidden');
 
@@ -170,15 +126,12 @@ window.submitChat = async function(t, isAudio = false) {
                 if (submitBtn) submitBtn.disabled = false;
                 if (micBtn) micBtn.disabled = false;
 
-                // Scroll para a última mensagem
                 const mc = document.getElementById('chat-messages');
                 if (mc) mc.scrollTop = mc.scrollHeight;
-
             }, typeWait);
         }, readWait);
-
     } catch (err) {
-        console.error("Erro na geração orgânica:", err);
+        console.error('Erro na geração orgânica:', err);
         typingBox.classList.add('hidden');
         window.isWaiting = false;
         if (submitBtn) submitBtn.disabled = false;
@@ -186,5 +139,4 @@ window.submitChat = async function(t, isAudio = false) {
     }
 };
 
-// Log de Inicialização no console para controle do Admin
-console.log("🚀 Método de Linguagem Orgânica WR-TEC Ativado.");
+console.log('🚀 Método de Linguagem Orgânica WR-TEC Ativado.');
