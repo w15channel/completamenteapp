@@ -1,4 +1,4 @@
-const GEMINI_OPENAI_COMPAT_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+const GROQ_OPENAI_COMPAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export default async function handler(req, res) {
   // 1. Configuração de CORS para permitir que o frontend converse com a API
@@ -18,11 +18,11 @@ export default async function handler(req, res) {
   }
 
   // 3. Validação da Chave de API
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return res.status(500).json({
-      error: 'GEMINI_API_KEY não configurada no projeto da Vercel.',
-      details: 'Defina GEMINI_API_KEY no painel para habilitar o chat.'
+      error: 'GROQ_API_KEY não configurada no projeto da Vercel.',
+      details: 'Defina GROQ_API_KEY no painel para habilitar o chat.'
     });
   }
 
@@ -43,16 +43,16 @@ export default async function handler(req, res) {
     });
   }
 
-  // 5. Chamada para o modelo Gemini
+  // 5. Chamada para o modelo Groq (compatível com OpenAI Chat Completions)
   try {
-    const response = await fetch(GEMINI_OPENAI_COMPAT_URL, {
+    const response = await fetch(GROQ_OPENAI_COMPAT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+        model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
         messages,
         temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
         max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     
     if (!response.ok) {
       return res.status(response.status).json({
-        error: 'Erro ao consultar Gemini.',
+        error: 'Erro ao consultar Groq.',
         details: data?.error?.message || 'Sem detalhes.'
       });
     }
