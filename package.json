@@ -1,0 +1,10 @@
+{
+  "name": "completamenteapp",
+  "version": "1.0.0",
+  "description": "Clínica Virtual com Terapeutas IA",
+  "main": "index.html",
+  "scripts": {
+    "start": "node api/chat.js"
+  },
+  "dependencies": {}
+}
