@@ -3,8 +3,6 @@ const fetch = require('node-fetch');
 const REQUEST_TIMEOUT_MS = 8000;
 const RAW_VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
 const VERCEL_AI_URL = RAW_VERCEL_AI_URL.startsWith('http') ? RAW_VERCEL_AI_URL : `https://${RAW_VERCEL_AI_URL}`;
-const REQUEST_TIMEOUT_MS = 5000;
-const VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
 const DEFAULT_MODEL = process.env.VERCEL_MODEL || 'qwen/qwen3-32b';
 
 function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
@@ -76,18 +74,6 @@ module.exports = async function handler(req, res) {
             messages,
             temperature,
             ...(typeof max_tokens === 'number' ? { max_tokens } : {})
-        const response = await withTimeout(VERCEL_AI_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model,
-                messages,
-                temperature,
-                ...(typeof max_tokens === 'number' ? { max_tokens } : {})
-            })
         });
 
         if (!response.ok) {
