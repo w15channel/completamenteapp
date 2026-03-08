@@ -80,12 +80,9 @@ return;
 }
 const startTimestamp=Date.now();
 try{
-const assistantCount=h.filter(message=>message.role==='assistant').length;
-const maxResponseChars=assistantCount===0?220:320;
-const messagesForAI=h.map(message=>({role:message.role,content:message.content}));
-const res=await fetch(window.CHAT_AI_PROXY_URL||window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messagesForAI,temperature:0.7,max_tokens:assistantCount===0?160:280})});
 const userMessages=h.filter(m=>m.role==='user').map(m=>m.content||'');
 const assistantCount=h.filter(m=>m.role==='assistant').length;
+const maxResponseChars=assistantCount===0?220:320;
 const totalUserWords=userMessages.join(' ').trim().split(/\s+/).filter(Boolean).length;
 const punctuationRate=/[!?]/.test(t)?'usa interrogação/exclamação com frequência':'pouco uso de exclamação e interrogação';
 const upperCaseRate=(t.match(/[A-ZÀ-Ú]/g)||[]).length>=5?'gosta de ênfase em maiúsculas':'ênfase mais sutil';
