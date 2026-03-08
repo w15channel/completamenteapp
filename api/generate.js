@@ -90,21 +90,26 @@ window.submitChat = async function (t, isAudio = false) {
 
         const userStyleProfile = buildUserStyleProfile(userMessages);
 
-        let maxResponseChars = 420;
+        let maxResponseChars = 280;
+        const psychoeducationIntent = /(explica|explique|psicoeduca|o que é|oq é|como funciona|me explica melhor|qual a diferença|por que isso acontece)/i.test(t);
 
         let volumeInstruction = '';
         if (assistantCount === 0) {
-            maxResponseChars = 300;
-            volumeInstruction = 'Primeira resposta do dia: no máximo 300 caracteres, até 2 frases curtas e acolhimento equilibrado.';
+            maxResponseChars = 150;
+            volumeInstruction = 'Primeira resposta do dia: no máximo 150 caracteres, acolhimento direto e curto.';
         } else if (userWordCount <= 8) {
-            maxResponseChars = 240;
-            volumeInstruction = 'Paciente foi objetivo. Responda com até 240 caracteres, 1 ou 2 frases curtas.';
+            maxResponseChars = 180;
+            volumeInstruction = 'Paciente foi objetivo. Responda com até 180 caracteres, 1 ou 2 frases curtas.';
         } else if (userWordCount > 35 || totalUserWords > 180) {
-            maxResponseChars = 780;
-            volumeInstruction = 'Paciente abriu espaço e trouxe mais detalhes. Aprofunde gradualmente, até 780 caracteres.';
+            maxResponseChars = psychoeducationIntent ? 380 : 300;
+            volumeInstruction = psychoeducationIntent
+                ? 'Paciente abriu espaço e pediu explicação. Pode aprofundar em psicoeducação, até 380 caracteres, mantendo 1 foco por vez.'
+                : 'Paciente abriu espaço e trouxe mais detalhes. Aprofunde gradualmente, até 300 caracteres, sem tentar explicar tudo de uma vez.';
         } else {
-            maxResponseChars = 460;
-            volumeInstruction = 'Mantenha conversa natural e progressiva, entre 220 e 460 caracteres, sem blocos longos.';
+            maxResponseChars = psychoeducationIntent ? 340 : 260;
+            volumeInstruction = psychoeducationIntent
+                ? 'Mantenha conversa natural e progressiva, com explicação breve e foco clínico, entre 220 e 340 caracteres.'
+                : 'Mantenha conversa natural e progressiva, entre 160 e 260 caracteres, sem blocos longos.';
         }
 
         const syntacticMirroringInstruction = [
@@ -117,6 +122,16 @@ window.submitChat = async function (t, isAudio = false) {
             '- Nunca copie frases literalmente e nunca mude o assunto para espelhar contexto.'
         ].join('\n');
 
+        const therapistSignatureMap = {
+            lia: 'Assinatura da Dra. Lia: use metáforas cotidianas curtas para facilitar compreensão emocional sem soar genérico.',
+            yara: 'Assinatura da Dra. Yara: tom protetor e noturno, com perguntas investigativas delicadas e objetivas.',
+            marcos: 'Assinatura do Dr. Marcos: raciocínio clínico direto, priorizando perguntas investigativas curtas e precisas.',
+            juliana: 'Assinatura da Dra. Juliana: foco em regulação emocional, linguagem prática de aterramento e autocontrole.'
+        };
+
+        const lastAssistantMessage = [...h].reverse().find((message) => message.role === 'assistant');
+        const lastAssistantFirstWord = (lastAssistantMessage?.content || '').trim().split(/\s+/)[0] || '';
+
         const attendantLanguageInstruction = [
             `Você é ${window.activeTherapist.name}, profissional de saúde mental e atendente virtual principal.`,
             'Diretrizes de comportamento (não alterar estrutura do sistema, apenas a comunicação):',
@@ -127,14 +142,27 @@ window.submitChat = async function (t, isAudio = false) {
             '- Comunicação natural, humana e não formal.',
             '- Estruture frases com frequência usando padrão: preposição + pronome + verbo no infinitivo.',
             '- Exemplos de estilo: "para eu entender", "por você falar", "sem ele perceber", "até nós descobrirmos", "para eu ajudar".',
+            '- Responda apenas com a quantidade de palavras que um humano diria em uma única respiração.',
+            '- Limite-se a no máximo dois parágrafos curtos por interação.',
+            '- É estritamente proibido usar bullet points, listas numeradas ou formatações estruturadas na resposta ao paciente.',
+            '- Nunca tente resolver ou explicar tudo de uma vez. Faça uma observação clínica e devolva a palavra com uma pergunta curta.',
             '- Fale em segunda pessoa (você) e mantenha foco no tema trazido pelo paciente.',
             '- Evite jargão técnico desnecessário e respostas mecânicas.',
             '- Desenvolva uma linha de comunicação natural, adequada ao contexto emocional e progressiva na investigação.',
+            '- Espelhe forma de comunicação do paciente (formalidade, ritmo, gírias, regionalismos), sem copiar frases exatas.',
+            '- Se receber relato muito longo, inicie processando o peso da informação e foque em um ponto por vez.',
+            '- Nunca inicie duas respostas consecutivas com a mesma palavra ou estrutura sintática.',
+            lastAssistantFirstWord
+                ? `- A resposta anterior começou com "${lastAssistantFirstWord}"; não comece a próxima com essa mesma palavra.`
+                : '- Evite repetir palavras de abertura entre respostas consecutivas.',
+            '- Lista negra de abertura: não iniciar com "Entendo como você se sente", "É importante lembrar que", "Como posso te ajudar hoje?", "Vejo que você está passando por".',
             '- Quando houver sinais de condição atípica/patológica, use DSM-5, CSBI-13 e PATHOS como referência avaliativa de apoio.',
             '- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
+            '- Formato obrigatório: "Com base no que investigamos, existe uma possibilidade diagnóstica de [X]% de que esse quadro seja compatível com [condição]".',
             '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
             '- Trate possibilidade diagnóstica como uma avaliação clínica inicial da IA para orientar compreensão do quadro.',
-            '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.'
+            '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.',
+            `- ${therapistSignatureMap[window.activeTherapist.id] || 'Mantenha assinatura própria do terapeuta sem soar igual aos demais.'}`
         ].join('\n');
 
         const hasAssistantMessages = h.some((message) => message.role === 'assistant');
