@@ -1,5 +1,8 @@
 const fetch = require('node-fetch');
 
+const REQUEST_TIMEOUT_MS = 8000;
+const RAW_VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
+const VERCEL_AI_URL = RAW_VERCEL_AI_URL.startsWith('http') ? RAW_VERCEL_AI_URL : `https://${RAW_VERCEL_AI_URL}`;
 const REQUEST_TIMEOUT_MS = 5000;
 const VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
 const DEFAULT_MODEL = process.env.VERCEL_MODEL || 'qwen/qwen3-32b';
@@ -26,6 +29,25 @@ function getVercelApiKey() {
     return key;
 }
 
+async function callProvider(apiKey, payload) {
+    const body = JSON.stringify(payload);
+    const doRequest = () => withTimeout(VERCEL_AI_URL, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body
+    });
+
+    let response = await doRequest();
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+        response = await doRequest();
+    }
+
+    return response;
+}
+
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
@@ -49,6 +71,11 @@ module.exports = async function handler(req, res) {
     }
 
     try {
+        const response = await callProvider(apiKey, {
+            model,
+            messages,
+            temperature,
+            ...(typeof max_tokens === 'number' ? { max_tokens } : {})
         const response = await withTimeout(VERCEL_AI_URL, {
             method: 'POST',
             headers: {
@@ -74,6 +101,14 @@ module.exports = async function handler(req, res) {
                 });
             }
 
+            if (response.status === 502 || response.status === 503 || response.status === 504) {
+                return res.status(502).json({
+                    error: 'Vercel AI Gateway indisponível no momento.',
+                    hint: `Verifique o endpoint (${VERCEL_AI_URL}) e tente novamente em instantes.`,
+                    details: errorText
+                });
+            }
+
             return res.status(response.status).json({
                 error: 'Falha ao gerar resposta no Vercel AI Gateway.',
                 details: errorText
@@ -91,4 +126,4 @@ module.exports = async function handler(req, res) {
             : error.message;
         return res.status(500).json({ error: `Erro ao conectar com Vercel AI: ${reason}` });
     }
-}
+};
