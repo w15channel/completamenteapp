@@ -19,6 +19,48 @@ window.submitChat = async function (t, isAudio = false) {
     if (micBtn) micBtn.disabled = true;
 
     const userWordCount = t.trim().split(/\s+/).length;
+
+    const buildUserStyleProfile = (userTexts = []) => {
+        const joined = userTexts.join(' ').trim();
+        const sample = joined || t;
+        const punctuationHits = (sample.match(/[!?]/g) || []).length;
+        const uppercaseHits = (sample.match(/[A-ZÀ-Ú]/g) || []).length;
+        const emojiHits = (sample.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length;
+        const colloquialHits = (sample.match(/\b(tô|ta|pq|vc|cê|tipo|né|mano|cara|vamo|tbm)\b/gi) || []).length;
+
+        const sentences = sample.split(/[.!?]+/).map((chunk) => chunk.trim()).filter(Boolean);
+        const totalWords = sample.split(/\s+/).filter(Boolean).length;
+        const avgWordsPerSentence = sentences.length
+            ? Math.round(totalWords / sentences.length)
+            : Math.max(totalWords, userWordCount);
+
+        const expressionBank = ['acho', 'sinto', 'preciso', 'quero', 'talvez', 'porque', 'então', 'assim', 'na real', 'de boa', 'tipo', 'né'];
+        const recurringExpressions = expressionBank
+            .filter((exp) => new RegExp(`\\b${exp.replace(/\s+/g, '\\s+')}\\b`, 'i').test(sample))
+            .slice(0, 4);
+
+        return {
+            punctuationStyle: punctuationHits >= Math.max(2, userTexts.length) ? 'usa interrogação/exclamação com frequência' : 'pouco uso de exclamação e interrogação',
+            emphasisStyle: uppercaseHits >= 6 ? 'gosta de ênfase em maiúsculas' : 'ênfase mais sutil',
+            emojiStyle: emojiHits > 0 ? 'usa emojis' : 'não usa emojis',
+            formalityStyle: colloquialHits >= 2 ? 'linguagem mais coloquial' : 'linguagem mais neutra',
+            avgWordsPerSentence: Math.min(Math.max(avgWordsPerSentence, 4), 24),
+            recurringExpressions
+        };
+    };
+
+    const trimToCharacterLimit = (text, maxChars) => {
+        if (!maxChars || text.length <= maxChars) return text;
+
+        const safeText = text.slice(0, maxChars + 1);
+        const lastPunctuation = Math.max(safeText.lastIndexOf('.'), safeText.lastIndexOf('!'), safeText.lastIndexOf('?'));
+        if (lastPunctuation >= Math.floor(maxChars * 0.6)) {
+            return safeText.slice(0, lastPunctuation + 1).trim();
+        }
+
+        const lastSpace = safeText.lastIndexOf(' ');
+        return (lastSpace > 0 ? safeText.slice(0, lastSpace) : safeText.slice(0, maxChars)).trim();
+    };
     let h = [];
 
     if (db) {
@@ -46,29 +88,32 @@ window.submitChat = async function (t, isAudio = false) {
         const assistantCount = h.filter((message) => message.role === 'assistant').length;
         const totalUserWords = userMessages.join(' ').trim().split(/\s+/).filter(Boolean).length;
 
-        const punctuationRate = /[!?]/.test(t) ? 'usa interrogação/exclamação com frequência' : 'pouco uso de exclamação e interrogação';
-        const upperCaseRate = (t.match(/[A-ZÀ-Ú]/g) || []).length >= 5 ? 'gosta de ênfase em maiúsculas' : 'ênfase mais sutil';
-        const emojiRate = /[\u{1F300}-\u{1FAFF}]/u.test(t) ? 'usa emojis' : 'não usa emojis';
-        const colloquialMarkers = /\b(tô|ta|pq|vc|cê|tipo|né|mano|cara|vamo|tbm)\b/i.test(t)
-            ? 'linguagem mais coloquial'
-            : 'linguagem mais neutra';
+        const userStyleProfile = buildUserStyleProfile(userMessages);
+
+        let maxResponseChars = 420;
 
         let volumeInstruction = '';
         if (assistantCount === 0) {
+            maxResponseChars = 300;
             volumeInstruction = 'Primeira resposta do dia: no máximo 300 caracteres, até 2 frases curtas e acolhimento equilibrado.';
-        } else if (userWordCount <= 6) {
-            volumeInstruction = 'Paciente foi objetivo. Responda com até 220 caracteres, 1 ou 2 frases curtas.';
-        } else if (userWordCount > 30 || totalUserWords > 140) {
-            volumeInstruction = 'Paciente abriu espaço e trouxe mais detalhes. Responda com profundidade proporcional, até 900 caracteres.';
+        } else if (userWordCount <= 8) {
+            maxResponseChars = 240;
+            volumeInstruction = 'Paciente foi objetivo. Responda com até 240 caracteres, 1 ou 2 frases curtas.';
+        } else if (userWordCount > 35 || totalUserWords > 180) {
+            maxResponseChars = 780;
+            volumeInstruction = 'Paciente abriu espaço e trouxe mais detalhes. Aprofunde gradualmente, até 780 caracteres.';
         } else {
-            volumeInstruction = 'Mantenha conversa natural e progressiva, entre 220 e 450 caracteres, sem blocos longos.';
+            maxResponseChars = 460;
+            volumeInstruction = 'Mantenha conversa natural e progressiva, entre 220 e 460 caracteres, sem blocos longos.';
         }
 
         const syntacticMirroringInstruction = [
             'Espelhamento sintático obrigatório (espelhar forma, não conteúdo):',
-            `- Perfil observado do paciente: ${punctuationRate}; ${upperCaseRate}; ${emojiRate}; ${colloquialMarkers}.`,
-            '- Replique ritmo, tamanho médio de frase e nível de formalidade do paciente.',
-            '- Reutilize de forma natural expressões e conectivos recorrentes do paciente quando fizer sentido.',
+            `- Perfil observado do paciente: ${userStyleProfile.punctuationStyle}; ${userStyleProfile.emphasisStyle}; ${userStyleProfile.emojiStyle}; ${userStyleProfile.formalityStyle}.`,
+            `- Mantenha frases com média próxima de ${userStyleProfile.avgWordsPerSentence} palavras para acompanhar o ritmo do paciente.`,
+            userStyleProfile.recurringExpressions.length
+                ? `- Expressões recorrentes identificadas: ${userStyleProfile.recurringExpressions.join(', ')}. Use de forma natural quando fizer sentido.`
+                : '- Poucas expressões recorrentes ainda; observe o padrão e ajuste gradualmente.',
             '- Nunca copie frases literalmente e nunca mude o assunto para espelhar contexto.'
         ].join('\n');
 
@@ -88,8 +133,7 @@ window.submitChat = async function (t, isAudio = false) {
             '- Quando houver sinais de condição atípica/patológica, use DSM-5, CSBI-13 e PATHOS como referência avaliativa de apoio.',
             '- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
             '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
-            '- Sempre esclareça que diagnóstico formal só pode ser emitido por especialistas habilitados.',
-            '- Explique que o objetivo da possibilidade diagnóstica é orientar compreensão inicial e incentivar continuidade em atendimento especializado.',
+            '- Trate possibilidade diagnóstica como uma avaliação clínica inicial da IA para orientar compreensão do quadro.',
             '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.'
         ].join('\n');
 
@@ -114,13 +158,13 @@ window.submitChat = async function (t, isAudio = false) {
             body: JSON.stringify({
                 messages: messagesForAI,
                 temperature: 0.8,
-                max_tokens: assistantCount === 0 ? 160 : (userWordCount < 7 ? 140 : (userWordCount > 30 ? 420 : 260))
+                max_tokens: assistantCount === 0 ? 140 : (userWordCount <= 8 ? 130 : (userWordCount > 35 ? 360 : 240))
             })
         });
 
         if (!res.ok) throw new Error('Falha na comunicação.');
         const data = await res.json();
-        const rt = data.choices[0].message.content;
+        const rt = trimToCharacterLimit(data.choices[0].message.content, maxResponseChars);
 
         const apiDuration = Date.now() - startTimestamp;
         let readWait = userWordCount < 6 ? 2500 : 8500;
