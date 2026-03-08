@@ -5,6 +5,21 @@ const RAW_VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.verce
 const VERCEL_AI_URL = RAW_VERCEL_AI_URL.startsWith('http') ? RAW_VERCEL_AI_URL : `https://${RAW_VERCEL_AI_URL}`;
 const DEFAULT_MODEL = process.env.VERCEL_MODEL || 'qwen/qwen3-32b';
 
+function log(level, message, meta = {}) {
+    const payload = {
+        scope: 'api/ai',
+        message,
+        ...meta
+    };
+
+    if (level === 'error') {
+        console.error(payload);
+        return;
+    }
+
+    console.log(payload);
+}
+
 function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -40,6 +55,10 @@ async function callProvider(apiKey, payload) {
 
     let response = await doRequest();
     if (response.status === 502 || response.status === 503 || response.status === 504) {
+        log('warn', 'retrying provider request due to transient status', {
+            status: response.status,
+            endpoint: VERCEL_AI_URL
+        });
         response = await doRequest();
     }
 
@@ -49,8 +68,14 @@ async function callProvider(apiKey, payload) {
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
+    log('info', 'request received', {
+        method: req.method,
+        endpoint: VERCEL_AI_URL
+    });
+
     const apiKey = getVercelApiKey();
     if (!apiKey) {
+        log('error', 'missing api key');
         return res.status(500).json({
             error: 'QWEEN_API_KEY não configurada.',
             hint: 'Adicione QWEEN_API_KEY (ou QWEN_API_KEY/VERCEL_AI_API_KEY) nas variáveis de ambiente do deploy.'
@@ -65,8 +90,16 @@ module.exports = async function handler(req, res) {
     } = req.body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
+        log('warn', 'invalid messages payload');
         return res.status(400).json({ error: 'messages deve ser um array com pelo menos uma mensagem.' });
     }
+
+    log('info', 'calling provider', {
+        model,
+        temperature,
+        message_count: messages.length,
+        has_max_tokens: typeof max_tokens === 'number'
+    });
 
     try {
         const response = await callProvider(apiKey, {
@@ -78,6 +111,10 @@ module.exports = async function handler(req, res) {
 
         if (!response.ok) {
             const errorText = await response.text();
+            log('error', 'provider returned non-ok response', {
+                status: response.status,
+                details: errorText.slice(0, 500)
+            });
 
             if (response.status === 401 || response.status === 403) {
                 return res.status(502).json({
@@ -102,6 +139,10 @@ module.exports = async function handler(req, res) {
         }
 
         const data = await response.json();
+        log('info', 'provider response ok', {
+            status: response.status,
+            choices: Array.isArray(data.choices) ? data.choices.length : 0
+        });
         return res.status(200).json({
             choices: data.choices,
             provider: 'VERCEL_AI'
@@ -110,6 +151,10 @@ module.exports = async function handler(req, res) {
         const reason = error.name === 'AbortError'
             ? `timeout de ${REQUEST_TIMEOUT_MS}ms`
             : error.message;
+        log('error', 'provider request failed', {
+            error_name: error.name,
+            reason
+        });
         return res.status(500).json({ error: `Erro ao conectar com Vercel AI: ${reason}` });
     }
 };
