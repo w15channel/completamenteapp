@@ -134,9 +134,7 @@ const attendantLanguageInstruction=[
 '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
 '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.'
 ].join('\n');
-const hasAssistantMessages=h.some(message=>message.role==='assistant');
-const firstInteractionInstruction=hasAssistantMessages?'Não é a primeira interação; manter continuidade natural do atendimento.':'É a primeira interação; iniciar com saudação receptiva e acolhedora.';
-const messagesForAI=h.map((m,idx)=>{if(idx===h.length-1){return{role:m.role,content:`${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${syntacticMirroringInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`};}return{role:m.role,content:m.content};});
+const messagesForAI=h.map(m=>({role:m.role,content:m.content}));
 const res=await fetch(window.CHAT_AI_PROXY_URL||window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messagesForAI,temperature:0.8,max_tokens:assistantCount===0?160:(userWordCount<7?140:(userWordCount>30?420:260))})});
 if(!res.ok)throw new Error('Falha na comunicação.');
 const data=await res.json();

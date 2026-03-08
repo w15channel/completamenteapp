@@ -1,6 +1,5 @@
 /**
- * WR TERAPIA - Motor de Humanização Orgânica
- * v2.1 - Diretrizes comportamentais dos atendentes
+ * WR TERAPIA - Chat nativo
  */
 
 window.submitChat = async function (t, isAudio = false) {
@@ -20,35 +19,6 @@ window.submitChat = async function (t, isAudio = false) {
 
     const userWordCount = t.trim().split(/\s+/).length;
 
-    const buildUserStyleProfile = (userTexts = []) => {
-        const joined = userTexts.join(' ').trim();
-        const sample = joined || t;
-        const punctuationHits = (sample.match(/[!?]/g) || []).length;
-        const uppercaseHits = (sample.match(/[A-ZÀ-Ú]/g) || []).length;
-        const emojiHits = (sample.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length;
-        const colloquialHits = (sample.match(/\b(tô|ta|pq|vc|cê|tipo|né|mano|cara|vamo|tbm)\b/gi) || []).length;
-
-        const sentences = sample.split(/[.!?]+/).map((chunk) => chunk.trim()).filter(Boolean);
-        const totalWords = sample.split(/\s+/).filter(Boolean).length;
-        const avgWordsPerSentence = sentences.length
-            ? Math.round(totalWords / sentences.length)
-            : Math.max(totalWords, userWordCount);
-
-        const expressionBank = ['acho', 'sinto', 'preciso', 'quero', 'talvez', 'porque', 'então', 'assim', 'na real', 'de boa', 'tipo', 'né'];
-        const recurringExpressions = expressionBank
-            .filter((exp) => new RegExp(`\\b${exp.replace(/\s+/g, '\\s+')}\\b`, 'i').test(sample))
-            .slice(0, 4);
-
-        return {
-            punctuationStyle: punctuationHits >= Math.max(2, userTexts.length) ? 'usa interrogação/exclamação com frequência' : 'pouco uso de exclamação e interrogação',
-            emphasisStyle: uppercaseHits >= 6 ? 'gosta de ênfase em maiúsculas' : 'ênfase mais sutil',
-            emojiStyle: emojiHits > 0 ? 'usa emojis' : 'não usa emojis',
-            formalityStyle: colloquialHits >= 2 ? 'linguagem mais coloquial' : 'linguagem mais neutra',
-            avgWordsPerSentence: Math.min(Math.max(avgWordsPerSentence, 4), 24),
-            recurringExpressions
-        };
-    };
-
     const trimToCharacterLimit = (text, maxChars) => {
         if (!maxChars || text.length <= maxChars) return text;
 
@@ -61,6 +31,7 @@ window.submitChat = async function (t, isAudio = false) {
         const lastSpace = safeText.lastIndexOf(' ');
         return (lastSpace > 0 ? safeText.slice(0, lastSpace) : safeText.slice(0, maxChars)).trim();
     };
+
     let h = [];
 
     if (db) {
@@ -84,109 +55,17 @@ window.submitChat = async function (t, isAudio = false) {
     const startTimestamp = Date.now();
 
     try {
-        const userMessages = h.filter((message) => message.role === 'user').map((message) => message.content || '');
         const assistantCount = h.filter((message) => message.role === 'assistant').length;
-        const totalUserWords = userMessages.join(' ').trim().split(/\s+/).filter(Boolean).length;
-
-        const userStyleProfile = buildUserStyleProfile(userMessages);
-
-        let maxResponseChars = 280;
-        const psychoeducationIntent = /(explica|explique|psicoeduca|o que é|oq é|como funciona|me explica melhor|qual a diferença|por que isso acontece)/i.test(t);
-
-        let volumeInstruction = '';
-        if (assistantCount === 0) {
-            maxResponseChars = 150;
-            volumeInstruction = 'Primeira resposta do dia: no máximo 150 caracteres, acolhimento direto e curto.';
-        } else if (userWordCount <= 8) {
-            maxResponseChars = 180;
-            volumeInstruction = 'Paciente foi objetivo. Responda com até 180 caracteres, 1 ou 2 frases curtas.';
-        } else if (userWordCount > 35 || totalUserWords > 180) {
-            maxResponseChars = psychoeducationIntent ? 380 : 300;
-            volumeInstruction = psychoeducationIntent
-                ? 'Paciente abriu espaço e pediu explicação. Pode aprofundar em psicoeducação, até 380 caracteres, mantendo 1 foco por vez.'
-                : 'Paciente abriu espaço e trouxe mais detalhes. Aprofunde gradualmente, até 300 caracteres, sem tentar explicar tudo de uma vez.';
-        } else {
-            maxResponseChars = psychoeducationIntent ? 340 : 260;
-            volumeInstruction = psychoeducationIntent
-                ? 'Mantenha conversa natural e progressiva, com explicação breve e foco clínico, entre 220 e 340 caracteres.'
-                : 'Mantenha conversa natural e progressiva, entre 160 e 260 caracteres, sem blocos longos.';
-        }
-
-        const syntacticMirroringInstruction = [
-            'Espelhamento sintático obrigatório (espelhar forma, não conteúdo):',
-            `- Perfil observado do paciente: ${userStyleProfile.punctuationStyle}; ${userStyleProfile.emphasisStyle}; ${userStyleProfile.emojiStyle}; ${userStyleProfile.formalityStyle}.`,
-            `- Mantenha frases com média próxima de ${userStyleProfile.avgWordsPerSentence} palavras para acompanhar o ritmo do paciente.`,
-            userStyleProfile.recurringExpressions.length
-                ? `- Expressões recorrentes identificadas: ${userStyleProfile.recurringExpressions.join(', ')}. Use de forma natural quando fizer sentido.`
-                : '- Poucas expressões recorrentes ainda; observe o padrão e ajuste gradualmente.',
-            '- Nunca copie frases literalmente e nunca mude o assunto para espelhar contexto.'
-        ].join('\n');
-
-        const therapistSignatureMap = {
-            lia: 'Assinatura da Dra. Lia: use metáforas cotidianas curtas para facilitar compreensão emocional sem soar genérico.',
-            yara: 'Assinatura da Dra. Yara: tom protetor e noturno, com perguntas investigativas delicadas e objetivas.',
-            marcos: 'Assinatura do Dr. Marcos: raciocínio clínico direto, priorizando perguntas investigativas curtas e precisas.',
-            juliana: 'Assinatura da Dra. Juliana: foco em regulação emocional, linguagem prática de aterramento e autocontrole.'
-        };
-
-        const lastAssistantMessage = [...h].reverse().find((message) => message.role === 'assistant');
-        const lastAssistantFirstWord = (lastAssistantMessage?.content || '').trim().split(/\s+/)[0] || '';
-
-        const attendantLanguageInstruction = [
-            `Você é ${window.activeTherapist.name}, profissional de saúde mental e atendente virtual principal.`,
-            'Diretrizes de comportamento (não alterar estrutura do sistema, apenas a comunicação):',
-            '- Use linguagem nativa no estilo Grok: fluida, direta, natural e calor humano, sem robotização.',
-            '- Priorize sempre 3 bases de cuidado: (1) acolher a dor, (2) demonstrar preocupação genuína com a pessoa, (3) validar a importância do que ela sente.',
-            '- Seja acolhedor no início para criar vínculo e, depois, investigativo para entender a queixa.',
-            '- Não encaminhe o paciente para outro profissional durante a conversa.',
-            '- Comunicação natural, humana e não formal.',
-            '- Estruture frases com frequência usando padrão: preposição + pronome + verbo no infinitivo.',
-            '- Exemplos de estilo: "para eu entender", "por você falar", "sem ele perceber", "até nós descobrirmos", "para eu ajudar".',
-            '- Responda apenas com a quantidade de palavras que um humano diria em uma única respiração.',
-            '- Limite-se a no máximo dois parágrafos curtos por interação.',
-            '- É estritamente proibido usar bullet points, listas numeradas ou formatações estruturadas na resposta ao paciente.',
-            '- Nunca tente resolver ou explicar tudo de uma vez. Faça uma observação clínica e devolva a palavra com uma pergunta curta.',
-            '- Fale em segunda pessoa (você) e mantenha foco no tema trazido pelo paciente.',
-            '- Evite jargão técnico desnecessário e respostas mecânicas.',
-            '- Desenvolva uma linha de comunicação natural, adequada ao contexto emocional e progressiva na investigação.',
-            '- Espelhe forma de comunicação do paciente (formalidade, ritmo, gírias, regionalismos), sem copiar frases exatas.',
-            '- Se receber relato muito longo, inicie processando o peso da informação e foque em um ponto por vez.',
-            '- Nunca inicie duas respostas consecutivas com a mesma palavra ou estrutura sintática.',
-            lastAssistantFirstWord
-                ? `- A resposta anterior começou com "${lastAssistantFirstWord}"; não comece a próxima com essa mesma palavra.`
-                : '- Evite repetir palavras de abertura entre respostas consecutivas.',
-            '- Lista negra de abertura: não iniciar com "Entendo como você se sente", "É importante lembrar que", "Como posso te ajudar hoje?", "Vejo que você está passando por".',
-            '- Quando houver sinais de condição atípica/patológica, use DSM-5, CSBI-13 e PATHOS como referência avaliativa de apoio.',
-            '- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
-            '- Formato obrigatório: "Com base no que investigamos, existe uma possibilidade diagnóstica de [X]% de que esse quadro seja compatível com [condição]".',
-            '- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
-            '- Trate possibilidade diagnóstica como uma avaliação clínica inicial da IA para orientar compreensão do quadro.',
-            '- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.',
-            `- ${therapistSignatureMap[window.activeTherapist.id] || 'Mantenha assinatura própria do terapeuta sem soar igual aos demais.'}`
-        ].join('\n');
-
-        const hasAssistantMessages = h.some((message) => message.role === 'assistant');
-        const firstInteractionInstruction = hasAssistantMessages
-            ? 'Não é a primeira interação; manter continuidade natural do atendimento.'
-            : 'É a primeira interação; iniciar com saudação receptiva e acolhedora.';
-
-        const messagesForAI = h.map((m, idx) => {
-            if (idx === h.length - 1) {
-                return {
-                    role: m.role,
-                    content: `${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${syntacticMirroringInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`
-                };
-            }
-            return { role: m.role, content: m.content };
-        });
+        const maxResponseChars = assistantCount === 0 ? 220 : 320;
+        const messagesForAI = h.map((message) => ({ role: message.role, content: message.content }));
 
         const res = await fetch(window.AI_PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 messages: messagesForAI,
-                temperature: 0.8,
-                max_tokens: assistantCount === 0 ? 140 : (userWordCount <= 8 ? 130 : (userWordCount > 35 ? 360 : 240))
+                temperature: 0.7,
+                max_tokens: assistantCount === 0 ? 160 : 280
             })
         });
 
@@ -231,7 +110,7 @@ window.submitChat = async function (t, isAudio = false) {
             }, typeWait);
         }, readWait);
     } catch (err) {
-        console.error('Erro na geração orgânica:', err);
+        console.error('Erro na geração nativa:', err);
         typingBox.classList.add('hidden');
         window.isWaiting = false;
         if (submitBtn) submitBtn.disabled = false;
@@ -239,4 +118,4 @@ window.submitChat = async function (t, isAudio = false) {
     }
 };
 
-console.log('🚀 Método de Linguagem Orgânica WR-TEC Ativado.');
+console.log('🚀 Chat nativo ativado.');

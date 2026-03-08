@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
 
 const REQUEST_TIMEOUT_MS = 5000;
-const GROQ_URL = process.env.GROQ_URL || 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = process.env.SK_MODEL || 'llama-3.3-70b-versatile';
+const VERCEL_AI_URL = process.env.VERCEL_AI_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
+const DEFAULT_MODEL = process.env.VERCEL_MODEL || 'qwen/qwen3-32b';
 
 function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
     const controller = new AbortController();
@@ -14,20 +14,26 @@ function withTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
     }).finally(() => clearTimeout(timeout));
 }
 
-function getGroqApiKey() {
-    const key = (process.env.GROQ_API_KEY || process.env.GROQ_KEY || '').trim();
+function getVercelApiKey() {
+    const key = (
+        process.env.QWEEN_API_KEY
+        || process.env.QWEN_API_KEY
+        || process.env.VERCEL_AI_API_KEY
+        || ''
+    ).trim();
+
     if (!key || key === 'SUA_CHAVE_AQUI') return null;
     return key;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Somente POST');
 
-    const apiKey = getGroqApiKey();
+    const apiKey = getVercelApiKey();
     if (!apiKey) {
         return res.status(500).json({
-            error: 'GROQ_API_KEY não configurada.',
-            hint: 'Adicione GROQ_API_KEY (ou GROQ_KEY) nas variáveis de ambiente do deploy.'
+            error: 'QWEEN_API_KEY não configurada.',
+            hint: 'Adicione QWEEN_API_KEY (ou QWEN_API_KEY/VERCEL_AI_API_KEY) nas variáveis de ambiente do deploy.'
         });
     }
 
@@ -43,7 +49,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const response = await withTimeout(GROQ_URL, {
+        const response = await withTimeout(VERCEL_AI_URL, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -63,13 +69,13 @@ export default async function handler(req, res) {
             if (response.status === 401 || response.status === 403) {
                 return res.status(502).json({
                     error: 'Falha de autenticação no provedor de IA.',
-                    hint: 'Verifique se a chave GROQ_API_KEY está correta, ativa e sem espaços extras.',
+                    hint: 'Verifique se a chave QWEEN_API_KEY está correta, ativa e sem espaços extras.',
                     provider_status: response.status
                 });
             }
 
             return res.status(response.status).json({
-                error: 'Falha ao gerar resposta com Groq.',
+                error: 'Falha ao gerar resposta no Vercel AI Gateway.',
                 details: errorText
             });
         }
@@ -77,12 +83,12 @@ export default async function handler(req, res) {
         const data = await response.json();
         return res.status(200).json({
             choices: data.choices,
-            provider: 'GROQ'
+            provider: 'VERCEL_AI'
         });
     } catch (error) {
         const reason = error.name === 'AbortError'
             ? `timeout de ${REQUEST_TIMEOUT_MS}ms`
             : error.message;
-        return res.status(500).json({ error: `Erro ao conectar com GROQ: ${reason}` });
+        return res.status(500).json({ error: `Erro ao conectar com Vercel AI: ${reason}` });
     }
 }
