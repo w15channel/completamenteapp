@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded",()=>{if(localStorage.getItem('wr_re
 window.setupPresence=function(){if(!db||!window.clientId)return;const userStatusRef=db.ref('/status/'+window.clientId);db.ref('.info/connected').on('value',(s)=>{if(s.val()===false)return;userStatusRef.onDisconnect().set({online:false,last_seen:firebase.database.ServerValue.TIMESTAMP}).then(()=>{userStatusRef.set({online:true,last_seen:firebase.database.ServerValue.TIMESTAMP});});});};
 window.getTodayStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 window.showTab=function(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');if(id!=='chat'&&window.activeChatRef){window.activeChatRef.off();window.activeAiStatusRef.off();window.activeChatRef=null;}if(id==='mural')window.loadMural();if(id==='cycle')window.initCycleTab();if(id==='routines'){if(Notification.permission==='default')Notification.requestPermission();window.renderTasks();}const mainArea=document.getElementById('main-area');const bottomNav=document.getElementById('bottom-nav');if(id==='admin-dashboard'){mainArea.style.maxWidth='100%';bottomNav.style.display='none';}else if(id==='onboarding'||id==='admin-login-screen'){mainArea.style.maxWidth='480px';bottomNav.style.display='none';}else{mainArea.style.maxWidth='480px';bottomNav.style.display='flex';}}
-window.login=async function(isAuto){const g=document.getElementById('user-gender').value;const n=document.getElementById('user-name-input').value.trim().toUpperCase();const p=document.getElementById('user-pass-input').value.trim();if(!isAuto&&(!g||n.split(' ').length<2||!/^\d{8}$/.test(p)))return alert("Selecione o Gênero, digite NOME e SOBRENOME e a Senha (DDMMAAAA).");window.clientId=n.replace(/\s+/g,'_');window.clientName=n.split(' ')[0];if(db){const snap=await db.ref('users/'+window.clientId).once('value');if(!snap.exists()){await db.ref('users/'+window.clientId).set({pass:p,fullName:n,gender:g,created:Date.now()});window.userDataCache={pass:p,fullName:n,gender:g};}else{const u=snap.val();if(u.blocked)return alert("ACESSO BLOQUEADO: Contate a administração.");if(u.pass!==p)return alert("Senha incorreta. Verifique sua data de nascimento.");window.userDataCache=u;if(u.cycle)window.fillCycleForm(u.cycle);if(u.goals){document.getElementById('rt-goal-week').value=u.goals.week||'';document.getElementById('rt-goal-month').value=u.goals.month||'';}}}if(document.getElementById('remember-me').checked){localStorage.setItem('wr_remember','true');localStorage.setItem('wr_user',n);localStorage.setItem('wr_pass',p);}else{localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');}document.querySelectorAll('.client-name').forEach(e=>e.innerText=window.clientName);window.setupPresence();window.showTab('home');if(Notification.permission!=='granted')Notification.requestPermission();startReminderLoop();if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";}}
+window.login=async function(isAuto){const g=document.getElementById('user-gender').value;const n=document.getElementById('user-name-input').value.trim().toUpperCase();const p=document.getElementById('user-pass-input').value.trim();if(!isAuto&&(!g||n.split(' ').length<2||!/^\d{8}$/.test(p)))return alert("Selecione o Gênero, digite NOME e SOBRENOME e a Senha (DDMMAAAA).");window.clientId=n.replace(/\s+/g,'_');window.clientName=n.split(' ')[0];await window.clearAllHistoriesOnce();if(db){const snap=await db.ref('users/'+window.clientId).once('value');if(!snap.exists()){await db.ref('users/'+window.clientId).set({pass:p,fullName:n,gender:g,created:Date.now()});window.userDataCache={pass:p,fullName:n,gender:g};}else{const u=snap.val();if(u.blocked)return alert("ACESSO BLOQUEADO: Contate a administração.");if(u.pass!==p)return alert("Senha incorreta. Verifique sua data de nascimento.");window.userDataCache=u;if(u.cycle)window.fillCycleForm(u.cycle);if(u.goals){document.getElementById('rt-goal-week').value=u.goals.week||'';document.getElementById('rt-goal-month').value=u.goals.month||'';}}}if(document.getElementById('remember-me').checked){localStorage.setItem('wr_remember','true');localStorage.setItem('wr_user',n);localStorage.setItem('wr_pass',p);}else{localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');}document.querySelectorAll('.client-name').forEach(e=>e.innerText=window.clientName);window.setupPresence();window.showTab('home');if(Notification.permission!=='granted')Notification.requestPermission();startReminderLoop();if(window.player){window.player.playVideo();window.player.unMute();window.player.setVolume(30);document.getElementById('music-icon').className="fas fa-volume-up text-sky-400";}}
 window.logoutUser=function(){localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');window.location.reload();}
 window.saveGoals=async function(){const goals={week:document.getElementById('rt-goal-week').value,month:document.getElementById('rt-goal-month').value};window.userDataCache.goals=goals;if(db)await db.ref(`users/${window.clientId}/goals`).set(goals);}
 window.openTaskModal=function(){document.getElementById('task-name').value='';document.getElementById('task-time').value='';document.getElementById('task-freq').value='daily';document.getElementById('task-modal').classList.remove('hidden');}
@@ -38,29 +38,11 @@ const therapists=[{id:'lia',name:'Dra. Lia',color:'#ec4899',icon:'heart',schedul
 window.triggerChatSelection=function(){if(!window.hasAcceptedTerms)document.getElementById('consent-modal').classList.remove('hidden');else window.renderTherapistList();}
 window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setItem('wr_terms_accepted','true');document.getElementById('consent-modal').classList.add('hidden');window.renderTherapistList();}
 window.declineTerms=function(){document.getElementById('consent-modal').classList.add('hidden');window.showTab('home');}
-window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div>`;l.appendChild(c);});window.showTab('chat-selection');}
-window.getSystemPrompt=function(id){
-const base="REGRA ABSOLUTA: Você é humano. NUNCA diga ser IA. Atende pessoas em fragilidade. Chame pelo primeiro nome. Aja com linguagem natural, empática e conversacional, sem mudar a estrutura do sistema.";
-const behavioralGuide="Diretrizes de comunicação: inicie acolhendo e depois investigue a queixa; não encaminhe para outro profissional; fale de forma não formal; use com frequência construções como preposição + pronome + infinitivo (ex.: para eu entender, por você falar, sem ele perceber, até nós descobrirmos); ao fim da investigação, apresente uma possibilidade diagnóstica com percentual e explicação didática.";
-const p={'lia':`${base} ${behavioralGuide} Dra. Lia, terapeuta 45 anos. Acolhedora. Responda até 500 caracteres.`,'yara':`${base} ${behavioralGuide} Dra. Yara, terapeuta da madrugada. Tom protetor.`,'marcos':`${base} ${behavioralGuide} Dr. Marcos, terapeuta analítico.`,'juliana':`${base} ${behavioralGuide} Dra. Juliana, foco em regulação emocional.`};
-let prompt=p[id]||base;
-const u=window.userDataCache;
-if(u){
-prompt+=`\n\n[CONTEXTO DO PACIENTE]:\nNome: ${u.fullName}.\nGênero: ${u.gender==='M'?'Mulher':'Homem'}. `;
-if(u.goals){prompt+=`\nMetas do paciente - Semana: ${u.goals.week||'-'}, Mês: ${u.goals.month||'-'}. `;}
-if(u.tasks){
-const tNames=Object.values(u.tasks).filter(x=>x.active).map(x=>x.name).join(', ');
-if(tNames)prompt+=`\nRotina diária: ${tNames}. `;}
-if(u.cycle&&u.cycle.notesList&&u.cycle.notesList.length>0){prompt+=`\nÚltimo registro no diário de sentimentos: "${u.cycle.notesList[0].text}". `;}
-try{
-const mLocal=JSON.parse(localStorage.getItem('mural_local')||'[]');
-if(mLocal.length>0){prompt+=`\nÚltimo desabafo no mural: "${mLocal[0].t}". `;}
-}catch(e){}
-prompt+=`\n\nUSE ESTAS INFORMAÇÕES DE FORMA SUTIL PARA DEMONSTRAR EMPATIA. Nunca diga 'li no seu mural' ou 'vi na sua rotina', aja como se lembrasse organicamente, como um terapeuta humano faria.`
-}
-return prompt;
-}
+window.renderTherapistList=function(){const l=document.getElementById('therapist-list');l.innerHTML='';therapists.forEach(t=>{const st=window.checkAvailability(t.id);const c=document.createElement('div');c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 ${st.allow?'bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-700':'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'}`;c.onclick=()=>{if(st.allow)window.startChat(t.id);else alert(`${t.name} atende no horário: ${t.schedule}`);};c.innerHTML=`<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style="background-color:${st.allow?t.color:'#475569'}"><i class="fas fa-${t.icon}"></i></div><div class="flex-1"><span class="font-bold text-sm ${st.allow?'text-slate-200':'text-slate-500'}">${t.name}</span><p class="text-[9px] text-slate-500">${t.schedule}</p><div class="flex items-center mt-1"><span class="status-dot" style="background:${st.c};box-shadow:0 0 5px ${st.c}"></span><span class="text-[8px] uppercase font-bold text-slate-400">${st.t}</span></div></div><button onclick="event.stopPropagation();window.clearChatHistory('${t.id}',true);" class="px-2 py-2 rounded-lg bg-slate-900/70 text-rose-300 hover:text-rose-200 hover:bg-rose-900/30 border border-slate-700" title="Excluir conversa"><i class="fas fa-trash"></i></button>`;l.appendChild(c);});window.showTab('chat-selection');}
+window.getSystemPrompt=function(id){const therapist=therapists.find(t=>t.id===id);const name=therapist?therapist.name:'Terapeuta';return `Você é ${name}. Responda de forma natural, clara e objetiva.`;}
 window.getLocalHistory=function(id){return JSON.parse(localStorage.getItem(`chat_${window.clientId}_${id}`))||[];}
+window.clearChatHistory=async function(therapistId,askConfirm=false){if(!window.clientId||!therapistId)return;const therapist=therapists.find(t=>t.id===therapistId);if(askConfirm&&!confirm(`Excluir todo o histórico com ${therapist?therapist.name:'este bot'}?`))return;const chatId=`${window.clientId}_${therapistId}`;localStorage.removeItem(`chat_${chatId}`);if(db){await db.ref(`chats/${chatId}`).remove();}if(window.activeTherapist&&window.activeTherapist.id===therapistId){window.refreshChatDisplay([]);}if(askConfirm)alert('Conversa excluída com sucesso.');}
+window.clearAllHistoriesOnce=async function(){if(!window.clientId)return;const resetKey=`wr_chat_reset_${window.clientId}_v3`;if(localStorage.getItem(resetKey)==='done')return;const ops=therapists.map(t=>window.clearChatHistory(t.id,false));await Promise.all(ops);localStorage.setItem(resetKey,'done');}
 window.startChat=async function(id){const st=window.checkAvailability(id);if(!st.allow)return;window.activeTherapist=therapists.find(t=>t.id===id);document.getElementById('active-name').innerText=window.activeTherapist.name;document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;document.getElementById('active-status-dot').style.background=st.c;document.getElementById('active-status-text').innerText=st.t;const input=document.getElementById('chat-input');const submitBtn=document.getElementById('submit-btn');const waBtn=document.getElementById('wa-btn');const micBtn=document.getElementById('mic-btn');input.disabled=false;input.placeholder="Digite aqui...";submitBtn.classList.remove('hidden');micBtn.classList.remove('hidden');waBtn.classList.add('hidden');const chatId=`${window.clientId}_${id}`;if(!db){let h=window.getLocalHistory(id);if(h.length===0){h.push({role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`});localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));}window.refreshChatDisplay(h);}else{window.activeChatRef=db.ref(`chats/${chatId}`);window.activeAiStatusRef=db.ref(`ai_status/${chatId}`);window.activeAiStatusRef.on('value',snap=>{const status=snap.val();window.isBotPaused=status?status.paused:false;});window.activeChatRef.on('value',(snapshot)=>{let h=snapshot.val();if(!h){h=[{role:"system",content:`${window.getSystemPrompt(id)} Paciente: ${window.clientName}.`}];window.activeChatRef.set(h);}localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));window.refreshChatDisplay(h);if(window.isWaiting){const lastMsg=h[h.length-1];if(lastMsg.role==='assistant'){document.getElementById('typing-box').classList.add('hidden');window.isWaiting=false;document.getElementById('submit-btn').disabled=false;document.getElementById('mic-btn').disabled=false;}}});}window.showTab('chat');}
 window.refreshChatDisplay=function(h){const mc=document.getElementById('chat-messages');mc.innerHTML='';h.forEach(m=>{if(m.role!=='system'){const uiContent=(m.isAudio)?`<div class="flex items-center gap-2"><i class="fas fa-microphone"></i> Arquivo de áudio</div>`:m.content;window.renderMessage(uiContent,m.role==='user'?'user':'therapist');}});mc.scrollTop=mc.scrollHeight;}
 window.renderMessage=function(t,type){const d=document.createElement('div');d.className=`message ${type}`;d.innerHTML=t;document.getElementById('chat-messages').appendChild(d);}
@@ -77,15 +59,16 @@ window.isWaiting=true;
 if(submitBtn)submitBtn.disabled=true;
 if(micBtn)micBtn.disabled=true;
 const userWordCount=t.trim().split(/\s+/).length;
+const trimToCharacterLimit=(text,maxChars)=>{if(!maxChars||text.length<=maxChars)return text;const safeText=text.slice(0,maxChars+1);const lastPunctuation=Math.max(safeText.lastIndexOf('.'),safeText.lastIndexOf('!'),safeText.lastIndexOf('?'));if(lastPunctuation>=Math.floor(maxChars*0.6))return safeText.slice(0,lastPunctuation+1).trim();const lastSpace=safeText.lastIndexOf(' ');return(lastSpace>0?safeText.slice(0,lastSpace):safeText.slice(0,maxChars)).trim();};
 let h=[];
 if(db){
 const snap=await db.ref(`chats/${chatId}`).once('value');
 h=snap.val()||[];
-h.push({role:'user',content:t,isAudio:isAudio});
+h.push({role:'user',content:t,isAudio});
 await db.ref(`chats/${chatId}`).set(h);
 }else{
 h=window.getLocalHistory(window.activeTherapist.id);
-h.push({role:'user',content:t,isAudio:isAudio});
+h.push({role:'user',content:t,isAudio});
 localStorage.setItem(`chat_${chatId}`,JSON.stringify(h));
 window.refreshChatDisplay(h);
 }
@@ -96,55 +79,17 @@ return;
 }
 const startTimestamp=Date.now();
 try{
-const userMessages=h.filter(m=>m.role==='user').map(m=>m.content||'');
-const assistantCount=h.filter(m=>m.role==='assistant').length;
-const totalUserWords=userMessages.join(' ').trim().split(/\s+/).filter(Boolean).length;
-const punctuationRate=/[!?]/.test(t)?'usa interrogação/exclamação com frequência':'pouco uso de exclamação e interrogação';
-const upperCaseRate=(t.match(/[A-ZÀ-Ú]/g)||[]).length>=5?'gosta de ênfase em maiúsculas':'ênfase mais sutil';
-const emojiRate=/[\u{1F300}-\u{1FAFF}]/u.test(t)?'usa emojis':'não usa emojis';
-const colloquialMarkers=/\b(tô|ta|pq|vc|cê|tipo|né|mano|cara|vamo|tbm)\b/i.test(t)?'linguagem mais coloquial':'linguagem mais neutra';
-let volumeInstruction='';
-if(assistantCount===0){
-volumeInstruction='Primeira resposta do dia: no máximo 300 caracteres, até 2 frases curtas e acolhimento equilibrado.';
-}else if(userWordCount<=6){
-volumeInstruction='Paciente foi objetivo. Responda com até 220 caracteres, 1 ou 2 frases curtas.';
-}else if(userWordCount>30||totalUserWords>140){
-volumeInstruction='Paciente abriu espaço e trouxe mais detalhes. Responda com profundidade proporcional, até 900 caracteres.';
-}else{
-volumeInstruction='Mantenha conversa natural e progressiva, entre 220 e 450 caracteres, sem blocos longos.';
-}
-const syntacticMirroringInstruction=[
-'Espelhamento sintático obrigatório (espelhar forma, não conteúdo):',
-`- Perfil observado do paciente: ${punctuationRate}; ${upperCaseRate}; ${emojiRate}; ${colloquialMarkers}.`,
-'- Replique ritmo, tamanho médio de frase e nível de formalidade do paciente.',
-'- Reutilize de forma natural expressões e conectivos recorrentes do paciente quando fizer sentido.',
-'- Nunca copie frases literalmente e nunca mude o assunto para espelhar contexto.'
-].join('\n');
-const attendantLanguageInstruction=[
-`Você é ${window.activeTherapist.name}, profissional de saúde mental e atendente virtual principal.`,
-'Diretrizes de comportamento (não alterar estrutura do sistema, apenas a comunicação):',
-'- Seja acolhedor no início para criar vínculo e, depois, investigativo para entender a queixa.',
-'- Não encaminhe o paciente para outro profissional durante a conversa.',
-'- Comunicação natural, humana e não formal.',
-'- Estruture frases com frequência usando padrão: preposição + pronome + verbo no infinitivo.',
-'- Exemplos de estilo: "para eu entender", "por você falar", "sem ele perceber", "até nós descobrirmos", "para eu ajudar".',
-'- Fale em segunda pessoa (você) e mantenha foco no tema trazido pelo paciente.',
-'- Evite jargão técnico desnecessário e respostas mecânicas.',
-'- Após investigar o contexto, apresente possibilidade diagnóstica em percentual de compatibilidade.',
-'- Em seguida, explique didaticamente o significado da possibilidade diagnóstica em linguagem simples.',
-'- Não use o termo "não posso diagnosticar"; use sempre "possibilidade diagnóstica" com percentual.'
-].join('\n');
-const hasAssistantMessages=h.some(message=>message.role==='assistant');
-const firstInteractionInstruction=hasAssistantMessages?'Não é a primeira interação; manter continuidade natural do atendimento.':'É a primeira interação; iniciar com saudação receptiva e acolhedora.';
-const messagesForAI=h.map((m,idx)=>{if(idx===h.length-1){return{role:m.role,content:`${m.content}\n\n[SISTEMA: ${volumeInstruction}]\n[SISTEMA: ${firstInteractionInstruction}]\n[SISTEMA: ${syntacticMirroringInstruction}]\n[SISTEMA: ${attendantLanguageInstruction}]`};}return{role:m.role,content:m.content};});
-const res=await fetch(window.CHAT_AI_PROXY_URL||window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messagesForAI,temperature:0.8,max_tokens:assistantCount===0?160:(userWordCount<7?140:(userWordCount>30?420:260))})});
+const assistantCount=h.filter(message=>message.role==='assistant').length;
+const maxResponseChars=assistantCount===0?220:320;
+const messagesForAI=h.map(message=>({role:message.role,content:message.content}));
+const res=await fetch(window.CHAT_AI_PROXY_URL||window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messagesForAI,temperature:0.7,max_tokens:assistantCount===0?160:280})});
 if(!res.ok)throw new Error('Falha na comunicação.');
 const data=await res.json();
-const rt=data.choices&&data.choices[0]?data.choices[0].message.content:'Desculpe, a conexão oscilou. Pode repetir?';
+const rt=trimToCharacterLimit((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)?data.choices[0].message.content:'Desculpe, houve uma falha. Pode repetir?',maxResponseChars);
 const apiDuration=Date.now()-startTimestamp;
 let readWait=userWordCount<6?2500:8500;
 readWait=Math.max(readWait-apiDuration,500);
-const responseWordCount=Math.max(rt.split(/\s+/).length,1);
+const responseWordCount=rt.split(/\s+/).length;
 let typeWait=Math.round((responseWordCount/130)*60000);
 if(typeWait>14000)typeWait=14000;
 if(typeWait<2000)typeWait=2000;
@@ -170,7 +115,7 @@ if(mc)mc.scrollTop=mc.scrollHeight;
 },typeWait);
 },readWait);
 }catch(err){
-console.error('Erro na geração orgânica:',err);
+console.error('Erro no chat nativo:',err);
 typingBox.classList.add('hidden');
 window.isWaiting=false;
 if(submitBtn)submitBtn.disabled=false;
