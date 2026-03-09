@@ -105,8 +105,13 @@
                             <div class="flex-1"><label class="text-[10px] text-rose-100 font-bold ml-1 uppercase">Altura (m)</label><input type="number" id="health-height" placeholder="Ex: 1.75" step="0.01" class="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-sm outline-none text-white text-center font-bold placeholder-white/40"></div>
                         </div>
                         <button onclick="window.calcIMC()" class="w-full mt-4 bg-white text-rose-600 py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg">Atualizar Medidas</button>
+                        <div class="mt-3 bg-slate-900/40 border border-white/20 rounded-xl p-3">
+                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-1">Necessidade calórica estimada</p>
+                            <p id="calorie-need-result" class="text-sm font-black text-amber-300">-- kcal/dia</p>
+                            <p class="text-[9px] text-slate-300 mt-1">Estimativa educativa baseada em IMC e peso/altura informados.</p>
+                        </div>
                         <div class="mt-4 bg-slate-900/40 border border-white/20 rounded-xl p-3">
-                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-2">Selecione características físicas</p>
+                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-2">Selecione o perfil físico que você acredita ser mais compatível</p>
                             <div id="biotype-options" class="space-y-2 text-[11px]"></div>
                             <button onclick="window.updateBiotypeFromTraits()" class="w-full mt-3 bg-rose-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Gerar meu biotipo</button>
                             <div id="biotype-result" class="hidden mt-3 text-[11px] text-white bg-slate-900/70 border border-slate-600 rounded-lg p-3"></div>
@@ -129,10 +134,10 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-4">
                         <select id="water-drink-type" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-xs font-bold text-white outline-none">
-                            <option value="water">Água pura (100%)</option>
-                            <option value="juice">Suco (50%)</option>
-                            <option value="tea">Chá/Infusão sem açúcar (75%)</option>
-                            <option value="soda">Refrigerante (25%)</option>
+                            <option value="water">Água pura</option>
+                            <option value="juice">Suco</option>
+                            <option value="tea">Chá/Infusão sem açúcar</option>
+                            <option value="soda">Refrigerante</option>
                         </select>
                         <input type="number" id="water-amount-input" value="250" min="50" step="50" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm text-center font-bold text-white outline-none" />
                     </div>
@@ -140,6 +145,7 @@
                         <button onclick="window.removeWater()" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl text-lg font-bold border border-slate-600"><i class="fas fa-minus"></i></button>
                         <button onclick="window.addWater()" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl text-sm font-black uppercase tracking-wider"><i class="fas fa-plus mr-2"></i>Adicionar</button>
                     </div>
+                    <p class="text-[9px] text-slate-400 mb-2">Lembrete: escolha o intervalo. A contagem inicia a partir do horário programado e seguirá continuamente até atingir a meta diária.</p>
                     <div class="flex gap-2 mb-3">
                         <input type="number" id="water-reminder-min" min="10" step="5" value="60" class="flex-1 p-2 rounded-lg bg-slate-900 border border-slate-600 text-xs text-center text-white font-bold" />
                         <button onclick="window.toggleWaterReminder()" id="water-reminder-btn" class="px-3 py-2 rounded-lg bg-slate-700 text-slate-200 text-xs font-black"><i class="fas fa-bell"></i> Lembrete</button>
@@ -150,12 +156,54 @@
             </div>
             
             <div id="sd-nutricao" class="hidden flex-1 overflow-y-auto pb-20">
-                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                    <h3 class="text-sm font-bold text-white mb-2"><i class="fas fa-utensils text-emerald-400 mr-2"></i>Análise Nutricional IA</h3>
-                    <p class="text-[10px] text-slate-400 mb-4 font-medium">Descreva sua refeição. A IA calculará baseando-se no seu IMC.</p>
-                    <textarea id="food-text-input" placeholder="Ex: 1 xícara de arroz" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm mb-3 outline-none text-white resize-none h-24 focus:border-emerald-500"></textarea>
-                    <button onclick="window.analyzeFood()" id="btn-analyze-food" class="w-full bg-emerald-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg mb-2">Avaliar Refeição</button>
-                    <div id="food-scan-result" class="hidden mt-4 p-4 bg-slate-900/80 rounded-xl border border-emerald-500/30 text-sm text-slate-300 font-medium"></div>
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <div class="flex flex-col gap-4">
+                        <div class="glass-card p-4 border-emerald-500/20">
+                            <label class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 block">Descreva sua Refeição</label>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <input id="mealQty" type="number" value="100" min="1" class="col-span-1 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-sm text-white text-center outline-none focus:border-emerald-500" />
+                                <select id="mealUnit" class="col-span-2 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none focus:border-emerald-500">
+                                    <option value="G" selected>G - Gramas</option>
+                                    <option value="U">U - Unidade</option>
+                                    <option value="C">C - Colheres</option>
+                                    <option value="X">X - Xícara</option>
+                                    <option value="P">P - Prato</option>
+                                </select>
+                            </div>
+                            <textarea id="mealInput" placeholder="Ex: frango grelhado, arroz integral e suco de laranja" class="w-full h-24 bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500 transition-all resize-none"></textarea>
+                            <button onclick="window.doNutriAnalysis()" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">
+                                <i class="fas fa-search-pie mr-2"></i>Analisar Nutrição
+                            </button>
+                        </div>
+
+                        <div id="nutriResultPane" class="hidden animate-fade-in">
+                            <div class="glass-card p-4 border-sky-500/20 mb-4">
+                                <div class="text-center">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Estimado</span>
+                                    <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-500" id="nutriTotalCal">0</div>
+                                    <span class="text-xs font-bold text-slate-500 uppercase">Kilocalorias</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Prot</p><p class="text-xs font-bold text-white" id="nutriProt">0g</p></div>
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Carb</p><p class="text-xs font-bold text-white" id="nutriCarb">0g</p></div>
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Gord</p><p class="text-xs font-bold text-white" id="nutriGord">0g</p></div>
+                                </div>
+                            </div>
+
+                            <div id="exercisePane" class="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl flex items-center gap-4">
+                                <div id="exIcon" class="text-3xl">🏃</div>
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest" id="exName">Corrida</p>
+                                    <p class="text-xs text-slate-300 leading-tight">Para queimar esta refeição, você precisaria de <b class="text-white" id="exTime">0 min</b> desta atividade.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Histórico Recente</h4>
+                            <div id="nutriHistory" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -163,14 +211,14 @@
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
                     <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-running text-amber-400 mr-2"></i>Carga de Exercício</h3>
                     <div class="flex justify-between items-end mb-2">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="exercise-goal-text">Meta: 20 min</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="exercise-goal-text">Meta diária: 20 min</span>
                         <span class="text-xs font-black text-amber-400" id="ex-left-text">Faltam 20 min</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-4 mb-4 border border-slate-700 overflow-hidden">
                         <div id="ex-progress-bar" class="bg-gradient-to-r from-amber-500 to-orange-400 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
                     </div>
                     <select id="health-sport" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-xs mb-3 font-bold text-white outline-none">
-                        <option value="Caminhada">Caminhada</option><option value="Corrida">Corrida</option><option value="Musculação">Musculação</option>
+                        <option value="Caminhada">Caminhada</option><option value="Corrida">Corrida</option><option value="Musculação">Musculação</option><option value="Pilates">Pilates</option><option value="Ciclismo">Ciclismo</option><option value="Vôlei">Vôlei</option><option value="Futebol">Futebol</option><option value="Natação">Natação</option><option value="Funcional">Treino Funcional</option><option value="Yoga">Yoga</option><option value="Dança">Dança</option><option value="Alongamento">Alongamento</option><option value="HIIT">HIIT</option><option value="Crossfit">Crossfit</option><option value="Basquete">Basquete</option><option value="Tênis">Tênis</option><option value="Luta">Luta</option><option value="Remo">Remo</option><option value="Escalada">Escalada</option><option value="Patinação">Patinação</option><option value="Elíptico">Elíptico</option>
                     </select>
                     <div class="flex gap-2">
                         <input type="number" id="health-sport-time" placeholder="Duração (min)" class="flex-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm outline-none text-white text-center font-bold">
@@ -184,6 +232,7 @@
                     <h3 class="text-sm font-bold text-white mb-2"><i class="fas fa-heartbeat text-rose-500 mr-2"></i>Monitor Cardíaco</h3>
                     <p class="text-[10px] text-slate-400 mb-4 text-justify bg-slate-900 p-3 rounded-lg border border-slate-700"><b>Instrução:</b> Fique em repouso absoluto por 5 minutos. Localize seu pulso (no pescoço ou pulso). Pressione INICIAR e apenas conte as batidas. Não olhe para a tela. Um <b>bipe sonoro</b> avisará o fim dos 60 segundos.</p>
                     <button onclick="window.startCardioTimer()" id="cardio-btn" class="w-32 h-32 rounded-full bg-slate-900 border-4 border-rose-500 flex items-center justify-center mx-auto mb-4 text-rose-500 hover:bg-rose-900/30 transition-colors shadow-[0_0_20px_rgba(225,29,72,0.3)]"><i class="fas fa-play text-4xl ml-2"></i></button>
+                    <p id="cardio-elapsed" class="text-xs font-black text-rose-300 mb-4">Tempo: 00s / 60s</p>
                     <div id="cardio-input-area" class="hidden animate-fade-in">
                         <input type="number" id="cardio-beats" placeholder="Quantos batimentos você contou?" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-600 text-sm mb-3 outline-none text-white text-center font-bold">
                         <button onclick="window.saveCardio()" class="w-full bg-rose-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg hover:bg-rose-500">Registrar</button>
@@ -195,12 +244,12 @@
             <div id="sd-ansiedade" class="hidden flex-1 flex flex-col relative h-full pb-16">
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex-none mb-2">
                     <h3 class="font-bold text-sky-400 mb-2">Controle de Ansiedade</h3>
-                    <p class="text-[10px] text-slate-400 mb-2 text-justify"><b>Aviso Educacional:</b> A IA fará 20 perguntas para definir seu nível no Ansiômetro. Não substitui diagnóstico profissional.</p>
+                    <p class="text-[10px] text-slate-400 mb-2 text-justify"><b>Aviso Educacional:</b> O Ansiômetro pode ser realizado uma vez por dia (com opção de refazer no mesmo dia), com limpeza automática no dia seguinte. Ferramenta destinada à finalidade educativa e não configura diagnóstico formal.</p>
                     <div class="w-full bg-slate-900 rounded-full h-4 mb-1 border border-slate-700 overflow-hidden relative shadow-inner">
                         <div id="ansio-bar" class="bg-slate-500 h-full transition-all duration-700 w-0"></div>
                     </div>
-                    <div class="flex justify-between text-[8px] font-bold mb-3 px-1">
-                        <span class="text-blue-400">Leve(0)</span><span class="text-green-500">Mod.(50)</span><span class="text-red-500">Intenso(100)</span>
+                    <div class="flex justify-between flex-wrap gap-1 text-[8px] font-bold mb-3 px-1">
+                        <span class="text-blue-400">Leve (0-25)</span><span class="text-green-500">Branda (25-50)</span><span class="text-yellow-400">Moderada (50-75)</span><span class="text-red-500">Intensa (75-100)</span>
                     </div>
                     <button onclick="window.startAnxietyCheck()" class="w-full bg-sky-600 text-white py-2 rounded text-xs font-bold hover:bg-sky-500">Iniciar Avaliação Investigativa</button>
                 </div>
