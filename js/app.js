@@ -706,72 +706,94 @@ window.removeWater=async function(){
   const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
   window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
 };
-// BANCO DE DADOS NUTRICIONAL (ADAPTADO)
-const FOOD_DB = {
-  'frango': {cal:165, p:31, c:0, f:3.6}, 'carne': {cal:250, p:26, c:0, f:15},
-  'ovo': {cal:155, p:13, c:1.1, f:11}, 'arroz': {cal:130, p:2.7, c:28, f:0.3},
-  'feijão': {cal:127, p:9, c:23, f:0.5}, 'macarrão': {cal:158, p:5.8, c:31, f:0.9},
-  'batata': {cal:77, p:2, c:17, f:0.1}, 'pão': {cal:265, p:9, c:49, f:3.2},
-  'salada': {cal:20, p:1.5, c:3.5, f:0.2}, 'azeite': {cal:884, p:0, c:0, f:100},
-  'suco de laranja': {cal:45, p:0.7, c:10.4, f:0.2}, 'refrigerante': {cal:42, p:0, c:10.6, f:0},
-  'pizza': {cal:266, p:11, c:33, f:10}, 'hambúrguer': {cal:295, p:17, c:24, f:14},
-  'maçã': {cal:52, p:0.3, c:14, f:0.2}, 'banana': {cal:89, p:1.1, c:23, f:0.3}
-};
+// NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
+window.doNutriAnalysis = async function() {
+  const input = document.getElementById('mealInput');
+  const text = (input?.value || '').trim();
+  if (!text) return alert('Por favor, descreva o que você consumiu.');
 
-const EXERCISES_MET = [
-  {name:'Corrida', icon:'🏃', met:8.3}, {name:'Caminhada', icon:'🚶', met:3.5},
-  {name:'Pedalada', icon:'🚴', met:6.8}, {name:'Musculação', icon:'💪', met:6.0},
-  {name:'Pular Corda', icon:'🪢', met:11.0}, {name:'Natação', icon:'🏊', met:6.0}
-];
+  const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
+  const originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...';
+    btn.disabled = true;
+  }
 
-window.doNutriAnalysis = async function(){
-  const input=document.getElementById('mealInput');
-  const text=(input?.value||'').toLowerCase().trim();
-  if(!text) return alert('Por favor, descreva o que você consumiu.');
+  const systemPrompt = `Atue como um nutricionista digital de alta precisão.
+Analise a descrição da refeição e retorne APENAS um objeto JSON (sem textos explicativos) no seguinte formato:
+{
+  "total_cal": número,
+  "p": gramas_proteina,
+  "c": gramas_carboidrato,
+  "f": gramas_gordura,
+  "items": [{"n": "nome_item", "cal": calorias}]
+}
+Se não souber a quantidade exata, use médias biológicas reais para uma porção padrão brasileira.
+Não use reticencias.`;
 
-  let totalCal=0,totalP=0,totalC=0,totalF=0;
-  const tokens=text.split(/,|\be\b|\bcom\b|\+/).map(s=>s.trim()).filter(Boolean);
+  try {
+    const response = await fetch(window.AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Analise esta refeição: ${text}` }
+        ],
+        temperature: 0.3
+      })
+    });
 
-  tokens.forEach((token)=>{
-    for(const food in FOOD_DB){
-      if(token.includes(food)){
-        const qtyMatch=token.match(/(\d+)/);
-        const qty=qtyMatch ? parseInt(qtyMatch[1],10) : 100;
-        const factor=qty/100;
-        totalCal += FOOD_DB[food].cal*factor;
-        totalP += FOOD_DB[food].p*factor;
-        totalC += FOOD_DB[food].c*factor;
-        totalF += FOOD_DB[food].f*factor;
-      }
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '{}';
+    const rawContent = content.replace(/```json|```/g, '').trim();
+    const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
+    const nutri = JSON.parse(jsonChunk);
+
+    const totalCal = Number(nutri.total_cal || 0);
+    const totalP = Number(nutri.p || 0);
+    const totalC = Number(nutri.c || 0);
+    const totalF = Number(nutri.f || 0);
+
+    document.getElementById('nutriResultPane')?.classList.remove('hidden');
+    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
+    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
+    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
+    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
+
+    const EXERCISES_MET = [
+      { name: 'Corrida', icon: '🏃', met: 8.3 },
+      { name: 'Caminhada', icon: '🚶', met: 3.5 },
+      { name: 'Pedalada', icon: '🚴', met: 6.8 },
+      { name: 'Musculação', icon: '💪', met: 6.0 }
+    ];
+    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
+    const weight = window.userDataCache?.saude?.weight || 75;
+    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
+
+    document.getElementById('exIcon').innerText = ex.icon;
+    document.getElementById('exName').innerText = ex.name;
+    document.getElementById('exTime').innerText = minutes + ' min';
+
+    if (!window.userDataCache) window.userDataCache = {};
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+    const entry = { meal: text, cal: Math.round(totalCal), date: new Date().toLocaleDateString('pt-BR') };
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 20);
+
+    if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+    window.renderNutriHistory();
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalBtnText;
+      btn.disabled = false;
     }
-  });
-
-  if(totalCal===0) totalCal=tokens.length*85;
-
-  const ex=EXERCISES_MET[Math.floor(Math.random()*EXERCISES_MET.length)];
-  const weight=window.userDataCache?.saude?.weight || 75;
-  const kcalPerHour=ex.met*weight;
-  const minutes=Math.max(1, Math.round((totalCal/kcalPerHour)*60));
-
-  document.getElementById('nutriResultPane')?.classList.remove('hidden');
-  document.getElementById('nutriTotalCal').innerText=Math.round(totalCal);
-  document.getElementById('nutriProt').innerText=Math.round(totalP)+'g';
-  document.getElementById('nutriCarb').innerText=Math.round(totalC)+'g';
-  document.getElementById('nutriGord').innerText=Math.round(totalF)+'g';
-  document.getElementById('exIcon').innerText=ex.icon;
-  document.getElementById('exName').innerText=ex.name;
-  document.getElementById('exTime').innerText=minutes+' min';
-
-  if(!window.userDataCache) window.userDataCache={};
-  if(!window.userDataCache.saude) window.userDataCache.saude={};
-  if(!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory=[];
-
-  const entry={meal:text, cal:Math.round(totalCal), date:new Date().toLocaleDateString('pt-BR')};
-  window.userDataCache.saude.nutriHistory.unshift(entry);
-  window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0,20);
-
-  if(db) await db.ref('users/'+window.clientId+'/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
-  window.renderNutriHistory();
+  }
 };
 
 window.renderNutriHistory=function(){
