@@ -118,6 +118,7 @@ window.initSaudeTab=function(){
     if(s.weight) document.getElementById('health-weight').value = s.weight;
     if(s.height) document.getElementById('health-height').value = s.height;
     if(s.imc) document.getElementById('imc-result').innerText = `IMC: ${s.imc} (${s.imcCategory})`;
+    window.renderHydration();
 }
 window.calcIMC=async function(){
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
@@ -127,7 +128,69 @@ window.calcIMC=async function(){
     document.getElementById('imc-result').innerText = `IMC: ${imc} (${cat})`;
     if(!window.userDataCache.saude) window.userDataCache.saude={};
     window.userDataCache.saude.weight = w; window.userDataCache.saude.height = h; window.userDataCache.saude.imc = imc; window.userDataCache.saude.imcCategory = cat;
+    window.renderHydration();
     if(db) await db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
+}
+
+window.getHydrationGoal=function(){
+    const weight = parseFloat(window.userDataCache?.saude?.weight);
+    if(!weight) return 2000;
+    return Math.round(weight * 35);
+}
+
+window.getHydrationFactor=function(drinkType){
+    if(drinkType==='juice') return 0.5;
+    if(drinkType==='soda') return 0.25;
+    if(drinkType==='tea') return 0.75;
+    return 1;
+}
+
+window.renderHydration=function(){
+    if(!window.userDataCache.saude) window.userDataCache.saude={};
+    if(!window.userDataCache.saude.water) window.userDataCache.saude.water={total:0};
+
+    const total = Math.round(window.userDataCache.saude.water.total || 0);
+    const goal = window.getHydrationGoal();
+    const percent = Math.min(100, Math.round((total / goal) * 100));
+
+    document.getElementById('water-total').innerText = `${total} ml`;
+    document.getElementById('water-goal-text').innerText = `Meta: ${goal} ml`;
+    document.getElementById('water-progress-bar').style.width = `${percent}%`;
+
+    const last = window.userDataCache.saude.water.lastEntry;
+    if(last){
+        const dt = new Date(last.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('water-last-entry').innerText = `Último lançamento: ${last.amount}ml (${last.label} = ${last.valid}ml) às ${dt}`;
+    }
+}
+
+window.addWater=async function(){
+    const amount = parseInt(document.getElementById('water-amount-input').value);
+    const type = document.getElementById('water-drink-type').value;
+    if(!amount || amount <= 0) return alert('Informe uma quantidade válida em ml.');
+
+    const labels = {water:'Água', juice:'Suco', soda:'Refrigerante', tea:'Chá/Infusão'};
+    const factor = window.getHydrationFactor(type);
+    const valid = Math.round(amount * factor);
+
+    if(!window.userDataCache.saude) window.userDataCache.saude={};
+    if(!window.userDataCache.saude.water) window.userDataCache.saude.water={total:0};
+
+    window.userDataCache.saude.water.total = Math.max(0, (window.userDataCache.saude.water.total || 0) + valid);
+    window.userDataCache.saude.water.lastEntry = { amount, valid, type, label: labels[type] || 'Água', at: Date.now() };
+
+    window.renderHydration();
+    if(db) await db.ref('users/'+window.clientId+'/saude/water').set(window.userDataCache.saude.water);
+}
+
+window.removeWater=async function(){
+    if(!window.userDataCache.saude) window.userDataCache.saude={};
+    if(!window.userDataCache.saude.water) window.userDataCache.saude.water={total:0};
+
+    window.userDataCache.saude.water.total = Math.max(0, (window.userDataCache.saude.water.total || 0) - 250);
+    window.userDataCache.saude.water.lastEntry = { amount:250, valid:-250, type:'remove', label:'Ajuste manual', at: Date.now() };
+    window.renderHydration();
+    if(db) await db.ref('users/'+window.clientId+'/saude/water').set(window.userDataCache.saude.water);
 }
 
 window.startCardioTimer=function(){
