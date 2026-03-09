@@ -119,6 +119,7 @@ window.initSaudeTab=function(){
     if(s.height) document.getElementById('health-height').value = s.height;
     if(s.imc) document.getElementById('imc-result').innerText = `IMC: ${s.imc} (${s.imcCategory})`;
     window.renderHydration();
+    window.renderCaloricNeed();
 }
 window.calcIMC=async function(){
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
@@ -129,6 +130,7 @@ window.calcIMC=async function(){
     if(!window.userDataCache.saude) window.userDataCache.saude={};
     window.userDataCache.saude.weight = w; window.userDataCache.saude.height = h; window.userDataCache.saude.imc = imc; window.userDataCache.saude.imcCategory = cat;
     window.renderHydration();
+    window.renderCaloricNeed();
     if(db) await db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
 }
 
@@ -194,14 +196,19 @@ window.removeWater=async function(){
 }
 
 window.startCardioTimer=function(){
-    const btn = document.getElementById('cardio-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
+    const btn = document.getElementById('cardio-btn');
+    const elapsedEl = document.getElementById('cardio-elapsed');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
     document.getElementById('cardio-input-area').classList.add('hidden'); document.getElementById('cardio-result').classList.add('hidden');
     let secs = 60;
+    if(elapsedEl) elapsedEl.innerText = 'Tempo: 00s / 60s';
     window.cardioTimer = setInterval(() => {
         secs--;
+        if(elapsedEl) elapsedEl.innerText = `Tempo: ${String(60-secs).padStart(2,'0')}s / 60s`;
         if(secs <= 0){
             clearInterval(window.cardioTimer); btn.innerHTML = '<i class="fas fa-play text-4xl ml-2"></i>'; btn.disabled = false;
             document.getElementById('cardio-input-area').classList.remove('hidden');
+            if(elapsedEl) elapsedEl.innerText = 'Tempo: 60s / 60s';
             try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 800; osc.start(); setTimeout(()=>osc.stop(), 800); } catch(e){}
         }
     }, 1000);
@@ -221,9 +228,16 @@ window.saveCardio=async function(){
 }
 
 window.startAnxietyCheck=function(){
+    window.ensureHealthStructures();
+    const today = window.getTodayStr();
+    const a = window.userDataCache.saude.anxietyDaily;
+    if(a.day===today && a.completed){
+        const redo = confirm('Você já concluiu o Ansiômetro hoje. Deseja refazer agora?');
+        if(!redo) return;
+    }
     window.ansioMessages=[]; document.getElementById('ans-chat-area').classList.remove('hidden'); document.getElementById('ans-messages').innerHTML='';
     const sys = "Atue como terapeuta. Faça 20 perguntas curtas, UMA POR VEZ (numere 1/20), para avaliar ansiedade. Após a 20ª resposta, diga APENAS um número de 0 a 100 definindo o nível de ansiedade. Sem uso de reticencias.";
-    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI("Quero avaliar minha ansiedade. Primeira pergunta.");
+    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI('Quero avaliar minha ansiedade. Primeira pergunta.');
 }
 window.sendAnsReply=function(){
     const input=document.getElementById('ans-input'); const txt=input.value.trim(); if(!txt)return;
@@ -246,9 +260,11 @@ window.callAnsAI=async function(overrideText){
             let bar = document.getElementById('ansio-bar'); bar.style.width = score + '%';
             if(score <= 25) bar.className = 'bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]'; 
             else if(score <= 50) bar.className = 'bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]'; 
-            else if(score <= 75) bar.className = 'bg-orange-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(249,115,22,0.8)]'; 
+            else if(score <= 75) bar.className = 'bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]'; 
             else bar.className = 'bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
-            window.userDataCache.saude.anxietyScore = score; if(db) await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score);
+            window.userDataCache.saude.anxietyScore = score;
+            window.userDataCache.saude.anxietyDaily = {day:window.getTodayStr(), score, completed:true};
+            if(db){ await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score); await db.ref('users/'+window.clientId+'/saude/anxietyDaily').set(window.userDataCache.saude.anxietyDaily); }
         }
     }catch(e){} finally{ btn.disabled=false; }
 }
@@ -617,10 +633,13 @@ window.ensureHealthStructures=function(){
   if(!Array.isArray(s.water.history)) s.water.history=[];
   if(!s.healthGoalLog || s.healthGoalLog.month!==window.getMonthStr()) s.healthGoalLog={month:window.getMonthStr(),entries:[]};
   if(!Array.isArray(s.healthGoalLog.entries)) s.healthGoalLog.entries=[];
+  if(!s.exercise || s.exercise.day!==window.getTodayStr()) s.exercise={day:window.getTodayStr(),goal:20,total:0,logs:[]};
+  if(!Array.isArray(s.exercise.logs)) s.exercise.logs=[];
+  if(!s.anxietyDaily || s.anxietyDaily.day!==window.getTodayStr()) s.anxietyDaily={day:window.getTodayStr(), score:null, completed:false};
 };
 window.renderBiotypeOptions=function(){
   const box=document.getElementById('biotype-options'); if(!box) return;
-  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v])=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>${v.emoji} ${v.name}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
+  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v],idx)=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>Perfil ${idx+1}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
 };
 window.updateBiotypeFromTraits=async function(){
   const selected=[...document.querySelectorAll('.biotype-opt:checked')].map(i=>i.dataset.kind);
@@ -630,7 +649,7 @@ window.updateBiotypeFromTraits=async function(){
   const p=window.BIOTYPE_PROFILES[winner];
   const out=document.getElementById('biotype-result');
   out.classList.remove('hidden');
-  out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`;
+  out.innerHTML=`<p class="font-black text-rose-300">Seu biotipo predominante: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p><p class="mt-2 text-[10px] text-amber-300"><b>Limitações comuns:</b> adaptação diferente a ganho de massa, resistência e recuperação. O progresso exige treino, alimentação e descanso individualizados.</p><p class="mt-1 text-[10px] text-slate-300">Seu resultado valida suas características integrais, mas não define sozinho sua capacidade física.</p>`;
   window.ensureHealthStructures();
   window.userDataCache.saude.biotype={result:winner,at:Date.now()};
   if(db) await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
@@ -658,14 +677,31 @@ window.removeWaterHistoryItem=async function(idx){
 };
 window.toggleWaterReminder=function(){
   const b=document.getElementById('water-reminder-btn');
-  if(window.waterReminderInterval){ clearInterval(window.waterReminderInterval); window.waterReminderInterval=null; if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete'; return; }
+  if(window.waterReminderInterval || window.waterReminderTimeout){
+    clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+    window.waterReminderInterval=null; window.waterReminderTimeout=null;
+    if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete';
+    return;
+  }
   const mins=parseInt(document.getElementById('water-reminder-min')?.value);
   if(!mins||mins<10) return alert('Informe intervalo válido (mínimo 10 min).');
   if(Notification.permission==='default') Notification.requestPermission();
-  window.waterReminderInterval=setInterval(()=>{ if(Notification.permission==='granted') new Notification('Lembrete de hidratação 💧',{body:'Beba água conforme seu intervalo.'}); }, mins*60000);
+  const runTick=()=>{
+    const total=Math.round(window.userDataCache?.saude?.water?.total||0);
+    const goal=window.getHydrationGoal();
+    if(total>=goal){
+      clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+      window.waterReminderInterval=null; window.waterReminderTimeout=null;
+      if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete';
+      if(Notification.permission==='granted') new Notification('Meta diária atingida ✅',{body:'Parabéns! O lembrete foi pausado automaticamente.'});
+      return;
+    }
+    if(Notification.permission==='granted') new Notification('Lembrete de hidratação 💧',{body:`Hora de beber líquidos. Intervalo ativo: ${mins} min.`});
+  };
+  alert(`Intervalo programado em ${mins} minutos. A contagem começa agora e seguirá até sua meta diária.`);
+  window.waterReminderTimeout=setTimeout(()=>{ runTick(); window.waterReminderInterval=setInterval(runTick, mins*60000); }, mins*60000);
   if(b)b.innerHTML='<i class="fas fa-bell-slash"></i> Pausar';
 };
-
 window.initSaudeTab=async function(){
   window.showSaudeSubTab('sd-perfil'); window.ensureHealthStructures(); await window.resetWaterIfNewDay();
   const s=window.userDataCache.saude;
@@ -673,14 +709,17 @@ window.initSaudeTab=async function(){
   if(s.height) document.getElementById('health-height').value=s.height;
   if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
   window.renderBiotypeOptions();
-  if(s.biotype?.result){ const p=window.BIOTYPE_PROFILES[s.biotype.result]; const out=document.getElementById('biotype-result'); if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; } }
-  window.renderHydration(); window.renderHealthGoalsLog();
+  window.renderCaloricNeed();
+  window.renderExerciseProgress();
+  window.renderAnxietyDailyState();
+  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
+  window.initHomeFitTool?.();
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
   const total=Math.round(w.total||0), goal=window.getHydrationGoal(), percent=Math.min(100, Math.round((total/goal)*100));
   document.getElementById('water-total').innerText=`${total} ml`;
-  document.getElementById('water-goal-text').innerText=`Meta: ${goal} ml`;
+  document.getElementById('water-goal-text').innerText=`Meta diária: ${goal} ml`;
   document.getElementById('water-progress-bar').style.width=`${percent}%`;
   if(w.lastEntry){ const dt=new Date(w.lastEntry.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); document.getElementById('water-last-entry').innerText=`Último lançamento: ${w.lastEntry.amount}ml (${w.lastEntry.label} = ${w.lastEntry.valid}ml) às ${dt}`; }
   else document.getElementById('water-last-entry').innerText='Último lançamento: --';
@@ -699,6 +738,11 @@ window.addWater=async function(){
     window.userDataCache.saude.healthGoalLog.entries.push({text:`Meta de hidratação concluída em ${new Date(now).toLocaleDateString('pt-BR')}`,at:now});
   }
   window.renderHydration(); window.renderHealthGoalsLog();
+  if(w.total>=goal && (window.waterReminderInterval || window.waterReminderTimeout)){
+    clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+    window.waterReminderInterval=null; window.waterReminderTimeout=null;
+    const b=document.getElementById('water-reminder-btn'); if(b)b.innerHTML='<i class=\"fas fa-bell\"></i> Lembrete';
+  }
   if(db){ await db.ref('users/'+window.clientId+'/saude/water').set(w); await db.ref('users/'+window.clientId+'/saude/healthGoalLog').set(window.userDataCache.saude.healthGoalLog); }
 };
 window.removeWater=async function(){
@@ -706,17 +750,152 @@ window.removeWater=async function(){
   const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
   window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
 };
-window.analyzeFood=async function(){
-  const txt=(document.getElementById('food-text-input')?.value||'').trim(); if(!txt) return alert('Descreva sua refeição.');
-  const btn=document.getElementById('btn-analyze-food'); const out=document.getElementById('food-analysis-result');
-  btn.disabled=true; btn.innerText='Analisando...';
-  try{
-    const imc=window.userDataCache?.saude?.imc||'não informado';
-    const messages=[{role:'system',content:'Atue como nutricionista esportivo.'},{role:'user',content:`Analise esta refeição (${txt}) para o IMC ${imc}. Informe calorias estimadas, pontos fortes e melhorias.`}];
-    const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:350})});
-    const data=await res.json(); out.classList.remove('hidden'); out.innerText=data?.choices?.[0]?.message?.content||'Sem resposta da IA.';
-  }catch(e){ out.classList.remove('hidden'); out.innerText='Falha na IA nutricional.'; }
-  btn.disabled=false; btn.innerText='Analisar com IA';
+// NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
+window.doNutriAnalysis = async function() {
+  const input = document.getElementById('mealInput');
+  const qty = parseInt(document.getElementById('mealQty')?.value || '100', 10);
+  const unit = document.getElementById('mealUnit')?.value || 'G';
+  const text = (input?.value || '').trim();
+  if (!text) return alert('Por favor, descreva o que você consumiu.');
+
+  const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
+  const originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...'; btn.disabled = true; }
+
+  const systemPrompt = `Atue como um nutricionista digital de alta precisão.
+Retorne APENAS um JSON com o formato: {"total_cal":numero,"p":numero,"c":numero,"f":numero,"items":[{"n":"item","cal":numero}]}
+Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras quando necessário.`;
+
+  try {
+    const response = await fetch(window.AI_PROXY_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição: ${text}` }], temperature:0.3 })
+    });
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '{}';
+    const rawContent = content.replace(/```json|```/g, '').trim();
+    const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
+    const nutri = JSON.parse(jsonChunk);
+
+    const itemCal = Number(nutri.total_cal || 0), itemP = Number(nutri.p || 0), itemC = Number(nutri.c || 0), itemF = Number(nutri.f || 0);
+    if (!window.userDataCache) window.userDataCache = {};
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+    const today = window.getTodayStr();
+    const entry = { meal: text, qty, unit, cal: Math.round(itemCal), p: Math.round(itemP), c: Math.round(itemC), f: Math.round(itemF), date: new Date().toLocaleDateString('pt-BR'), day: today };
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 120);
+
+    const todayItems = window.userDataCache.saude.nutriHistory.filter((h)=>h.day===today);
+    const totalCal = todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+    const totalP = todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+    const totalC = todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+    const totalF = todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+
+    document.getElementById('nutriResultPane')?.classList.remove('hidden');
+    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
+    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
+    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
+    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
+
+    const EXERCISES_MET = [{ name:'Corrida', icon:'🏃', met:8.3 },{ name:'Caminhada', icon:'🚶', met:3.5 },{ name:'Pedalada', icon:'🚴', met:6.8 },{ name:'Musculação', icon:'💪', met:6.0 }];
+    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
+    const weight = window.userDataCache?.saude?.weight || 75;
+    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
+    document.getElementById('exIcon').innerText = ex.icon;
+    document.getElementById('exName').innerText = ex.name;
+    document.getElementById('exTime').innerText = minutes + ' min';
+
+    if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+    window.renderNutriHistory();
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
+  } finally {
+    if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
+  }
+};
+
+window.deleteNutriEntry=async function(idx){
+  if(!window.userDataCache?.saude?.nutriHistory) return;
+  window.userDataCache.saude.nutriHistory.splice(idx,1);
+  if(db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+  const today=window.getTodayStr();
+  const todayItems=(window.userDataCache.saude.nutriHistory||[]).filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  document.getElementById('nutriTotalCal').innerText=Math.round(totalCal);
+  document.getElementById('nutriProt').innerText=Math.round(totalP)+'g';
+  document.getElementById('nutriCarb').innerText=Math.round(totalC)+'g';
+  document.getElementById('nutriGord').innerText=Math.round(totalF)+'g';
+  window.renderNutriHistory();
+};
+
+window.renderNutriHistory=function(){
+  const container=document.getElementById('nutriHistory');
+  if(!container) return;
+  const history=(window.userDataCache?.saude?.nutriHistory||[]);
+  const today=window.getTodayStr();
+  const todayItems=history.filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  const pane=document.getElementById('nutriResultPane');
+  if(pane && totalCal>0) pane.classList.remove('hidden');
+  const elCal=document.getElementById('nutriTotalCal'); if(elCal) elCal.innerText=Math.round(totalCal);
+  const elP=document.getElementById('nutriProt'); if(elP) elP.innerText=Math.round(totalP)+'g';
+  const elC=document.getElementById('nutriCarb'); if(elC) elC.innerText=Math.round(totalC)+'g';
+  const elF=document.getElementById('nutriGord'); if(elF) elF.innerText=Math.round(totalF)+'g';
+  container.innerHTML = history.slice(0,10).map((h,idx)=>`
+    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in gap-2">
+      <div class="flex flex-col min-w-0">
+        <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
+        <span class="text-[8px] text-slate-500 font-bold">${h.qty||''}${h.unit||''} • ${h.date}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black text-emerald-400 whitespace-nowrap">${h.cal} kcal</span>
+        <button onclick="window.deleteNutriEntry(${idx})" class="text-[10px] px-2 py-1 rounded bg-rose-900/40 border border-rose-500/40 text-rose-300">Excluir</button>
+      </div>
+    </div>
+  `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
+};
+
+window.renderCaloricNeed=function(){
+  const el=document.getElementById('calorie-need-result'); if(!el) return;
+  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);
+  if(!w||!h||!imc){ el.innerText='-- kcal/dia'; return; }
+  const base=w*24;
+  const factor=imc<18.5?1.15:imc<25?1:imc<30?0.9:0.82;
+  el.innerText=`${Math.round(base*factor)} kcal/dia`;
+};
+window.renderExerciseProgress=function(){
+  window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise;
+  const total=Math.round(ex.total||0), goal=ex.goal||20, pct=Math.min(100, Math.round((total/goal)*100));
+  const goalEl=document.getElementById('exercise-goal-text'), leftEl=document.getElementById('ex-left-text'), bar=document.getElementById('ex-progress-bar');
+  if(goalEl) goalEl.innerText=`Meta diária: ${goal} min`;
+  if(leftEl) leftEl.innerText = total>=goal ? 'Meta diária concluída' : `Faltam ${goal-total} min`;
+  if(bar) bar.style.width = `${pct}%`;
+};
+window.renderAnxietyDailyState=function(){
+  window.ensureHealthStructures(); const a=window.userDataCache.saude.anxietyDaily; const bar=document.getElementById('ansio-bar'); if(!bar) return;
+  const score=(a.day===window.getTodayStr() && a.score!=null)?a.score:0;
+  bar.style.width=score+'%';
+  if(score<=25) bar.className='bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]';
+  else if(score<=50) bar.className='bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]';
+  else if(score<=75) bar.className='bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+  else bar.className='bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
+};
+window.addExercise=async function(){
+  window.ensureHealthStructures(); const sport=document.getElementById('health-sport')?.value; const mins=parseInt(document.getElementById('health-sport-time')?.value,10);
+  if(!sport||!mins||mins<=0) return alert('Informe exercício e duração válida.');
+  const ex=window.userDataCache.saude.exercise; ex.logs.unshift({sport, mins, at:Date.now()}); ex.logs=ex.logs.slice(0,30); ex.total=Math.max(0,(ex.total||0)+mins);
+  document.getElementById('health-sport-time').value='';
+  window.renderExerciseProgress();
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
 };
 window.saveGoals=async function(){
   const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();
@@ -730,4 +909,48 @@ window.renderTasks=function(){
 window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');};
 window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
 window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
-window.addExercise=function(){alert('Registro de exercícios em atualização.');};
+
+
+
+// HOMEFIT IA — sessão de exercícios (integrado à guia Saúde)
+window.initHomeFitTool=function(){
+  const root=document.getElementById('sd-exercicio');
+  if(!root || root.dataset.hfInit==='1') return;
+  root.dataset.hfInit='1';
+  const $=(id)=>document.getElementById(id);
+  const pad=(n)=>String(n).padStart(2,'0');
+  const uid=()=>Math.random().toString(16).slice(2,8);
+  const BODIES={peito:'Peito',costas:'Costas',ombros:'Ombros',bracos:'Braços',abdomen:'Abdômen/Core',gluteos:'Glúteos',pernas:'Pernas','corpo-todo':'Corpo todo',mobilidade:'Mobilidade/Postura'};
+  const INT={iniciante:'Iniciante',intermediario:'Intermediário',avancado:'Avançado'};
+  window.homeFitState={intensity:'iniciante',mode:'texto',targetType:'reps',perExerciseSec:40,sessionMinutes:20,current:null,history:[],completedCount:0,totalActiveSeconds:0,timerPhase:'idle',remainingPrep:20,remainingWork:40,timerId:null,voicesSupported:false,voiceObj:null};
+  const st=window.homeFitState;
+  const setSeg=(id,val)=>{ document.querySelectorAll('#'+id+' .hf-seg').forEach(b=>{ const on=b.dataset.val===val; b.classList.toggle('active',on); b.classList.toggle('bg-emerald-900/30',on); b.classList.toggle('text-emerald-300',on); b.classList.toggle('border-emerald-500/40',on); b.classList.toggle('bg-slate-800',!on); b.classList.toggle('text-slate-300',!on); b.classList.add('rounded','border','border-slate-700','py-1','font-black'); }); };
+  const refreshInfo=()=>{ const minDone=Math.round(st.totalActiveSeconds/60); $('hf-session-info').innerText=`Sessão alvo: ${st.sessionMinutes} min • ${st.completedCount} exercícios concluídos • ~${minDone} min ativos`; };
+  const updateDisplay=()=>{ const sec=Math.max(0, st.timerPhase==='prep'?st.remainingPrep:st.remainingWork); $('hf-timer-display').innerText='00:'+pad(sec); };
+  const setPhase=(txt)=>$('hf-phase-badge').innerText=txt;
+  const speak=(t)=>{ if(!st.voicesSupported || !$('hf-voice-check').checked || st.mode!=='voz') return; try{ const u=new SpeechSynthesisUtterance(t); u.lang='pt-BR'; if(st.voiceObj) u.voice=st.voiceObj; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} };
+  const beep=(long=false)=>{ try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const c=new C(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=long?680:880; const d=long?0.45:0.18; const n=c.currentTime; g.gain.setValueAtTime(0.001,n); g.gain.exponentialRampToValueAtTime(0.35,n+0.01); g.gain.exponentialRampToValueAtTime(0.001,n+d); o.start(n); o.stop(n+d+0.05); setTimeout(()=>c.close(),700);}catch(e){} };
+  const autoTime=()=>{ if(st.targetType==='reps') return; const b=st.intensity==='iniciante'?30:st.intensity==='intermediario'?40:50; $('hf-duration').value=b; st.perExerciseSec=b; st.remainingWork=b; $('hf-duration-label').innerText=b; updateDisplay(); };
+  const generate=(bodyKey,intensity,targetType,perSec,reps)=>{ const names={peito:['Flexão inclinada','Flexão no chão','Flexão avançada'],costas:['Remada com mochila','Superman','Remada unilateral'],ombros:['Elevação lateral','Press militar','Pike push-up'],bracos:['Rosca mochila','Tríceps banco','Prancha toque ombro'],abdomen:['Prancha frontal','Abdominal bicicleta','Prancha lateral'],gluteos:['Ponte de quadril','Afundo estático','Coice de glúteo'],pernas:['Agachamento livre','Agachamento sumô','Agachamento salto'],'corpo-todo':['Polichinelo','Burpee modificado','Agacha + elevação'],mobilidade:['Gato-vaca','Rotação torácica','Alongamento quadril']}; const mus={peito:['peitorais','tríceps'],costas:['dorsais','lombar'],ombros:['deltoides','trapézio'],bracos:['bíceps','tríceps'],abdomen:['reto abdominal','oblíquos'],gluteos:['glúteo máximo','glúteo médio'],pernas:['quadríceps','isquiotibiais'],'corpo-todo':['core','membros'],mobilidade:['coluna','quadril']}; const idx=intensity==='iniciante'?0:intensity==='intermediario'?1:2; const nm=(names[bodyKey]||['Exercício funcional'])[idx]||names[bodyKey][0]; const emoji={peito:'🤸',costas:'🧍',ombros:'💪',bracos:'🏋️',abdomen:'🧘',gluteos:'🍑',pernas:'🏃','corpo-todo':'⚡',mobilidade:'🌿'}[bodyKey]||'🏋️'; const steps=['Prepare um espaço seguro e estável.','Mantenha postura neutra e core ativado.','Controle a velocidade do movimento.','Respire continuamente sem prender o ar.','Finalize com retorno calmo e respiração profunda.']; return {id:uid(),bodyKey,intensity,targetType,perExerciseSec:perSec,targetReps:targetType==='reps'?reps:null,name:nm,emoji,muscles:mus[bodyKey]||['grupo alvo'],focusDesc:`Foco em ${(mus[bodyKey]||['grupo alvo']).join(' e ')} com execução segura.`,intensityDesc:intensity==='iniciante'?'Ritmo confortável e técnico.':intensity==='intermediario'?'Desafio moderado e consistente.':'Alta exigência com técnica refinada.',targetDesc:targetType==='reps'?`${reps} repetições com técnica.`:`${perSec}s contínuos com controle.`,steps,breathing:'Solte o ar no esforço e inspire no retorno.',posture:'Dor articular é sinal para reduzir amplitude ou pausar.',progression:'Evolua gradualmente tempo, repetições e qualidade.',createdAt:new Date(),voiceScriptPrep:`Prepare-se para ${nm}. Você terá vinte segundos para posicionar.`,voiceScriptStart:'Início da execução. Mantenha ritmo e postura.'}; };
+  const renderEx=(ex)=>{ if(!ex){ $('hf-exercise-container').innerHTML='Configure e clique em <b>Gerar exercício com IA</b> para receber um guia inteligente.'; $('hf-badge').innerText='Aguardando'; return; } $('hf-badge').innerText=`${BODIES[ex.bodyKey]} · ${INT[ex.intensity]} · ${ex.targetType==='reps'?ex.targetReps+' reps':ex.perExerciseSec+'s'}`; $('hf-exercise-container').innerHTML=`<div class="space-y-2"><div class="text-sm font-black text-white">${ex.emoji} ${ex.name}</div><div class="text-[11px] text-slate-400">Músculos alvo: ${ex.muscles.join(', ')}</div><div class="text-xs text-slate-300"><b>Resumo:</b> ${ex.focusDesc}<br><b>Intensidade:</b> ${ex.intensityDesc}<br><b>Meta:</b> ${ex.targetDesc}</div><ol class="list-decimal pl-4 text-xs text-slate-300">${ex.steps.map(i=>`<li>${i}</li>`).join('')}</ol><div class="text-[11px] text-slate-400 border border-slate-700 rounded p-2"><b>Respiração:</b> ${ex.breathing}<br><b>Segurança:</b> ${ex.posture}<br><b>Progressão:</b> ${ex.progression}</div></div>`; };
+  const renderHistory=()=>{ const h=$('hf-history'); if(!st.history.length){ h.innerText='Nenhum exercício concluído ainda.'; return; } h.innerHTML=st.history.slice().reverse().map((x,i)=>`<div class="p-2 rounded border border-slate-700 bg-slate-900/70 cursor-pointer" data-id="${x.id}"><div class="text-white font-bold text-xs">${x.name}</div><div class="text-[10px] text-slate-500">${BODIES[x.bodyKey]} · ${INT[x.intensity]} · ${x.targetType==='reps'?x.targetReps+' reps':x.perExerciseSec+'s'} · ${pad(x.createdAt.getHours())}:${pad(x.createdAt.getMinutes())}</div></div>`).join(''); h.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{ const f=st.history.find(i=>i.id===el.dataset.id); if(f){ st.current=f; renderEx(f); } }); };
+  const updateCounter=()=>$('hf-counter-label').innerText=`${st.history.length} exercícios na sessão`;
+  const stopTimer=()=>{ if(st.timerId){ clearInterval(st.timerId); st.timerId=null; } };
+  const resetTimer=()=>{ stopTimer(); st.timerPhase='idle'; st.remainingPrep=20; st.remainingWork=st.perExerciseSec; $('hf-timer-status').innerText='Pronto'; setPhase('Fase: parada'); updateDisplay(); };
+  const markComplete=async()=>{ if(!st.current) return; const clone=JSON.parse(JSON.stringify(st.current)); clone.id=uid(); clone.createdAt=new Date(); st.history.push(clone); st.completedCount++; renderHistory(); updateCounter(); refreshInfo(); window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise; const addMin=Math.max(1, Math.round(st.perExerciseSec/60)); ex.total=Math.max(0,(ex.total||0)+addMin); ex.logs.unshift({sport:`HomeFit IA (${BODIES[clone.bodyKey]})`, mins:addMin, at:Date.now()}); ex.logs=ex.logs.slice(0,30); window.renderExerciseProgress(); if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex); const msgs=['Parabéns, você concluiu este exercício!','Excelente! Mais um passo na sua meta diária.','Muito bom! Constância gera resultado.']; alert(msgs[Math.floor(Math.random()*msgs.length)]); };
+  const startTimer=()=>{ if(!st.current) return alert('Gere um exercício com IA antes de iniciar.'); stopTimer(); st.remainingPrep=20; st.remainingWork=st.perExerciseSec; st.timerPhase='prep'; $('hf-timer-status').innerText='Preparação (20s)'; setPhase('Fase: preparação'); updateDisplay(); beep(); speak(st.current.voiceScriptPrep); st.timerId=setInterval(async()=>{ if(st.timerPhase==='prep'){ st.remainingPrep--; updateDisplay(); if(st.remainingPrep<=0){ beep(true); st.timerPhase='work'; $('hf-timer-status').innerText='Executando exercício'; setPhase('Fase: execução'); speak(st.current.voiceScriptStart);} } else if(st.timerPhase==='work'){ st.remainingWork--; st.totalActiveSeconds++; refreshInfo(); updateDisplay(); if(st.remainingWork<=0){ beep(true); stopTimer(); st.timerPhase='idle'; $('hf-timer-status').innerText='Concluído'; setPhase('Fase: concluída'); await markComplete(); st.remainingPrep=20; st.remainingWork=st.perExerciseSec; } } },1000); };
+  const pauseTimer=()=>{ if(!st.timerId) return; stopTimer(); $('hf-timer-status').innerText='Pausado'; setPhase('Fase: pausa'); st.timerPhase='paused'; beep(); };
+  $('hf-duration').oninput=(e)=>{ st.perExerciseSec=Number(e.target.value); st.remainingWork=st.perExerciseSec; $('hf-duration-label').innerText=st.perExerciseSec; updateDisplay(); };
+  $('hf-session').oninput=(e)=>{ st.sessionMinutes=Number(e.target.value); $('hf-session-label').innerText=st.sessionMinutes; refreshInfo(); };
+  document.querySelectorAll('#hf-intensity .hf-seg').forEach(b=>b.onclick=()=>{ st.intensity=b.dataset.val; setSeg('hf-intensity',st.intensity); autoTime(); });
+  document.querySelectorAll('#hf-target-type .hf-seg').forEach(b=>b.onclick=()=>{ st.targetType=b.dataset.val; setSeg('hf-target-type',st.targetType); $('hf-reps-box').classList.toggle('hidden',st.targetType!=='reps'); $('hf-time-box').classList.toggle('hidden',st.targetType!=='tempo'); autoTime(); });
+  document.querySelectorAll('#hf-mode .hf-seg').forEach(b=>b.onclick=()=>{ st.mode=b.dataset.val; setSeg('hf-mode',st.mode); });
+  $('hf-generate').onclick=()=>{ const body=$('hf-body').value||'corpo-todo'; const reps=Number($('hf-reps').value)||15; st.current=generate(body,st.intensity,st.targetType,st.perExerciseSec,reps); renderEx(st.current); resetTimer(); };
+  $('hf-btn-random').onclick=()=>{ const keys=Object.keys(BODIES); $('hf-body').value=keys[Math.floor(Math.random()*keys.length)]; const ints=['iniciante','intermediario','avancado']; st.intensity=ints[Math.floor(Math.random()*ints.length)]; setSeg('hf-intensity',st.intensity); const types=['reps','tempo']; st.targetType=types[Math.floor(Math.random()*types.length)]; setSeg('hf-target-type',st.targetType); $('hf-reps-box').classList.toggle('hidden',st.targetType!=='reps'); $('hf-time-box').classList.toggle('hidden',st.targetType!=='tempo'); autoTime(); const ex=generate($('hf-body').value,st.intensity,st.targetType,st.perExerciseSec,Number($('hf-reps').value)||15); st.current=ex; renderEx(ex); resetTimer(); };
+  $('hf-btn-start').onclick=startTimer; $('hf-btn-pause').onclick=pauseTimer; $('hf-btn-reset').onclick=resetTimer;
+  $('hf-open-music').onclick=()=>window.open('https://www.youtube.com/watch?v=H_oPsHyEI7k&list=RDH_oPsHyEI7k&start_radio=1','_blank','noopener');
+  $('hf-clear-history').onclick=()=>{ if(!st.history.length || !confirm('Limpar histórico desta sessão?')) return; st.history=[]; st.completedCount=0; st.totalActiveSeconds=0; renderHistory(); updateCounter(); refreshInfo(); };
+  $('hf-generate-card').onclick=()=>{ const c=$('hf-share-canvas'),ctx=c.getContext('2d'); const w=c.width,h=c.height; const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#020617'); g.addColorStop(1,'#0f172a'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); ctx.strokeStyle='rgba(148,163,184,.7)'; ctx.lineWidth=3; ctx.strokeRect(8,8,w-16,h-16); ctx.fillStyle='#22c55e'; ctx.font='bold 18px system-ui'; ctx.fillText('HomeFit IA — Ficha diária',24,40); ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui'; ctx.fillText(`Data: ${new Date().toLocaleDateString('pt-BR')}`,24,62); const minDone=Math.round(st.totalActiveSeconds/60); ctx.fillStyle='#e5e7eb'; ctx.font='bold 14px system-ui'; ctx.fillText('Resumo da prática:',24,90); ctx.font='12px system-ui'; ctx.fillText(`Meta de sessão: ${st.sessionMinutes} min`,24,112); ctx.fillText(`Tempo ativo estimado: ${minDone} min`,24,130); ctx.fillText(`Exercícios concluídos: ${st.completedCount}`,24,148); ctx.font='bold 13px system-ui'; ctx.fillText('Exercícios:',24,176); ctx.font='11px system-ui'; let y=194; const last=st.history.slice(-4); if(!last.length){ ctx.fillText('Nenhum exercício concluído ainda. Comece agora! 💪',24,y);} else { last.forEach((ex,i)=>{ ctx.fillText(`${i+1}. ${ex.name} — ${BODIES[ex.bodyKey]} — ${ex.targetType==='reps'?ex.targetReps+' reps':ex.perExerciseSec+'s'}`,24,y); y+=16; }); } ctx.fillStyle='#38bdf8'; ctx.fillText('Compartilhe sua vitória de hoje. #HomeFitIA',24,h-26); const url=c.toDataURL('image/png'); const a=$('hf-download-link'); a.href=url; a.classList.remove('hidden'); alert('Ficha gerada! Agora é só baixar o PNG.'); };
+  if('speechSynthesis' in window){ const synth=window.speechSynthesis; const upd=()=>{ const v=synth.getVoices(); if(!v||!v.length) return; st.voiceObj=v.find(x=>x.lang&&x.lang.toLowerCase().startsWith('pt'))||v[0]; st.voicesSupported=true; }; synth.onvoiceschanged=upd; setTimeout(upd,200); }
+  setSeg('hf-intensity','iniciante'); setSeg('hf-target-type','reps'); setSeg('hf-mode','texto'); refreshInfo(); updateDisplay(); renderHistory();
+};
