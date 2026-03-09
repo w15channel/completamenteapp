@@ -119,6 +119,7 @@ window.initSaudeTab=function(){
     if(s.height) document.getElementById('health-height').value = s.height;
     if(s.imc) document.getElementById('imc-result').innerText = `IMC: ${s.imc} (${s.imcCategory})`;
     window.renderHydration();
+    window.renderCaloricNeed();
 }
 window.calcIMC=async function(){
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
@@ -129,6 +130,7 @@ window.calcIMC=async function(){
     if(!window.userDataCache.saude) window.userDataCache.saude={};
     window.userDataCache.saude.weight = w; window.userDataCache.saude.height = h; window.userDataCache.saude.imc = imc; window.userDataCache.saude.imcCategory = cat;
     window.renderHydration();
+    window.renderCaloricNeed();
     if(db) await db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
 }
 
@@ -194,14 +196,19 @@ window.removeWater=async function(){
 }
 
 window.startCardioTimer=function(){
-    const btn = document.getElementById('cardio-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
+    const btn = document.getElementById('cardio-btn');
+    const elapsedEl = document.getElementById('cardio-elapsed');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
     document.getElementById('cardio-input-area').classList.add('hidden'); document.getElementById('cardio-result').classList.add('hidden');
     let secs = 60;
+    if(elapsedEl) elapsedEl.innerText = 'Tempo: 00s / 60s';
     window.cardioTimer = setInterval(() => {
         secs--;
+        if(elapsedEl) elapsedEl.innerText = `Tempo: ${String(60-secs).padStart(2,'0')}s / 60s`;
         if(secs <= 0){
             clearInterval(window.cardioTimer); btn.innerHTML = '<i class="fas fa-play text-4xl ml-2"></i>'; btn.disabled = false;
             document.getElementById('cardio-input-area').classList.remove('hidden');
+            if(elapsedEl) elapsedEl.innerText = 'Tempo: 60s / 60s';
             try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 800; osc.start(); setTimeout(()=>osc.stop(), 800); } catch(e){}
         }
     }, 1000);
@@ -221,9 +228,16 @@ window.saveCardio=async function(){
 }
 
 window.startAnxietyCheck=function(){
+    window.ensureHealthStructures();
+    const today = window.getTodayStr();
+    const a = window.userDataCache.saude.anxietyDaily;
+    if(a.day===today && a.completed){
+        const redo = confirm('Você já concluiu o Ansiômetro hoje. Deseja refazer agora?');
+        if(!redo) return;
+    }
     window.ansioMessages=[]; document.getElementById('ans-chat-area').classList.remove('hidden'); document.getElementById('ans-messages').innerHTML='';
     const sys = "Atue como terapeuta. Faça 20 perguntas curtas, UMA POR VEZ (numere 1/20), para avaliar ansiedade. Após a 20ª resposta, diga APENAS um número de 0 a 100 definindo o nível de ansiedade. Sem uso de reticencias.";
-    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI("Quero avaliar minha ansiedade. Primeira pergunta.");
+    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI('Quero avaliar minha ansiedade. Primeira pergunta.');
 }
 window.sendAnsReply=function(){
     const input=document.getElementById('ans-input'); const txt=input.value.trim(); if(!txt)return;
@@ -246,9 +260,11 @@ window.callAnsAI=async function(overrideText){
             let bar = document.getElementById('ansio-bar'); bar.style.width = score + '%';
             if(score <= 25) bar.className = 'bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]'; 
             else if(score <= 50) bar.className = 'bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]'; 
-            else if(score <= 75) bar.className = 'bg-orange-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(249,115,22,0.8)]'; 
+            else if(score <= 75) bar.className = 'bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]'; 
             else bar.className = 'bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
-            window.userDataCache.saude.anxietyScore = score; if(db) await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score);
+            window.userDataCache.saude.anxietyScore = score;
+            window.userDataCache.saude.anxietyDaily = {day:window.getTodayStr(), score, completed:true};
+            if(db){ await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score); await db.ref('users/'+window.clientId+'/saude/anxietyDaily').set(window.userDataCache.saude.anxietyDaily); }
         }
     }catch(e){} finally{ btn.disabled=false; }
 }
@@ -617,10 +633,13 @@ window.ensureHealthStructures=function(){
   if(!Array.isArray(s.water.history)) s.water.history=[];
   if(!s.healthGoalLog || s.healthGoalLog.month!==window.getMonthStr()) s.healthGoalLog={month:window.getMonthStr(),entries:[]};
   if(!Array.isArray(s.healthGoalLog.entries)) s.healthGoalLog.entries=[];
+  if(!s.exercise || s.exercise.day!==window.getTodayStr()) s.exercise={day:window.getTodayStr(),goal:20,total:0,logs:[]};
+  if(!Array.isArray(s.exercise.logs)) s.exercise.logs=[];
+  if(!s.anxietyDaily || s.anxietyDaily.day!==window.getTodayStr()) s.anxietyDaily={day:window.getTodayStr(), score:null, completed:false};
 };
 window.renderBiotypeOptions=function(){
   const box=document.getElementById('biotype-options'); if(!box) return;
-  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v])=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>${v.emoji} ${v.name}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
+  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v],idx)=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>Perfil ${idx+1}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
 };
 window.updateBiotypeFromTraits=async function(){
   const selected=[...document.querySelectorAll('.biotype-opt:checked')].map(i=>i.dataset.kind);
@@ -630,7 +649,7 @@ window.updateBiotypeFromTraits=async function(){
   const p=window.BIOTYPE_PROFILES[winner];
   const out=document.getElementById('biotype-result');
   out.classList.remove('hidden');
-  out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`;
+  out.innerHTML=`<p class="font-black text-rose-300">Seu biotipo predominante: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p><p class="mt-2 text-[10px] text-amber-300"><b>Limitações comuns:</b> adaptação diferente a ganho de massa, resistência e recuperação. O progresso exige treino, alimentação e descanso individualizados.</p><p class="mt-1 text-[10px] text-slate-300">Seu resultado valida suas características integrais, mas não define sozinho sua capacidade física.</p>`;
   window.ensureHealthStructures();
   window.userDataCache.saude.biotype={result:winner,at:Date.now()};
   if(db) await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
@@ -673,14 +692,16 @@ window.initSaudeTab=async function(){
   if(s.height) document.getElementById('health-height').value=s.height;
   if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
   window.renderBiotypeOptions();
-  if(s.biotype?.result){ const p=window.BIOTYPE_PROFILES[s.biotype.result]; const out=document.getElementById('biotype-result'); if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; } }
-  window.renderHydration(); window.renderHealthGoalsLog();
+  window.renderCaloricNeed();
+  window.renderExerciseProgress();
+  window.renderAnxietyDailyState();
+  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
   const total=Math.round(w.total||0), goal=window.getHydrationGoal(), percent=Math.min(100, Math.round((total/goal)*100));
   document.getElementById('water-total').innerText=`${total} ml`;
-  document.getElementById('water-goal-text').innerText=`Meta: ${goal} ml`;
+  document.getElementById('water-goal-text').innerText=`Meta diária: ${goal} ml`;
   document.getElementById('water-progress-bar').style.width=`${percent}%`;
   if(w.lastEntry){ const dt=new Date(w.lastEntry.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); document.getElementById('water-last-entry').innerText=`Último lançamento: ${w.lastEntry.amount}ml (${w.lastEntry.label} = ${w.lastEntry.valid}ml) às ${dt}`; }
   else document.getElementById('water-last-entry').innerText='Último lançamento: --';
@@ -706,17 +727,142 @@ window.removeWater=async function(){
   const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
   window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
 };
-window.analyzeFood=async function(){
-  const txt=(document.getElementById('food-text-input')?.value||'').trim(); if(!txt) return alert('Descreva sua refeição.');
-  const btn=document.getElementById('btn-analyze-food'); const out=document.getElementById('food-analysis-result');
-  btn.disabled=true; btn.innerText='Analisando...';
-  try{
-    const imc=window.userDataCache?.saude?.imc||'não informado';
-    const messages=[{role:'system',content:'Atue como nutricionista esportivo.'},{role:'user',content:`Analise esta refeição (${txt}) para o IMC ${imc}. Informe calorias estimadas, pontos fortes e melhorias.`}];
-    const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:350})});
-    const data=await res.json(); out.classList.remove('hidden'); out.innerText=data?.choices?.[0]?.message?.content||'Sem resposta da IA.';
-  }catch(e){ out.classList.remove('hidden'); out.innerText='Falha na IA nutricional.'; }
-  btn.disabled=false; btn.innerText='Analisar com IA';
+// NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
+window.doNutriAnalysis = async function() {
+  const input = document.getElementById('mealInput');
+  const text = (input?.value || '').trim();
+  if (!text) return alert('Por favor, descreva o que você consumiu.');
+
+  const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
+  const originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...';
+    btn.disabled = true;
+  }
+
+  const systemPrompt = `Atue como um nutricionista digital de alta precisão.
+Analise a descrição da refeição e retorne APENAS um objeto JSON (sem textos explicativos) no seguinte formato:
+{
+  "total_cal": número,
+  "p": gramas_proteina,
+  "c": gramas_carboidrato,
+  "f": gramas_gordura,
+  "items": [{"n": "nome_item", "cal": calorias}]
+}
+Se não souber a quantidade exata, use médias biológicas reais para uma porção padrão brasileira.
+Não use reticencias.`;
+
+  try {
+    const response = await fetch(window.AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Analise esta refeição: ${text}` }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '{}';
+    const rawContent = content.replace(/```json|```/g, '').trim();
+    const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
+    const nutri = JSON.parse(jsonChunk);
+
+    const totalCal = Number(nutri.total_cal || 0);
+    const totalP = Number(nutri.p || 0);
+    const totalC = Number(nutri.c || 0);
+    const totalF = Number(nutri.f || 0);
+
+    document.getElementById('nutriResultPane')?.classList.remove('hidden');
+    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
+    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
+    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
+    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
+
+    const EXERCISES_MET = [
+      { name: 'Corrida', icon: '🏃', met: 8.3 },
+      { name: 'Caminhada', icon: '🚶', met: 3.5 },
+      { name: 'Pedalada', icon: '🚴', met: 6.8 },
+      { name: 'Musculação', icon: '💪', met: 6.0 }
+    ];
+    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
+    const weight = window.userDataCache?.saude?.weight || 75;
+    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
+
+    document.getElementById('exIcon').innerText = ex.icon;
+    document.getElementById('exName').innerText = ex.name;
+    document.getElementById('exTime').innerText = minutes + ' min';
+
+    if (!window.userDataCache) window.userDataCache = {};
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+    const entry = { meal: text, cal: Math.round(totalCal), date: new Date().toLocaleDateString('pt-BR') };
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 20);
+
+    if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+    window.renderNutriHistory();
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalBtnText;
+      btn.disabled = false;
+    }
+  }
+};
+
+window.renderNutriHistory=function(){
+  const container=document.getElementById('nutriHistory');
+  if(!container) return;
+  const history=window.userDataCache?.saude?.nutriHistory || [];
+  container.innerHTML = history.slice(0,5).map((h)=>`
+    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in">
+      <div class="flex flex-col min-w-0">
+        <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
+        <span class="text-[8px] text-slate-500 font-bold">${h.date}</span>
+      </div>
+      <span class="text-xs font-black text-emerald-400 ml-3 whitespace-nowrap">${h.cal} kcal</span>
+    </div>
+  `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
+};
+window.renderCaloricNeed=function(){
+  const el=document.getElementById('calorie-need-result'); if(!el) return;
+  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);
+  if(!w||!h||!imc){ el.innerText='-- kcal/dia'; return; }
+  const base=w*24;
+  const factor=imc<18.5?1.15:imc<25?1:imc<30?0.9:0.82;
+  el.innerText=`${Math.round(base*factor)} kcal/dia`;
+};
+window.renderExerciseProgress=function(){
+  window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise;
+  const total=Math.round(ex.total||0), goal=ex.goal||20, pct=Math.min(100, Math.round((total/goal)*100));
+  const goalEl=document.getElementById('exercise-goal-text'), leftEl=document.getElementById('ex-left-text'), bar=document.getElementById('ex-progress-bar');
+  if(goalEl) goalEl.innerText=`Meta diária: ${goal} min`;
+  if(leftEl) leftEl.innerText = total>=goal ? 'Meta diária concluída' : `Faltam ${goal-total} min`;
+  if(bar) bar.style.width = `${pct}%`;
+};
+window.renderAnxietyDailyState=function(){
+  window.ensureHealthStructures(); const a=window.userDataCache.saude.anxietyDaily; const bar=document.getElementById('ansio-bar'); if(!bar) return;
+  const score=(a.day===window.getTodayStr() && a.score!=null)?a.score:0;
+  bar.style.width=score+'%';
+  if(score<=25) bar.className='bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]';
+  else if(score<=50) bar.className='bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]';
+  else if(score<=75) bar.className='bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+  else bar.className='bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
+};
+window.addExercise=async function(){
+  window.ensureHealthStructures(); const sport=document.getElementById('health-sport')?.value; const mins=parseInt(document.getElementById('health-sport-time')?.value,10);
+  if(!sport||!mins||mins<=0) return alert('Informe exercício e duração válida.');
+  const ex=window.userDataCache.saude.exercise; ex.logs.unshift({sport, mins, at:Date.now()}); ex.logs=ex.logs.slice(0,30); ex.total=Math.max(0,(ex.total||0)+mins);
+  document.getElementById('health-sport-time').value='';
+  window.renderExerciseProgress();
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
 };
 window.saveGoals=async function(){
   const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();
@@ -730,4 +876,4 @@ window.renderTasks=function(){
 window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');};
 window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
 window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
-window.addExercise=function(){alert('Registro de exercícios em atualização.');};
+
