@@ -1,58 +1,56 @@
 const GROQ_OPENAI_COMPAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const XAI_OPENAI_COMPAT_URL = 'https://api.x.ai/v1/chat/completions';
+
+function providerConfig() {
+  if (process.env.XAI_API_KEY) {
+    return {
+      name: 'xAI Grok',
+      url: XAI_OPENAI_COMPAT_URL,
+      apiKey: process.env.XAI_API_KEY,
+      model: process.env.XAI_MODEL || 'grok-2-latest'
+    };
+  }
+  return {
+    name: 'Groq',
+    url: GROQ_OPENAI_COMPAT_URL,
+    apiKey: process.env.GROQ_API_KEY,
+    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+  };
+}
 
 export default async function handler(req, res) {
-  // 1. Configuração de CORS para permitir que o frontend converse com a API
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Se quiser mais segurança depois, troque '*' pelo domínio do seu app
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Responde imediatamente a requisições de pré-voo (preflight) do navegador
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido. Use POST.' });
 
-  // 2. Bloqueia métodos incorretos
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido. Use POST.' });
-  }
-
-  // 3. Validação da Chave de API
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  const provider = providerConfig();
+  if (!provider.apiKey) {
     return res.status(500).json({
-      error: 'GROQ_API_KEY não configurada no projeto da Vercel.',
-      details: 'Defina GROQ_API_KEY no painel para habilitar o chat.'
+      error: 'Chave da IA não configurada.',
+      details: 'Defina XAI_API_KEY (Grok) ou GROQ_API_KEY no ambiente da Vercel.'
     });
   }
 
-  // 4. Captura e validação da mensagem do usuário
   const body = req.body || {};
   const incomingMessages = Array.isArray(body.messages) ? body.messages : [];
   const prompt = typeof body.mensagem === 'string' ? body.mensagem.trim() : '';
+  const messages = incomingMessages.length ? incomingMessages : prompt ? [{ role: 'user', content: prompt }] : [];
 
-  const messages = incomingMessages.length
-    ? incomingMessages
-    : prompt
-      ? [{ role: 'user', content: prompt }]
-      : [];
+  if (!messages.length) return res.status(400).json({ error: 'Envie `messages` (array) ou `mensagem` (string) no corpo da requisição.' });
 
-  if (!messages.length) {
-    return res.status(400).json({
-      error: 'Envie `messages` (array) ou `mensagem` (string) no corpo da requisição.'
-    });
-  }
-
-  // 5. Chamada para o modelo Groq (compatível com OpenAI Chat Completions)
   try {
-    const response = await fetch(GROQ_OPENAI_COMPAT_URL, {
+    const response = await fetch(provider.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
+        Authorization: `Bearer ${provider.apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+        model: provider.model,
         messages,
         temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
         max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
@@ -60,17 +58,13 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    
     if (!response.ok) {
       return res.status(response.status).json({
-        error: 'Erro ao consultar Groq.',
+        error: `Erro ao consultar ${provider.name}.`,
         details: data?.error?.message || 'Sem detalhes.'
       });
     }
-
-    // Retorna a resposta completa compatível com OpenAI
     return res.status(200).json(data);
-    
   } catch (error) {
     return res.status(500).json({ error: 'Falha ao conectar com a inteligência artificial.' });
   }
