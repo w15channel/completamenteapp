@@ -601,3 +601,133 @@ window.loadMural=async function(){
         list.innerHTML=msgs.map(i=>`<div class="bg-slate-800 border-l-4 border-amber-500 p-4 rounded-xl mb-3 shadow animate-fade-in"><div class="flex justify-between items-center mb-2"><span class="font-bold text-amber-500 text-[10px] uppercase tracking-wider"><i class="fas fa-quote-left mr-1"></i></span><span class="text-[9px] text-slate-500 font-bold">${i.d}</span></div><p class="text-slate-200 text-sm break-words leading-relaxed">${i.t}</p></div>`).join('');
     }
 }
+
+// --- Ajustes Saúde & Corpo / Rotina ---
+window.BIOTYPE_PROFILES={
+  ectomorfo:{name:'Ectomorfo',emoji:'🧍',summary:'Estrutura óssea linear e fina, ombros estreitos e alto gasto calórico. Tendência a provas de velocidade.'},
+  mesomorfo:{name:'Mesomorfo',emoji:'🏃',summary:'Estrutura sólida e atlética, ombros largos e cintura fina. Perfil equilibrado para resistência e potência.'},
+  endomorfo:{name:'Endomorfo',emoji:'🏋️',summary:'Corpo arredondado e macio, metabolismo mais lento e boa resposta para força bruta com constância.'}
+};
+window.getMonthStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+window.ensureHealthStructures=function(){
+  if(!window.userDataCache) window.userDataCache={};
+  if(!window.userDataCache.saude) window.userDataCache.saude={};
+  const s=window.userDataCache.saude;
+  if(!s.water) s.water={total:0,history:[],day:window.getTodayStr(),goalReachedAt:null};
+  if(!Array.isArray(s.water.history)) s.water.history=[];
+  if(!s.healthGoalLog || s.healthGoalLog.month!==window.getMonthStr()) s.healthGoalLog={month:window.getMonthStr(),entries:[]};
+  if(!Array.isArray(s.healthGoalLog.entries)) s.healthGoalLog.entries=[];
+};
+window.renderBiotypeOptions=function(){
+  const box=document.getElementById('biotype-options'); if(!box) return;
+  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v])=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>${v.emoji} ${v.name}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
+};
+window.updateBiotypeFromTraits=async function(){
+  const selected=[...document.querySelectorAll('.biotype-opt:checked')].map(i=>i.dataset.kind);
+  if(!selected.length) return alert('Selecione ao menos uma característica.');
+  const counts={ectomorfo:0,mesomorfo:0,endomorfo:0}; selected.forEach(k=>counts[k]++);
+  const winner=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+  const p=window.BIOTYPE_PROFILES[winner];
+  const out=document.getElementById('biotype-result');
+  out.classList.remove('hidden');
+  out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`;
+  window.ensureHealthStructures();
+  window.userDataCache.saude.biotype={result:winner,at:Date.now()};
+  if(db) await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
+};
+window.resetWaterIfNewDay=async function(){
+  window.ensureHealthStructures();
+  const w=window.userDataCache.saude.water;
+  const today=window.getTodayStr();
+  if(w.day!==today){ w.day=today; w.total=0; w.history=[]; w.goalReachedAt=null; w.lastEntry=null; if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w); }
+};
+window.renderWaterHistory=function(){
+  const el=document.getElementById('water-history'); if(!el) return;
+  window.ensureHealthStructures(); const h=window.userDataCache.saude.water.history;
+  el.innerHTML=h.length?h.slice().reverse().map((i,rev)=>`<div class="text-[10px] bg-slate-900 border border-slate-700 rounded-lg p-2 flex justify-between"><span>${new Date(i.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} - ${i.label} ${i.amount}ml (${i.valid>0?'+':''}${i.valid})</span><button class="text-red-400" onclick="window.removeWaterHistoryItem(${h.length-1-rev})">x</button></div>`).join(''):'<p class="text-[10px] text-slate-500">Sem registros de água hoje.</p>';
+};
+window.renderHealthGoalsLog=function(){
+  const el=document.getElementById('health-goals-log'); if(!el) return;
+  window.ensureHealthStructures(); const e=window.userDataCache.saude.healthGoalLog.entries;
+  el.innerHTML=e.length?e.map(i=>`<div class="bg-slate-900 border border-slate-700 rounded p-2">✅ ${i.text}</div>`).join(''):'<p class="text-slate-500">Sem metas de saúde cumpridas no mês.</p>';
+};
+window.removeWaterHistoryItem=async function(idx){
+  window.ensureHealthStructures(); const w=window.userDataCache.saude.water; const item=w.history[idx]; if(!item) return;
+  w.total=Math.max(0,(w.total||0)-item.valid); w.history.splice(idx,1); w.lastEntry=w.history[w.history.length-1]||null;
+  window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
+};
+window.toggleWaterReminder=function(){
+  const b=document.getElementById('water-reminder-btn');
+  if(window.waterReminderInterval){ clearInterval(window.waterReminderInterval); window.waterReminderInterval=null; if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete'; return; }
+  const mins=parseInt(document.getElementById('water-reminder-min')?.value);
+  if(!mins||mins<10) return alert('Informe intervalo válido (mínimo 10 min).');
+  if(Notification.permission==='default') Notification.requestPermission();
+  window.waterReminderInterval=setInterval(()=>{ if(Notification.permission==='granted') new Notification('Lembrete de hidratação 💧',{body:'Beba água conforme seu intervalo.'}); }, mins*60000);
+  if(b)b.innerHTML='<i class="fas fa-bell-slash"></i> Pausar';
+};
+
+window.initSaudeTab=async function(){
+  window.showSaudeSubTab('sd-perfil'); window.ensureHealthStructures(); await window.resetWaterIfNewDay();
+  const s=window.userDataCache.saude;
+  if(s.weight) document.getElementById('health-weight').value=s.weight;
+  if(s.height) document.getElementById('health-height').value=s.height;
+  if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
+  window.renderBiotypeOptions();
+  if(s.biotype?.result){ const p=window.BIOTYPE_PROFILES[s.biotype.result]; const out=document.getElementById('biotype-result'); if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; } }
+  window.renderHydration(); window.renderHealthGoalsLog();
+};
+window.renderHydration=function(){
+  window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
+  const total=Math.round(w.total||0), goal=window.getHydrationGoal(), percent=Math.min(100, Math.round((total/goal)*100));
+  document.getElementById('water-total').innerText=`${total} ml`;
+  document.getElementById('water-goal-text').innerText=`Meta: ${goal} ml`;
+  document.getElementById('water-progress-bar').style.width=`${percent}%`;
+  if(w.lastEntry){ const dt=new Date(w.lastEntry.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); document.getElementById('water-last-entry').innerText=`Último lançamento: ${w.lastEntry.amount}ml (${w.lastEntry.label} = ${w.lastEntry.valid}ml) às ${dt}`; }
+  else document.getElementById('water-last-entry').innerText='Último lançamento: --';
+  window.renderWaterHistory();
+};
+window.addWater=async function(){
+  await window.resetWaterIfNewDay();
+  const amount=parseInt(document.getElementById('water-amount-input').value), type=document.getElementById('water-drink-type').value;
+  if(!amount||amount<=0) return alert('Informe uma quantidade válida em ml.');
+  const labels={water:'Água',juice:'Suco',soda:'Refrigerante',tea:'Chá/Infusão'}; const valid=Math.round(amount*window.getHydrationFactor(type));
+  window.ensureHealthStructures(); const now=Date.now(); const w=window.userDataCache.saude.water;
+  const entry={amount,valid,type,label:labels[type]||'Água',at:now}; w.total=Math.max(0,(w.total||0)+valid); w.lastEntry=entry; w.history.push(entry);
+  const goal=window.getHydrationGoal();
+  if(w.total>=goal && !w.goalReachedAt){
+    w.goalReachedAt=now; alert('Parabéns por cuidar da saúde! Meta de líquidos concluída hoje.');
+    window.userDataCache.saude.healthGoalLog.entries.push({text:`Meta de hidratação concluída em ${new Date(now).toLocaleDateString('pt-BR')}`,at:now});
+  }
+  window.renderHydration(); window.renderHealthGoalsLog();
+  if(db){ await db.ref('users/'+window.clientId+'/saude/water').set(w); await db.ref('users/'+window.clientId+'/saude/healthGoalLog').set(window.userDataCache.saude.healthGoalLog); }
+};
+window.removeWater=async function(){
+  await window.resetWaterIfNewDay(); window.ensureHealthStructures(); const now=Date.now(); const w=window.userDataCache.saude.water;
+  const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
+  window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
+};
+window.analyzeFood=async function(){
+  const txt=(document.getElementById('food-text-input')?.value||'').trim(); if(!txt) return alert('Descreva sua refeição.');
+  const btn=document.getElementById('btn-analyze-food'); const out=document.getElementById('food-analysis-result');
+  btn.disabled=true; btn.innerText='Analisando...';
+  try{
+    const imc=window.userDataCache?.saude?.imc||'não informado';
+    const messages=[{role:'system',content:'Atue como nutricionista esportivo.'},{role:'user',content:`Analise esta refeição (${txt}) para o IMC ${imc}. Informe calorias estimadas, pontos fortes e melhorias.`}];
+    const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:350})});
+    const data=await res.json(); out.classList.remove('hidden'); out.innerText=data?.choices?.[0]?.message?.content||'Sem resposta da IA.';
+  }catch(e){ out.classList.remove('hidden'); out.innerText='Falha na IA nutricional.'; }
+  btn.disabled=false; btn.innerText='Analisar com IA';
+};
+window.saveGoals=async function(){
+  const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();
+  if(!window.userDataCache) return; window.userDataCache.goals={week,month}; if(db) await db.ref('users/'+window.clientId+'/goals').set(window.userDataCache.goals);
+};
+window.renderTasks=function(){
+  const todo=document.getElementById('tasks-todo'), done=document.getElementById('tasks-done'); if(!todo||!done) return;
+  todo.innerHTML='<div class="text-xs text-slate-500">Cadastre tarefas para visualizar sua rotina diária.</div>';
+  done.innerHTML=''; document.getElementById('area-todo').classList.remove('hidden'); document.getElementById('area-done').classList.add('hidden');
+};
+window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');};
+window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
+window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
+window.addExercise=function(){alert('Registro de exercícios em atualização.');};
