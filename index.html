@@ -386,57 +386,7 @@
 
                 <div class="mt-4 flex-1 flex flex-col gap-4">
 
-                    <div id="ex-setup-panel" class="glass-card p-5 border-amber-500/20">
-
-                        <h3 class="text-sm font-black text-white uppercase mb-4"><i class="fas fa-sliders-h mr-2 text-amber-500"></i>Configurar Sessão</h3>
-
-                        <div class="space-y-4">
-
-                            <div>
-
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Tempo total desejado</label>
-
-                                <select id="ex-total-duration" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm font-bold text-white outline-none">
-
-                                    <option value="10">10 Minutos (Rápido)</option>
-
-                                    <option value="20" selected>20 Minutos (Padrão)</option>
-
-                                    <option value="40">40 Minutos (Intenso)</option>
-
-                                </select>
-
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-3">
-
-                                <button onclick="window.startWorkoutSession('cardio')" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-900/20 transition-all">
-
-                                    <i class="fas fa-heartbeat text-2xl text-rose-500"></i>
-
-                                    <span class="text-[10px] font-black uppercase text-slate-300">Cardio</span>
-
-                                </button>
-
-                                <button onclick="window.startWorkoutSession('forca')" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-900/20 transition-all">
-
-                                    <i class="fas fa-dumbbell text-2xl text-sky-400"></i>
-
-                                    <span class="text-[10px] font-black uppercase text-slate-300">Força</span>
-
-                                </button>
-
-                            </div>
-
-                            <div class="bg-amber-900/10 border border-amber-500/20 p-3 rounded-xl">
-
-                                <p class="text-[10px] text-amber-200/70 text-center leading-relaxed">Ao iniciar, você entra no modo foco com preparação guiada para cada exercício.</p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                    
 
 
 
@@ -532,18 +482,26 @@
                                 <div id="hf-target-type" class="grid grid-cols-2 gap-1 text-[10px]"><button data-val="reps" class="hf-seg active">Repetições</button><button data-val="tempo" class="hf-seg">Tempo</button></div>
                             </div>
                             <div id="hf-reps-box"><label class="text-[10px] font-bold text-slate-400 uppercase">Meta (unidades)</label><input id="hf-reps" type="number" min="5" max="100" value="15" class="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"></div>
-                            <div id="hf-time-box" class="hidden"><label class="text-[10px] font-bold text-slate-400 uppercase">Duração por exercício</label><input id="hf-duration" type="range" min="20" max="90" step="10" value="40" class="w-full"><p class="text-[10px] text-sky-400 font-black text-right"><span id="hf-duration-label">40</span>s</p></div>
+                            <div id="hf-time-box" class="hidden"><label class="text-[10px] font-bold text-slate-400 uppercase">Duração por exercício</label><input id="hf-duration" type="range" min="60" max="180" step="10" value="60" class="w-full"><p class="text-[10px] text-sky-400 font-black text-right"><span id="hf-duration-label">60</span>s</p></div>
                             <div><label class="text-[10px] font-bold text-slate-400 uppercase">Duração da sessão</label><input id="hf-session" type="range" min="5" max="45" step="5" value="20" class="w-full"><p class="text-[10px] text-emerald-400 font-black text-right"><span id="hf-session-label">20</span> min</p></div>
                             <div>
                                 <label class="text-[10px] font-bold text-slate-400 uppercase">Modo de guia</label>
                                 <div id="hf-mode" class="grid grid-cols-2 gap-1 text-[10px]"><button data-val="texto" class="hf-seg active">Texto</button><button data-val="voz" class="hf-seg">Texto + Voz</button></div>
                             </div>
                             <button id="hf-generate" class="w-full bg-emerald-600 text-white text-[10px] font-black uppercase py-2 rounded-lg">Gerar exercício com IA</button>
-                            <button id="hf-open-music" class="w-full bg-slate-700 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Tocar música</button>
+                            <button id="hf-open-music" class="w-full bg-slate-700 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Tocar música em segundo plano</button>
+                            <div id="hf-music-bg" class="hidden relative w-full h-20 rounded-lg overflow-hidden border border-slate-700">
+                                <iframe id="hf-music-frame" class="absolute inset-0 w-full h-full opacity-35 pointer-events-none" src="" title="Música de treino" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                                <div class="absolute inset-0 bg-slate-950/35"></div>
+                                <p class="absolute bottom-1 right-2 text-[9px] font-bold uppercase text-slate-200">Música ativa</p>
+                            </div>
                             <label class="text-[10px] text-slate-400 flex items-center gap-2"><input id="hf-voice-check" type="checkbox"> Ler comandos em voz alta</label>
                         </div>
                         <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3">
                             <div class="flex justify-between items-center mb-2"><p class="text-[10px] uppercase text-slate-400 font-black">Guia do exercício atual</p><span id="hf-badge" class="text-[9px] px-2 py-1 rounded-full border border-slate-600 text-slate-400">Aguardando</span></div>
+                            <div id="hf-prescription" class="mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 p-2 text-[11px] text-amber-100">
+                                Gere um exercício para receber orientação detalhada de postura, posicionamento e execução antes de iniciar.
+                            </div>
                             <div id="hf-exercise-container" class="space-y-2 max-h-96 overflow-y-auto text-xs text-slate-300">
                                 Configure e clique em <b>Gerar exercício com IA</b> para receber um guia inteligente.
                             </div>
@@ -551,7 +509,7 @@
                         <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3 space-y-3">
                             <div class="border border-slate-700 rounded-lg p-2">
                                 <p id="hf-timer-status" class="text-[10px] uppercase text-slate-400 font-black">Pronto</p>
-                                <p id="hf-timer-display" class="text-3xl font-black tracking-widest text-white">00:40</p>
+                                <p id="hf-timer-display" class="text-3xl font-black tracking-widest text-white">00:60</p>
                                 <p id="hf-session-info" class="text-[10px] text-slate-500">Sessão alvo: 20 min • 0 exercícios concluídos</p>
                                 <div class="mt-2 flex gap-1"><button id="hf-btn-start" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2 rounded">Play</button><button id="hf-btn-pause" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Pausar</button><button id="hf-btn-reset" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Reset</button></div>
                                 <p id="hf-phase-badge" class="text-[10px] mt-2 text-emerald-400 font-bold">Fase: parada</p>
