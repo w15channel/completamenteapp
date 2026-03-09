@@ -119,6 +119,7 @@ window.initSaudeTab=function(){
     if(s.height) document.getElementById('health-height').value = s.height;
     if(s.imc) document.getElementById('imc-result').innerText = `IMC: ${s.imc} (${s.imcCategory})`;
     window.renderHydration();
+    window.renderCaloricNeed();
 }
 window.calcIMC=async function(){
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
@@ -129,6 +130,7 @@ window.calcIMC=async function(){
     if(!window.userDataCache.saude) window.userDataCache.saude={};
     window.userDataCache.saude.weight = w; window.userDataCache.saude.height = h; window.userDataCache.saude.imc = imc; window.userDataCache.saude.imcCategory = cat;
     window.renderHydration();
+    window.renderCaloricNeed();
     if(db) await db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
 }
 
@@ -194,14 +196,19 @@ window.removeWater=async function(){
 }
 
 window.startCardioTimer=function(){
-    const btn = document.getElementById('cardio-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
+    const btn = document.getElementById('cardio-btn');
+    const elapsedEl = document.getElementById('cardio-elapsed');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-stopwatch text-4xl animate-pulse ml-2"></i>';
     document.getElementById('cardio-input-area').classList.add('hidden'); document.getElementById('cardio-result').classList.add('hidden');
     let secs = 60;
+    if(elapsedEl) elapsedEl.innerText = 'Tempo: 00s / 60s';
     window.cardioTimer = setInterval(() => {
         secs--;
+        if(elapsedEl) elapsedEl.innerText = `Tempo: ${String(60-secs).padStart(2,'0')}s / 60s`;
         if(secs <= 0){
             clearInterval(window.cardioTimer); btn.innerHTML = '<i class="fas fa-play text-4xl ml-2"></i>'; btn.disabled = false;
             document.getElementById('cardio-input-area').classList.remove('hidden');
+            if(elapsedEl) elapsedEl.innerText = 'Tempo: 60s / 60s';
             try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 800; osc.start(); setTimeout(()=>osc.stop(), 800); } catch(e){}
         }
     }, 1000);
@@ -221,9 +228,16 @@ window.saveCardio=async function(){
 }
 
 window.startAnxietyCheck=function(){
+    window.ensureHealthStructures();
+    const today = window.getTodayStr();
+    const a = window.userDataCache.saude.anxietyDaily;
+    if(a.day===today && a.completed){
+        const redo = confirm('Você já concluiu o Ansiômetro hoje. Deseja refazer agora?');
+        if(!redo) return;
+    }
     window.ansioMessages=[]; document.getElementById('ans-chat-area').classList.remove('hidden'); document.getElementById('ans-messages').innerHTML='';
     const sys = "Atue como terapeuta. Faça 20 perguntas curtas, UMA POR VEZ (numere 1/20), para avaliar ansiedade. Após a 20ª resposta, diga APENAS um número de 0 a 100 definindo o nível de ansiedade. Sem uso de reticencias.";
-    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI("Quero avaliar minha ansiedade. Primeira pergunta.");
+    window.ansioMessages.push({role:'system', content:sys}); window.callAnsAI('Quero avaliar minha ansiedade. Primeira pergunta.');
 }
 window.sendAnsReply=function(){
     const input=document.getElementById('ans-input'); const txt=input.value.trim(); if(!txt)return;
@@ -246,9 +260,11 @@ window.callAnsAI=async function(overrideText){
             let bar = document.getElementById('ansio-bar'); bar.style.width = score + '%';
             if(score <= 25) bar.className = 'bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]'; 
             else if(score <= 50) bar.className = 'bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]'; 
-            else if(score <= 75) bar.className = 'bg-orange-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(249,115,22,0.8)]'; 
+            else if(score <= 75) bar.className = 'bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]'; 
             else bar.className = 'bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
-            window.userDataCache.saude.anxietyScore = score; if(db) await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score);
+            window.userDataCache.saude.anxietyScore = score;
+            window.userDataCache.saude.anxietyDaily = {day:window.getTodayStr(), score, completed:true};
+            if(db){ await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score); await db.ref('users/'+window.clientId+'/saude/anxietyDaily').set(window.userDataCache.saude.anxietyDaily); }
         }
     }catch(e){} finally{ btn.disabled=false; }
 }
@@ -617,10 +633,13 @@ window.ensureHealthStructures=function(){
   if(!Array.isArray(s.water.history)) s.water.history=[];
   if(!s.healthGoalLog || s.healthGoalLog.month!==window.getMonthStr()) s.healthGoalLog={month:window.getMonthStr(),entries:[]};
   if(!Array.isArray(s.healthGoalLog.entries)) s.healthGoalLog.entries=[];
+  if(!s.exercise || s.exercise.day!==window.getTodayStr()) s.exercise={day:window.getTodayStr(),goal:20,total:0,logs:[]};
+  if(!Array.isArray(s.exercise.logs)) s.exercise.logs=[];
+  if(!s.anxietyDaily || s.anxietyDaily.day!==window.getTodayStr()) s.anxietyDaily={day:window.getTodayStr(), score:null, completed:false};
 };
 window.renderBiotypeOptions=function(){
   const box=document.getElementById('biotype-options'); if(!box) return;
-  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v])=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>${v.emoji} ${v.name}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
+  box.innerHTML=Object.entries(window.BIOTYPE_PROFILES).map(([k,v],idx)=>`<label class="flex items-start gap-2 p-2 rounded-lg border border-slate-600 bg-slate-900/40"><input class="biotype-opt mt-1" type="checkbox" data-kind="${k}"><span><b>Perfil ${idx+1}</b><br><span class="text-slate-300">${v.summary}</span></span></label>`).join('');
 };
 window.updateBiotypeFromTraits=async function(){
   const selected=[...document.querySelectorAll('.biotype-opt:checked')].map(i=>i.dataset.kind);
@@ -630,7 +649,7 @@ window.updateBiotypeFromTraits=async function(){
   const p=window.BIOTYPE_PROFILES[winner];
   const out=document.getElementById('biotype-result');
   out.classList.remove('hidden');
-  out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`;
+  out.innerHTML=`<p class="font-black text-rose-300">Seu biotipo predominante: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p><p class="mt-2 text-[10px] text-amber-300"><b>Limitações comuns:</b> adaptação diferente a ganho de massa, resistência e recuperação. O progresso exige treino, alimentação e descanso individualizados.</p><p class="mt-1 text-[10px] text-slate-300">Seu resultado valida suas características integrais, mas não define sozinho sua capacidade física.</p>`;
   window.ensureHealthStructures();
   window.userDataCache.saude.biotype={result:winner,at:Date.now()};
   if(db) await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
@@ -673,14 +692,16 @@ window.initSaudeTab=async function(){
   if(s.height) document.getElementById('health-height').value=s.height;
   if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
   window.renderBiotypeOptions();
-  if(s.biotype?.result){ const p=window.BIOTYPE_PROFILES[s.biotype.result]; const out=document.getElementById('biotype-result'); if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; } }
+  window.renderCaloricNeed();
+  window.renderExerciseProgress();
+  window.renderAnxietyDailyState();
   window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
   const total=Math.round(w.total||0), goal=window.getHydrationGoal(), percent=Math.min(100, Math.round((total/goal)*100));
   document.getElementById('water-total').innerText=`${total} ml`;
-  document.getElementById('water-goal-text').innerText=`Meta: ${goal} ml`;
+  document.getElementById('water-goal-text').innerText=`Meta diária: ${goal} ml`;
   document.getElementById('water-progress-bar').style.width=`${percent}%`;
   if(w.lastEntry){ const dt=new Date(w.lastEntry.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); document.getElementById('water-last-entry').innerText=`Último lançamento: ${w.lastEntry.amount}ml (${w.lastEntry.label} = ${w.lastEntry.valid}ml) às ${dt}`; }
   else document.getElementById('water-last-entry').innerText='Último lançamento: --';
@@ -810,6 +831,39 @@ window.renderNutriHistory=function(){
     </div>
   `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
 };
+window.renderCaloricNeed=function(){
+  const el=document.getElementById('calorie-need-result'); if(!el) return;
+  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);
+  if(!w||!h||!imc){ el.innerText='-- kcal/dia'; return; }
+  const base=w*24;
+  const factor=imc<18.5?1.15:imc<25?1:imc<30?0.9:0.82;
+  el.innerText=`${Math.round(base*factor)} kcal/dia`;
+};
+window.renderExerciseProgress=function(){
+  window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise;
+  const total=Math.round(ex.total||0), goal=ex.goal||20, pct=Math.min(100, Math.round((total/goal)*100));
+  const goalEl=document.getElementById('exercise-goal-text'), leftEl=document.getElementById('ex-left-text'), bar=document.getElementById('ex-progress-bar');
+  if(goalEl) goalEl.innerText=`Meta diária: ${goal} min`;
+  if(leftEl) leftEl.innerText = total>=goal ? 'Meta diária concluída' : `Faltam ${goal-total} min`;
+  if(bar) bar.style.width = `${pct}%`;
+};
+window.renderAnxietyDailyState=function(){
+  window.ensureHealthStructures(); const a=window.userDataCache.saude.anxietyDaily; const bar=document.getElementById('ansio-bar'); if(!bar) return;
+  const score=(a.day===window.getTodayStr() && a.score!=null)?a.score:0;
+  bar.style.width=score+'%';
+  if(score<=25) bar.className='bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]';
+  else if(score<=50) bar.className='bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]';
+  else if(score<=75) bar.className='bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+  else bar.className='bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
+};
+window.addExercise=async function(){
+  window.ensureHealthStructures(); const sport=document.getElementById('health-sport')?.value; const mins=parseInt(document.getElementById('health-sport-time')?.value,10);
+  if(!sport||!mins||mins<=0) return alert('Informe exercício e duração válida.');
+  const ex=window.userDataCache.saude.exercise; ex.logs.unshift({sport, mins, at:Date.now()}); ex.logs=ex.logs.slice(0,30); ex.total=Math.max(0,(ex.total||0)+mins);
+  document.getElementById('health-sport-time').value='';
+  window.renderExerciseProgress();
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
+};
 window.saveGoals=async function(){
   const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();
   if(!window.userDataCache) return; window.userDataCache.goals={week,month}; if(db) await db.ref('users/'+window.clientId+'/goals').set(window.userDataCache.goals);
@@ -822,4 +876,4 @@ window.renderTasks=function(){
 window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');};
 window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
 window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
-window.addExercise=function(){alert('Registro de exercícios em atualização.');};
+

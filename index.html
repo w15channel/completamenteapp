@@ -105,8 +105,13 @@
                             <div class="flex-1"><label class="text-[10px] text-rose-100 font-bold ml-1 uppercase">Altura (m)</label><input type="number" id="health-height" placeholder="Ex: 1.75" step="0.01" class="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-sm outline-none text-white text-center font-bold placeholder-white/40"></div>
                         </div>
                         <button onclick="window.calcIMC()" class="w-full mt-4 bg-white text-rose-600 py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg">Atualizar Medidas</button>
+                        <div class="mt-3 bg-slate-900/40 border border-white/20 rounded-xl p-3">
+                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-1">Necessidade calórica estimada</p>
+                            <p id="calorie-need-result" class="text-sm font-black text-amber-300">-- kcal/dia</p>
+                            <p class="text-[9px] text-slate-300 mt-1">Estimativa educativa baseada em IMC e peso/altura informados.</p>
+                        </div>
                         <div class="mt-4 bg-slate-900/40 border border-white/20 rounded-xl p-3">
-                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-2">Selecione características físicas</p>
+                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-2">Selecione o perfil físico que você acredita ser mais compatível</p>
                             <div id="biotype-options" class="space-y-2 text-[11px]"></div>
                             <button onclick="window.updateBiotypeFromTraits()" class="w-full mt-3 bg-rose-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Gerar meu biotipo</button>
                             <div id="biotype-result" class="hidden mt-3 text-[11px] text-white bg-slate-900/70 border border-slate-600 rounded-lg p-3"></div>
@@ -195,14 +200,14 @@
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
                     <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-running text-amber-400 mr-2"></i>Carga de Exercício</h3>
                     <div class="flex justify-between items-end mb-2">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="exercise-goal-text">Meta: 20 min</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="exercise-goal-text">Meta diária: 20 min</span>
                         <span class="text-xs font-black text-amber-400" id="ex-left-text">Faltam 20 min</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-4 mb-4 border border-slate-700 overflow-hidden">
                         <div id="ex-progress-bar" class="bg-gradient-to-r from-amber-500 to-orange-400 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
                     </div>
                     <select id="health-sport" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-xs mb-3 font-bold text-white outline-none">
-                        <option value="Caminhada">Caminhada</option><option value="Corrida">Corrida</option><option value="Musculação">Musculação</option>
+                        <option value="Caminhada">Caminhada</option><option value="Corrida">Corrida</option><option value="Musculação">Musculação</option><option value="Pilates">Pilates</option><option value="Ciclismo">Ciclismo</option><option value="Vôlei">Vôlei</option><option value="Futebol">Futebol</option><option value="Natação">Natação</option><option value="Funcional">Treino Funcional</option><option value="Yoga">Yoga</option><option value="Dança">Dança</option><option value="Alongamento">Alongamento</option><option value="HIIT">HIIT</option><option value="Crossfit">Crossfit</option><option value="Basquete">Basquete</option><option value="Tênis">Tênis</option><option value="Luta">Luta</option><option value="Remo">Remo</option><option value="Escalada">Escalada</option><option value="Patinação">Patinação</option><option value="Elíptico">Elíptico</option>
                     </select>
                     <div class="flex gap-2">
                         <input type="number" id="health-sport-time" placeholder="Duração (min)" class="flex-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm outline-none text-white text-center font-bold">
@@ -216,6 +221,7 @@
                     <h3 class="text-sm font-bold text-white mb-2"><i class="fas fa-heartbeat text-rose-500 mr-2"></i>Monitor Cardíaco</h3>
                     <p class="text-[10px] text-slate-400 mb-4 text-justify bg-slate-900 p-3 rounded-lg border border-slate-700"><b>Instrução:</b> Fique em repouso absoluto por 5 minutos. Localize seu pulso (no pescoço ou pulso). Pressione INICIAR e apenas conte as batidas. Não olhe para a tela. Um <b>bipe sonoro</b> avisará o fim dos 60 segundos.</p>
                     <button onclick="window.startCardioTimer()" id="cardio-btn" class="w-32 h-32 rounded-full bg-slate-900 border-4 border-rose-500 flex items-center justify-center mx-auto mb-4 text-rose-500 hover:bg-rose-900/30 transition-colors shadow-[0_0_20px_rgba(225,29,72,0.3)]"><i class="fas fa-play text-4xl ml-2"></i></button>
+                    <p id="cardio-elapsed" class="text-xs font-black text-rose-300 mb-4">Tempo: 00s / 60s</p>
                     <div id="cardio-input-area" class="hidden animate-fade-in">
                         <input type="number" id="cardio-beats" placeholder="Quantos batimentos você contou?" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-600 text-sm mb-3 outline-none text-white text-center font-bold">
                         <button onclick="window.saveCardio()" class="w-full bg-rose-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg hover:bg-rose-500">Registrar</button>
@@ -227,12 +233,12 @@
             <div id="sd-ansiedade" class="hidden flex-1 flex flex-col relative h-full pb-16">
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex-none mb-2">
                     <h3 class="font-bold text-sky-400 mb-2">Controle de Ansiedade</h3>
-                    <p class="text-[10px] text-slate-400 mb-2 text-justify"><b>Aviso Educacional:</b> A IA fará 20 perguntas para definir seu nível no Ansiômetro. Não substitui diagnóstico profissional.</p>
+                    <p class="text-[10px] text-slate-400 mb-2 text-justify"><b>Aviso Educacional:</b> O Ansiômetro pode ser realizado uma vez por dia (com opção de refazer no mesmo dia), com limpeza automática no dia seguinte. Ferramenta destinada à finalidade educativa e não configura diagnóstico formal.</p>
                     <div class="w-full bg-slate-900 rounded-full h-4 mb-1 border border-slate-700 overflow-hidden relative shadow-inner">
                         <div id="ansio-bar" class="bg-slate-500 h-full transition-all duration-700 w-0"></div>
                     </div>
-                    <div class="flex justify-between text-[8px] font-bold mb-3 px-1">
-                        <span class="text-blue-400">Leve(0)</span><span class="text-green-500">Mod.(50)</span><span class="text-red-500">Intenso(100)</span>
+                    <div class="flex justify-between flex-wrap gap-1 text-[8px] font-bold mb-3 px-1">
+                        <span class="text-blue-400">Leve (0-25)</span><span class="text-green-500">Branda (25-50)</span><span class="text-yellow-400">Moderada (50-75)</span><span class="text-red-500">Intensa (75-100)</span>
                     </div>
                     <button onclick="window.startAnxietyCheck()" class="w-full bg-sky-600 text-white py-2 rounded text-xs font-bold hover:bg-sky-500">Iniciar Avaliação Investigativa</button>
                 </div>
