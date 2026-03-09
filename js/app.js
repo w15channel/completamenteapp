@@ -677,14 +677,31 @@ window.removeWaterHistoryItem=async function(idx){
 };
 window.toggleWaterReminder=function(){
   const b=document.getElementById('water-reminder-btn');
-  if(window.waterReminderInterval){ clearInterval(window.waterReminderInterval); window.waterReminderInterval=null; if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete'; return; }
+  if(window.waterReminderInterval || window.waterReminderTimeout){
+    clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+    window.waterReminderInterval=null; window.waterReminderTimeout=null;
+    if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete';
+    return;
+  }
   const mins=parseInt(document.getElementById('water-reminder-min')?.value);
   if(!mins||mins<10) return alert('Informe intervalo válido (mínimo 10 min).');
   if(Notification.permission==='default') Notification.requestPermission();
-  window.waterReminderInterval=setInterval(()=>{ if(Notification.permission==='granted') new Notification('Lembrete de hidratação 💧',{body:'Beba água conforme seu intervalo.'}); }, mins*60000);
+  const runTick=()=>{
+    const total=Math.round(window.userDataCache?.saude?.water?.total||0);
+    const goal=window.getHydrationGoal();
+    if(total>=goal){
+      clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+      window.waterReminderInterval=null; window.waterReminderTimeout=null;
+      if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete';
+      if(Notification.permission==='granted') new Notification('Meta diária atingida ✅',{body:'Parabéns! O lembrete foi pausado automaticamente.'});
+      return;
+    }
+    if(Notification.permission==='granted') new Notification('Lembrete de hidratação 💧',{body:`Hora de beber líquidos. Intervalo ativo: ${mins} min.`});
+  };
+  alert(`Intervalo programado em ${mins} minutos. A contagem começa agora e seguirá até sua meta diária.`);
+  window.waterReminderTimeout=setTimeout(()=>{ runTick(); window.waterReminderInterval=setInterval(runTick, mins*60000); }, mins*60000);
   if(b)b.innerHTML='<i class="fas fa-bell-slash"></i> Pausar';
 };
-
 window.initSaudeTab=async function(){
   window.showSaudeSubTab('sd-perfil'); window.ensureHealthStructures(); await window.resetWaterIfNewDay();
   const s=window.userDataCache.saude;
@@ -720,6 +737,11 @@ window.addWater=async function(){
     window.userDataCache.saude.healthGoalLog.entries.push({text:`Meta de hidratação concluída em ${new Date(now).toLocaleDateString('pt-BR')}`,at:now});
   }
   window.renderHydration(); window.renderHealthGoalsLog();
+  if(w.total>=goal && (window.waterReminderInterval || window.waterReminderTimeout)){
+    clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+    window.waterReminderInterval=null; window.waterReminderTimeout=null;
+    const b=document.getElementById('water-reminder-btn'); if(b)b.innerHTML='<i class=\"fas fa-bell\"></i> Lembrete';
+  }
   if(db){ await db.ref('users/'+window.clientId+'/saude/water').set(w); await db.ref('users/'+window.clientId+'/saude/healthGoalLog').set(window.userDataCache.saude.healthGoalLog); }
 };
 window.removeWater=async function(){
@@ -730,51 +752,45 @@ window.removeWater=async function(){
 // NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
 window.doNutriAnalysis = async function() {
   const input = document.getElementById('mealInput');
+  const qty = parseInt(document.getElementById('mealQty')?.value || '100', 10);
+  const unit = document.getElementById('mealUnit')?.value || 'G';
   const text = (input?.value || '').trim();
   if (!text) return alert('Por favor, descreva o que você consumiu.');
 
   const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
   const originalBtnText = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...';
-    btn.disabled = true;
-  }
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...'; btn.disabled = true; }
 
   const systemPrompt = `Atue como um nutricionista digital de alta precisão.
-Analise a descrição da refeição e retorne APENAS um objeto JSON (sem textos explicativos) no seguinte formato:
-{
-  "total_cal": número,
-  "p": gramas_proteina,
-  "c": gramas_carboidrato,
-  "f": gramas_gordura,
-  "items": [{"n": "nome_item", "cal": calorias}]
-}
-Se não souber a quantidade exata, use médias biológicas reais para uma porção padrão brasileira.
-Não use reticencias.`;
+Retorne APENAS um JSON com o formato: {"total_cal":numero,"p":numero,"c":numero,"f":numero,"items":[{"n":"item","cal":numero}]}
+Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras quando necessário.`;
 
   try {
     const response = await fetch(window.AI_PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analise esta refeição: ${text}` }
-        ],
-        temperature: 0.3
-      })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição: ${text}` }], temperature:0.3 })
     });
-
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content || '{}';
     const rawContent = content.replace(/```json|```/g, '').trim();
     const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
     const nutri = JSON.parse(jsonChunk);
 
-    const totalCal = Number(nutri.total_cal || 0);
-    const totalP = Number(nutri.p || 0);
-    const totalC = Number(nutri.c || 0);
-    const totalF = Number(nutri.f || 0);
+    const itemCal = Number(nutri.total_cal || 0), itemP = Number(nutri.p || 0), itemC = Number(nutri.c || 0), itemF = Number(nutri.f || 0);
+    if (!window.userDataCache) window.userDataCache = {};
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+    const today = window.getTodayStr();
+    const entry = { meal: text, qty, unit, cal: Math.round(itemCal), p: Math.round(itemP), c: Math.round(itemC), f: Math.round(itemF), date: new Date().toLocaleDateString('pt-BR'), day: today };
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 120);
+
+    const todayItems = window.userDataCache.saude.nutriHistory.filter((h)=>h.day===today);
+    const totalCal = todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+    const totalP = todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+    const totalC = todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+    const totalF = todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
 
     document.getElementById('nutriResultPane')?.classList.remove('hidden');
     document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
@@ -782,27 +798,13 @@ Não use reticencias.`;
     document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
     document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
 
-    const EXERCISES_MET = [
-      { name: 'Corrida', icon: '🏃', met: 8.3 },
-      { name: 'Caminhada', icon: '🚶', met: 3.5 },
-      { name: 'Pedalada', icon: '🚴', met: 6.8 },
-      { name: 'Musculação', icon: '💪', met: 6.0 }
-    ];
+    const EXERCISES_MET = [{ name:'Corrida', icon:'🏃', met:8.3 },{ name:'Caminhada', icon:'🚶', met:3.5 },{ name:'Pedalada', icon:'🚴', met:6.8 },{ name:'Musculação', icon:'💪', met:6.0 }];
     const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
     const weight = window.userDataCache?.saude?.weight || 75;
     const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
-
     document.getElementById('exIcon').innerText = ex.icon;
     document.getElementById('exName').innerText = ex.name;
     document.getElementById('exTime').innerText = minutes + ' min';
-
-    if (!window.userDataCache) window.userDataCache = {};
-    if (!window.userDataCache.saude) window.userDataCache.saude = {};
-    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
-
-    const entry = { meal: text, cal: Math.round(totalCal), date: new Date().toLocaleDateString('pt-BR') };
-    window.userDataCache.saude.nutriHistory.unshift(entry);
-    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 20);
 
     if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
     window.renderNutriHistory();
@@ -810,27 +812,57 @@ Não use reticencias.`;
     console.error('Erro na análise:', error);
     alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
   } finally {
-    if (btn) {
-      btn.innerHTML = originalBtnText;
-      btn.disabled = false;
-    }
+    if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
   }
+};
+
+window.deleteNutriEntry=async function(idx){
+  if(!window.userDataCache?.saude?.nutriHistory) return;
+  window.userDataCache.saude.nutriHistory.splice(idx,1);
+  if(db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+  const today=window.getTodayStr();
+  const todayItems=(window.userDataCache.saude.nutriHistory||[]).filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  document.getElementById('nutriTotalCal').innerText=Math.round(totalCal);
+  document.getElementById('nutriProt').innerText=Math.round(totalP)+'g';
+  document.getElementById('nutriCarb').innerText=Math.round(totalC)+'g';
+  document.getElementById('nutriGord').innerText=Math.round(totalF)+'g';
+  window.renderNutriHistory();
 };
 
 window.renderNutriHistory=function(){
   const container=document.getElementById('nutriHistory');
   if(!container) return;
-  const history=window.userDataCache?.saude?.nutriHistory || [];
-  container.innerHTML = history.slice(0,5).map((h)=>`
-    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in">
+  const history=(window.userDataCache?.saude?.nutriHistory||[]);
+  const today=window.getTodayStr();
+  const todayItems=history.filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  const pane=document.getElementById('nutriResultPane');
+  if(pane && totalCal>0) pane.classList.remove('hidden');
+  const elCal=document.getElementById('nutriTotalCal'); if(elCal) elCal.innerText=Math.round(totalCal);
+  const elP=document.getElementById('nutriProt'); if(elP) elP.innerText=Math.round(totalP)+'g';
+  const elC=document.getElementById('nutriCarb'); if(elC) elC.innerText=Math.round(totalC)+'g';
+  const elF=document.getElementById('nutriGord'); if(elF) elF.innerText=Math.round(totalF)+'g';
+  container.innerHTML = history.slice(0,10).map((h,idx)=>`
+    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in gap-2">
       <div class="flex flex-col min-w-0">
         <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
-        <span class="text-[8px] text-slate-500 font-bold">${h.date}</span>
+        <span class="text-[8px] text-slate-500 font-bold">${h.qty||''}${h.unit||''} • ${h.date}</span>
       </div>
-      <span class="text-xs font-black text-emerald-400 ml-3 whitespace-nowrap">${h.cal} kcal</span>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black text-emerald-400 whitespace-nowrap">${h.cal} kcal</span>
+        <button onclick="window.deleteNutriEntry(${idx})" class="text-[10px] px-2 py-1 rounded bg-rose-900/40 border border-rose-500/40 text-rose-300">Excluir</button>
+      </div>
     </div>
   `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
 };
+
 window.renderCaloricNeed=function(){
   const el=document.getElementById('calorie-need-result'); if(!el) return;
   const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);

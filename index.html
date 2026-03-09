@@ -134,10 +134,10 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-4">
                         <select id="water-drink-type" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-xs font-bold text-white outline-none">
-                            <option value="water">Água pura (100%)</option>
-                            <option value="juice">Suco (50%)</option>
-                            <option value="tea">Chá/Infusão sem açúcar (75%)</option>
-                            <option value="soda">Refrigerante (25%)</option>
+                            <option value="water">Água pura</option>
+                            <option value="juice">Suco</option>
+                            <option value="tea">Chá/Infusão sem açúcar</option>
+                            <option value="soda">Refrigerante</option>
                         </select>
                         <input type="number" id="water-amount-input" value="250" min="50" step="50" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm text-center font-bold text-white outline-none" />
                     </div>
@@ -145,6 +145,7 @@
                         <button onclick="window.removeWater()" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl text-lg font-bold border border-slate-600"><i class="fas fa-minus"></i></button>
                         <button onclick="window.addWater()" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl text-sm font-black uppercase tracking-wider"><i class="fas fa-plus mr-2"></i>Adicionar</button>
                     </div>
+                    <p class="text-[9px] text-slate-400 mb-2">Lembrete: escolha o intervalo. A contagem inicia a partir do horário programado e seguirá continuamente até atingir a meta diária.</p>
                     <div class="flex gap-2 mb-3">
                         <input type="number" id="water-reminder-min" min="10" step="5" value="60" class="flex-1 p-2 rounded-lg bg-slate-900 border border-slate-600 text-xs text-center text-white font-bold" />
                         <button onclick="window.toggleWaterReminder()" id="water-reminder-btn" class="px-3 py-2 rounded-lg bg-slate-700 text-slate-200 text-xs font-black"><i class="fas fa-bell"></i> Lembrete</button>
@@ -159,7 +160,17 @@
                     <div class="flex flex-col gap-4">
                         <div class="glass-card p-4 border-emerald-500/20">
                             <label class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 block">Descreva sua Refeição</label>
-                            <textarea id="mealInput" placeholder="Ex: 1 filé de frango (200g), arroz integral (150g) e suco de laranja" class="w-full h-24 bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500 transition-all resize-none"></textarea>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <input id="mealQty" type="number" value="100" min="1" class="col-span-1 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-sm text-white text-center outline-none focus:border-emerald-500" />
+                                <select id="mealUnit" class="col-span-2 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none focus:border-emerald-500">
+                                    <option value="G" selected>G - Gramas</option>
+                                    <option value="U">U - Unidade</option>
+                                    <option value="C">C - Colheres</option>
+                                    <option value="X">X - Xícara</option>
+                                    <option value="P">P - Prato</option>
+                                </select>
+                            </div>
+                            <textarea id="mealInput" placeholder="Ex: frango grelhado, arroz integral e suco de laranja" class="w-full h-24 bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500 transition-all resize-none"></textarea>
                             <button onclick="window.doNutriAnalysis()" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">
                                 <i class="fas fa-search-pie mr-2"></i>Analisar Nutrição
                             </button>
