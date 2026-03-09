@@ -225,6 +225,69 @@
                         <button onclick="window.addExercise()" class="bg-amber-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider">Lançar</button>
                     </div>
                 </div>
+                <div class="mt-4 flex-1 flex flex-col gap-4">
+                    <div id="ex-setup-panel" class="glass-card p-5 border-amber-500/20">
+                        <h3 class="text-sm font-black text-white uppercase mb-4"><i class="fas fa-sliders-h mr-2 text-amber-500"></i>Configurar Sessão</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Tempo total desejado</label>
+                                <select id="ex-total-duration" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm font-bold text-white outline-none">
+                                    <option value="10">10 Minutos (Rápido)</option>
+                                    <option value="20" selected>20 Minutos (Padrão)</option>
+                                    <option value="40">40 Minutos (Intenso)</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="window.startWorkoutSession('cardio')" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-900/20 transition-all">
+                                    <i class="fas fa-heartbeat text-2xl text-rose-500"></i>
+                                    <span class="text-[10px] font-black uppercase text-slate-300">Cardio</span>
+                                </button>
+                                <button onclick="window.startWorkoutSession('forca')" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-900/20 transition-all">
+                                    <i class="fas fa-dumbbell text-2xl text-sky-400"></i>
+                                    <span class="text-[10px] font-black uppercase text-slate-300">Força</span>
+                                </button>
+                            </div>
+                            <div class="bg-amber-900/10 border border-amber-500/20 p-3 rounded-xl">
+                                <p class="text-[10px] text-amber-200/70 text-center leading-relaxed">Ao iniciar, você entra no modo foco com preparação guiada para cada exercício.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ex-active-session" class="hidden flex-1 flex flex-col gap-4 animate-fade-in">
+                        <div id="ex-prep-overlay" class="glass-card p-8 text-center border-sky-500/30">
+                            <h2 class="text-xl font-black text-sky-400 uppercase mb-2">Prepare-se</h2>
+                            <div id="ex-prep-timer" class="text-6xl font-black text-white">20</div>
+                            <p class="text-xs text-slate-400 mt-4" id="ex-next-name">Próximo: --</p>
+                        </div>
+                        <div id="ex-current-card" class="hidden glass-card p-6 border-emerald-500/20 relative overflow-hidden">
+                            <div id="ex-timer-bar" class="absolute top-0 left-0 h-1 bg-emerald-500 transition-all duration-1000" style="width: 100%"></div>
+                            <div class="flex justify-between items-start mb-4">
+                                <h4 id="ex-title" class="text-lg font-black text-white uppercase">Exercício</h4>
+                                <span id="ex-type-badge" class="px-3 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-black uppercase">Meta</span>
+                            </div>
+                            <p id="ex-desc" class="text-sm text-slate-300 leading-relaxed mb-6">Descrição do exercício.</p>
+                            <div class="flex items-center justify-center gap-4">
+                                <div id="ex-main-counter" class="text-5xl font-black text-white tabular-nums">00</div>
+                                <button onclick="window.nextWorkoutStep()" class="bg-emerald-600 text-white px-8 py-3 rounded-xl font-black uppercase tracking-wider shadow-lg active:scale-95">Concluído</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ex-finish-area" class="hidden">
+                        <div id="ex-certificate" class="bg-slate-900 p-8 rounded-none border-4 border-amber-500 text-center w-full aspect-[4/5] flex flex-col justify-center items-center">
+                            <div class="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center mb-6 shadow-lg"><i class="fas fa-trophy text-4xl text-slate-900"></i></div>
+                            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Treino Finalizado</h2>
+                            <p class="text-amber-500 font-bold client-name uppercase">Usuário</p>
+                            <div class="h-px w-32 bg-slate-700 my-4"></div>
+                            <p class="text-xs text-slate-400 max-w-[200px]" id="cert-summary">Você completou seu treino de hoje.</p>
+                            <p class="text-[8px] text-slate-600 mt-8 uppercase tracking-[0.3em]">WR TERAPIA | HARMONIA DIÁRIA</p>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="window.downloadWorkoutCert()" class="flex-1 bg-sky-600 text-white py-3 rounded-xl font-black uppercase text-xs">Baixar PNG</button>
+                            <button onclick="window.resetWorkoutSession()" class="flex-1 bg-slate-700 text-white py-3 rounded-xl font-black uppercase text-xs">Novo Treino</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div id="sd-cardio" class="hidden flex-1 overflow-y-auto pb-20">

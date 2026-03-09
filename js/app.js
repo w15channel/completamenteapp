@@ -713,6 +713,7 @@ window.initSaudeTab=async function(){
   window.renderExerciseProgress();
   window.renderAnxietyDailyState();
   window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
+  window.resetWorkoutSession?.(false);
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
@@ -909,3 +910,89 @@ window.openTaskModal=function(){document.getElementById('task-modal')?.classList
 window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
 window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
 
+
+
+// CONFIGURAÇÕES DE EXERCÍCIOS GUIADOS
+const WORKOUT_DB = {
+  cardio: [
+    { n: 'Polichinelos', d: 'Mantenha o ritmo constante e respire pelo nariz.', type: 'time', val: 45 },
+    { n: 'Corrida no Lugar', d: 'Eleve os joelhos e use os braços para equilíbrio.', type: 'time', val: 60 },
+    { n: 'Burpees', d: 'Movimento completo para condicionamento metabólico.', type: 'unit', val: 12 }
+  ],
+  forca: [
+    { n: 'Agachamento Livre', d: 'Peso nos calcanhares e coluna neutra.', type: 'unit', val: 20 },
+    { n: 'Flexão de Braços', d: 'Cotovelos a 45 graus do corpo.', type: 'unit', val: 15 },
+    { n: 'Prancha Abdominal', d: 'Core contraído e corpo em linha reta.', type: 'time', val: 40 }
+  ]
+};
+window.workoutState = { active:false, mode:null, currentIdx:0, list:[], totalMins:0, prepIv:null, exIv:null, exStartAt:null, elapsedSec:0 };
+window.startWorkoutSession=function(mode){
+  const duration=parseInt(document.getElementById('ex-total-duration')?.value||'20',10);
+  const list=(WORKOUT_DB[mode]||[]).map(i=>({...i}));
+  if(!list.length) return;
+  window.workoutState.mode=mode; window.workoutState.list=list; window.workoutState.currentIdx=0; window.workoutState.totalMins=duration; window.workoutState.active=true;
+  document.getElementById('ex-setup-panel')?.classList.add('hidden');
+  document.getElementById('ex-finish-area')?.classList.add('hidden');
+  document.getElementById('ex-active-session')?.classList.remove('hidden');
+  window.runPreparation();
+};
+window.runPreparation=function(){
+  clearInterval(window.workoutState.prepIv); clearInterval(window.workoutState.exIv);
+  let timeLeft=20;
+  const display=document.getElementById('ex-prep-timer');
+  const overlay=document.getElementById('ex-prep-overlay');
+  const card=document.getElementById('ex-current-card');
+  const nextEx=window.workoutState.list[window.workoutState.currentIdx];
+  if(display) display.innerText=timeLeft;
+  if(nextEx) document.getElementById('ex-next-name').innerText=`Próximo: ${nextEx.n}`;
+  overlay?.classList.remove('hidden');
+  card?.classList.add('hidden');
+  window.workoutState.prepIv=setInterval(()=>{
+    timeLeft--; if(display) display.innerText=timeLeft;
+    if(timeLeft<=0){ clearInterval(window.workoutState.prepIv); overlay?.classList.add('hidden'); window.startCurrentExercise(); }
+  },1000);
+};
+window.startCurrentExercise=function(){
+  clearInterval(window.workoutState.exIv);
+  const ex=window.workoutState.list[window.workoutState.currentIdx]; if(!ex) return window.finishWorkout();
+  const card=document.getElementById('ex-current-card'); const title=document.getElementById('ex-title'); const desc=document.getElementById('ex-desc'); const badge=document.getElementById('ex-type-badge'); const counter=document.getElementById('ex-main-counter');
+  card?.classList.remove('hidden'); if(title) title.innerText=ex.n; if(desc) desc.innerText=ex.d;
+  if(ex.type==='time'){
+    let sec=ex.val; if(badge) badge.innerText=`Tempo: ${sec}s`; if(counter) counter.innerText=sec;
+    window.workoutState.exIv=setInterval(()=>{ sec--; if(counter) counter.innerText=Math.max(0,sec); if(sec<=0){ clearInterval(window.workoutState.exIv); window.playBipe(); window.nextWorkoutStep(); } },1000);
+  } else {
+    if(badge) badge.innerText=`Fazer: ${ex.val} un`; if(counter) counter.innerText=ex.val;
+  }
+};
+window.nextWorkoutStep=function(){
+  clearInterval(window.workoutState.exIv);
+  window.workoutState.currentIdx++;
+  if(window.workoutState.currentIdx < window.workoutState.list.length) window.runPreparation();
+  else window.finishWorkout();
+};
+window.finishWorkout=async function(){
+  clearInterval(window.workoutState.prepIv); clearInterval(window.workoutState.exIv);
+  window.workoutState.active=false;
+  document.getElementById('ex-active-session')?.classList.add('hidden');
+  document.getElementById('ex-finish-area')?.classList.remove('hidden');
+  document.getElementById('cert-summary').innerText=`Você completou ${window.workoutState.totalMins} minutos de dedicação ao seu corpo hoje.`;
+  window.ensureHealthStructures();
+  const ex=window.userDataCache.saude.exercise; ex.total=Math.max(0,(ex.total||0)+window.workoutState.totalMins);
+  ex.logs.unshift({sport:`Sessão guiada (${window.workoutState.mode||'treino'})`, mins:window.workoutState.totalMins, at:Date.now()}); ex.logs=ex.logs.slice(0,30);
+  window.renderExerciseProgress();
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
+};
+window.resetWorkoutSession=function(showSetup=true){
+  clearInterval(window.workoutState?.prepIv); clearInterval(window.workoutState?.exIv);
+  window.workoutState={ active:false, mode:null, currentIdx:0, list:[], totalMins:0, prepIv:null, exIv:null, exStartAt:null, elapsedSec:0 };
+  if(showSetup) document.getElementById('ex-setup-panel')?.classList.remove('hidden');
+  document.getElementById('ex-active-session')?.classList.add('hidden');
+  document.getElementById('ex-finish-area')?.classList.add('hidden');
+};
+window.playBipe=function(){
+  try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const osc=ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value=600; osc.start(); setTimeout(()=>osc.stop(),500);}catch(e){}
+};
+window.downloadWorkoutCert=function(){
+  const target=document.getElementById('ex-certificate'); if(!target) return;
+  html2canvas(target).then(canvas=>{ const link=document.createElement('a'); link.download=`Treino-WR-${window.clientName||'Usuario'}.png`; link.href=canvas.toDataURL('image/png'); link.click(); });
+};
