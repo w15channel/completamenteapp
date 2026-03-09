@@ -674,7 +674,7 @@ window.initSaudeTab=async function(){
   if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
   window.renderBiotypeOptions();
   if(s.biotype?.result){ const p=window.BIOTYPE_PROFILES[s.biotype.result]; const out=document.getElementById('biotype-result'); if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Biotipo físico sugerido: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; } }
-  window.renderHydration(); window.renderHealthGoalsLog();
+  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
@@ -706,17 +706,109 @@ window.removeWater=async function(){
   const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
   window.renderHydration(); if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
 };
-window.analyzeFood=async function(){
-  const txt=(document.getElementById('food-text-input')?.value||'').trim(); if(!txt) return alert('Descreva sua refeição.');
-  const btn=document.getElementById('btn-analyze-food'); const out=document.getElementById('food-analysis-result');
-  btn.disabled=true; btn.innerText='Analisando...';
-  try{
-    const imc=window.userDataCache?.saude?.imc||'não informado';
-    const messages=[{role:'system',content:'Atue como nutricionista esportivo.'},{role:'user',content:`Analise esta refeição (${txt}) para o IMC ${imc}. Informe calorias estimadas, pontos fortes e melhorias.`}];
-    const res=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:350})});
-    const data=await res.json(); out.classList.remove('hidden'); out.innerText=data?.choices?.[0]?.message?.content||'Sem resposta da IA.';
-  }catch(e){ out.classList.remove('hidden'); out.innerText='Falha na IA nutricional.'; }
-  btn.disabled=false; btn.innerText='Analisar com IA';
+// NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
+window.doNutriAnalysis = async function() {
+  const input = document.getElementById('mealInput');
+  const text = (input?.value || '').trim();
+  if (!text) return alert('Por favor, descreva o que você consumiu.');
+
+  const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
+  const originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...';
+    btn.disabled = true;
+  }
+
+  const systemPrompt = `Atue como um nutricionista digital de alta precisão.
+Analise a descrição da refeição e retorne APENAS um objeto JSON (sem textos explicativos) no seguinte formato:
+{
+  "total_cal": número,
+  "p": gramas_proteina,
+  "c": gramas_carboidrato,
+  "f": gramas_gordura,
+  "items": [{"n": "nome_item", "cal": calorias}]
+}
+Se não souber a quantidade exata, use médias biológicas reais para uma porção padrão brasileira.
+Não use reticencias.`;
+
+  try {
+    const response = await fetch(window.AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Analise esta refeição: ${text}` }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '{}';
+    const rawContent = content.replace(/```json|```/g, '').trim();
+    const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
+    const nutri = JSON.parse(jsonChunk);
+
+    const totalCal = Number(nutri.total_cal || 0);
+    const totalP = Number(nutri.p || 0);
+    const totalC = Number(nutri.c || 0);
+    const totalF = Number(nutri.f || 0);
+
+    document.getElementById('nutriResultPane')?.classList.remove('hidden');
+    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
+    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
+    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
+    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
+
+    const EXERCISES_MET = [
+      { name: 'Corrida', icon: '🏃', met: 8.3 },
+      { name: 'Caminhada', icon: '🚶', met: 3.5 },
+      { name: 'Pedalada', icon: '🚴', met: 6.8 },
+      { name: 'Musculação', icon: '💪', met: 6.0 }
+    ];
+    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
+    const weight = window.userDataCache?.saude?.weight || 75;
+    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
+
+    document.getElementById('exIcon').innerText = ex.icon;
+    document.getElementById('exName').innerText = ex.name;
+    document.getElementById('exTime').innerText = minutes + ' min';
+
+    if (!window.userDataCache) window.userDataCache = {};
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+    const entry = { meal: text, cal: Math.round(totalCal), date: new Date().toLocaleDateString('pt-BR') };
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 20);
+
+    if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+    window.renderNutriHistory();
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalBtnText;
+      btn.disabled = false;
+    }
+  }
+};
+
+window.renderNutriHistory=function(){
+  const container=document.getElementById('nutriHistory');
+  if(!container) return;
+  const history=window.userDataCache?.saude?.nutriHistory || [];
+  container.innerHTML = history.slice(0,5).map((h)=>`
+    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in">
+      <div class="flex flex-col min-w-0">
+        <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
+        <span class="text-[8px] text-slate-500 font-bold">${h.date}</span>
+      </div>
+      <span class="text-xs font-black text-emerald-400 ml-3 whitespace-nowrap">${h.cal} kcal</span>
+    </div>
+  `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
 };
 window.saveGoals=async function(){
   const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();

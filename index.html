@@ -150,12 +150,44 @@
             </div>
             
             <div id="sd-nutricao" class="hidden flex-1 overflow-y-auto pb-20">
-                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                    <h3 class="text-sm font-bold text-white mb-2"><i class="fas fa-utensils text-emerald-400 mr-2"></i>Análise Nutricional IA</h3>
-                    <p class="text-[10px] text-slate-400 mb-4 font-medium">Descreva sua refeição. A IA calculará baseando-se no seu IMC.</p>
-                    <textarea id="food-text-input" placeholder="Ex: 1 xícara de arroz" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-sm mb-3 outline-none text-white resize-none h-24 focus:border-emerald-500"></textarea>
-                    <button onclick="window.analyzeFood()" id="btn-analyze-food" class="w-full bg-emerald-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg mb-2">Avaliar Refeição</button>
-                    <div id="food-scan-result" class="hidden mt-4 p-4 bg-slate-900/80 rounded-xl border border-emerald-500/30 text-sm text-slate-300 font-medium"></div>
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <div class="flex flex-col gap-4">
+                        <div class="glass-card p-4 border-emerald-500/20">
+                            <label class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 block">Descreva sua Refeição</label>
+                            <textarea id="mealInput" placeholder="Ex: 1 filé de frango (200g), arroz integral (150g) e suco de laranja" class="w-full h-24 bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500 transition-all resize-none"></textarea>
+                            <button onclick="window.doNutriAnalysis()" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">
+                                <i class="fas fa-search-pie mr-2"></i>Analisar Nutrição
+                            </button>
+                        </div>
+
+                        <div id="nutriResultPane" class="hidden animate-fade-in">
+                            <div class="glass-card p-4 border-sky-500/20 mb-4">
+                                <div class="text-center">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Estimado</span>
+                                    <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-500" id="nutriTotalCal">0</div>
+                                    <span class="text-xs font-bold text-slate-500 uppercase">Kilocalorias</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Prot</p><p class="text-xs font-bold text-white" id="nutriProt">0g</p></div>
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Carb</p><p class="text-xs font-bold text-white" id="nutriCarb">0g</p></div>
+                                    <div class="bg-slate-900/50 p-2 rounded-lg"><p class="text-[8px] text-slate-500 uppercase font-bold">Gord</p><p class="text-xs font-bold text-white" id="nutriGord">0g</p></div>
+                                </div>
+                            </div>
+
+                            <div id="exercisePane" class="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl flex items-center gap-4">
+                                <div id="exIcon" class="text-3xl">🏃</div>
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest" id="exName">Corrida</p>
+                                    <p class="text-xs text-slate-300 leading-tight">Para queimar esta refeição, você precisaria de <b class="text-white" id="exTime">0 min</b> desta atividade.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Histórico Recente</h4>
+                            <div id="nutriHistory" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
