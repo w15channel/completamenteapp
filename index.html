@@ -489,7 +489,13 @@
                                 <div id="hf-mode" class="grid grid-cols-2 gap-1 text-[10px]"><button data-val="texto" class="hf-seg active">Texto</button><button data-val="voz" class="hf-seg">Texto + Voz</button></div>
                             </div>
                             <button id="hf-generate" class="w-full bg-emerald-600 text-white text-[10px] font-black uppercase py-2 rounded-lg">Gerar exercício com IA</button>
-                            <button id="hf-open-music" class="w-full bg-slate-700 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Tocar música em segundo plano</button>
+                            <button id="hf-open-music" class="w-full bg-slate-700 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Iniciar música de fundo</button>
+                            <div class="grid grid-cols-2 gap-1">
+                                <button id="hf-music-prev" class="bg-slate-800 border border-slate-600 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Faixa anterior</button>
+                                <button id="hf-music-next" class="bg-slate-800 border border-slate-600 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">Próxima faixa</button>
+                                <button id="hf-music-play" class="bg-emerald-700 border border-emerald-500/60 text-white text-[10px] font-black uppercase py-2 rounded-lg">Play</button>
+                                <button id="hf-music-pause" class="bg-amber-700 border border-amber-500/60 text-white text-[10px] font-black uppercase py-2 rounded-lg">Pausar</button>
+                            </div>
                             <div id="hf-music-bg" class="hidden relative w-full h-20 rounded-lg overflow-hidden border border-slate-700">
                                 <iframe id="hf-music-frame" class="absolute inset-0 w-full h-full opacity-35 pointer-events-none" src="" title="Música de treino" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                                 <div class="absolute inset-0 bg-slate-950/35"></div>

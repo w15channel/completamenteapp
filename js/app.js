@@ -2427,7 +2427,31 @@ window.initHomeFitTool=function(){
   };
   $('hf-btn-random').onclick=async()=>{ const keys=Object.keys(BODIES); $('hf-body').value=keys[Math.floor(Math.random()*keys.length)]; const ints=['iniciante','intermediario','avancado']; st.intensity=ints[Math.floor(Math.random()*ints.length)]; setSeg('hf-intensity',st.intensity); const types=['reps','tempo']; st.targetType=types[Math.floor(Math.random()*types.length)]; setSeg('hf-target-type',st.targetType); $('hf-reps-box').classList.toggle('hidden',st.targetType!=='reps'); $('hf-time-box').classList.toggle('hidden',st.targetType!=='tempo'); autoTime(); $('hf-generate').click(); };
   $('hf-btn-start').onclick=startTimer; $('hf-btn-pause').onclick=pauseTimer; $('hf-btn-reset').onclick=resetTimer;
-  $('hf-open-music').onclick=()=>{ const box=$('hf-music-bg'); const frame=$('hf-music-frame'); if(!box||!frame) return; box.classList.remove('hidden'); frame.src='https://www.youtube.com/embed/H_oPsHyEI7k?autoplay=1&loop=1&playlist=H_oPsHyEI7k&controls=0&modestbranding=1'; $('hf-open-music').innerText='Música tocando no fundo'; };
+  const openMusicPanel=()=>{
+    const box=$('hf-music-bg');
+    if(box) box.classList.remove('hidden');
+  };
+  const musicState={loaded:false};
+  const musicFrame=$('hf-music-frame');
+  const sendMusicCommand=(func)=>{
+    if(!musicFrame || !musicFrame.contentWindow) return;
+    musicFrame.contentWindow.postMessage(JSON.stringify({event:'command',func,args:[]}), '*');
+  };
+  const initMusicPlayer=()=>{
+    if(musicState.loaded || !musicFrame) return;
+    musicFrame.src='https://www.youtube.com/embed/t37DTadb3Po?autoplay=1&controls=0&enablejsapi=1&origin='+encodeURIComponent(window.location.origin)+'&listType=playlist&list=PLeDakahyfrO-QTZRwfVYlCEBcedD0UmbD';
+    musicState.loaded=true;
+  };
+  $('hf-open-music').onclick=()=>{
+    openMusicPanel();
+    initMusicPlayer();
+    setTimeout(()=>sendMusicCommand('playVideo'),350);
+    $('hf-open-music').innerText='Música em reprodução';
+  };
+  $('hf-music-play').onclick=()=>{ openMusicPanel(); initMusicPlayer(); setTimeout(()=>sendMusicCommand('playVideo'),200); };
+  $('hf-music-pause').onclick=()=>{ if(!musicState.loaded) return; sendMusicCommand('pauseVideo'); };
+  $('hf-music-next').onclick=()=>{ if(!musicState.loaded) return; sendMusicCommand('nextVideo'); };
+  $('hf-music-prev').onclick=()=>{ if(!musicState.loaded) return; sendMusicCommand('previousVideo'); };
   $('hf-clear-history').onclick=()=>{ if(!st.history.length || !confirm('Limpar histórico desta sessão?')) return; st.history=[]; st.completedCount=0; st.totalActiveSeconds=0; renderHistory(); updateCounter(); refreshInfo(); };
   $('hf-generate-card').onclick=()=>{ const c=$('hf-share-canvas'),ctx=c.getContext('2d'); const w=c.width,h=c.height; const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#020617'); g.addColorStop(1,'#0f172a'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); ctx.strokeStyle='rgba(148,163,184,.7)'; ctx.lineWidth=3; ctx.strokeRect(8,8,w-16,h-16); ctx.fillStyle='#22c55e'; ctx.font='bold 18px system-ui'; ctx.fillText('HomeFit IA — Ficha diária',24,40); ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui'; ctx.fillText(`Data: ${new Date().toLocaleDateString('pt-BR')}`,24,62); const minDone=Math.round(st.totalActiveSeconds/60); ctx.fillStyle='#e5e7eb'; ctx.font='bold 14px system-ui'; ctx.fillText('Resumo da prática:',24,90); ctx.font='12px system-ui'; ctx.fillText(`Meta de sessão: ${st.sessionMinutes} min`,24,112); ctx.fillText(`Tempo ativo estimado: ${minDone} min`,24,130); ctx.fillText(`Exercícios concluídos: ${st.completedCount}`,24,148); ctx.font='bold 13px system-ui'; ctx.fillText('Exercícios:',24,176); ctx.font='11px system-ui'; let y=194; const last=st.history.slice(-4); if(!last.length){ ctx.fillText('Nenhum exercício concluído ainda. Comece agora! 💪',24,y);} else { last.forEach((ex,i)=>{ ctx.fillText(`${i+1}. ${ex.name} — ${BODIES[ex.bodyKey]} — ${ex.targetType==='reps'?ex.targetReps+' reps':ex.perExerciseSec+'s'}`,24,y); y+=16; }); } ctx.fillStyle='#38bdf8'; ctx.fillText('Compartilhe sua vitória de hoje. #HomeFitIA',24,h-26); const url=c.toDataURL('image/png'); const a=$('hf-download-link'); a.href=url; a.classList.remove('hidden'); alert('Ficha gerada! Agora é só baixar o PNG.'); };
   if('speechSynthesis' in window){ const synth=window.speechSynthesis; const upd=()=>{ const v=synth.getVoices(); if(!v||!v.length) return; st.voiceObj=v.find(x=>x.lang&&x.lang.toLowerCase().startsWith('pt'))||v[0]; st.voicesSupported=true; }; synth.onvoiceschanged=upd; setTimeout(upd,200); }
