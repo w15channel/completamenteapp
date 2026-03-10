@@ -92,9 +92,9 @@ window.login = async function(isAuto) {
 
 
 
-        if (!n || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p)) {
+        if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) {
 
-            return alert("Atenção: Digite Nome e Sobrenome e a Senha (exatamente 8 números).");
+            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
 
         }
 
@@ -118,12 +118,6 @@ window.login = async function(isAuto) {
 
             if (!snap.exists()) {
 
-                if (!g && !isAuto) {
-
-                    return alert("Para primeiro acesso, selecione seu gênero.");
-
-                }
-
                 const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
 
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
@@ -138,13 +132,7 @@ window.login = async function(isAuto) {
 
                 if (u.pass !== p) return alert("Senha incorreta.");
 
-                if (g && u.gender !== g) {
-
-                    await db.ref('users/' + window.clientId + '/gender').set(g);
-
-                    u.gender = g;
-
-                }
+                
 
                 window.userDataCache = u || window.userDataCache;
 
@@ -1515,14 +1503,10 @@ window.generateBalancedMealPlan=async function(){
     plan.meals.push({day,items:dayMeals});
   }
 
-  const mealsText=plan.meals.map((d)=>{
-    if(!d.items.length) return `Dia ${d.day}: sem opções compatíveis com as restrições informadas.`;
-    return `Dia ${d.day}\n${d.items.map((m)=>`- ${window.recipeTypeLabelMap[m.type]||m.type}: ${m.name} (${m.cal} kcal)`).join('\n')}`;
-  }).join('\n\n');
-
-  const recipesText=plan.meals.map((d)=>{
-    const list=d.items.map((m)=>`${window.recipeTypeLabelMap[m.type]||m.type} — ${m.name}\n${m.ingredients.map((ig)=>`   • ${ig.item}: ${ig.qty}`).join('\n')}`).join('\n');
-    return `Dia ${d.day}\n${list}`;
+  const mealText=plan.meals.map((d)=>{
+    if(!d.items.length) return `Dia ${d.day}: sem opções compatíveis com as restrições.`;
+    const items=d.items.map((m)=>`- ${m.name} (${m.cal} kcal)`).join('\n');
+    return `Dia ${d.day}\n${items}`;
   }).join('\n\n');
 
   const recipesText=plan.meals.map((d)=>{
@@ -1549,8 +1533,7 @@ window.generateBalancedMealPlan=async function(){
     out.classList.remove('hidden');
     out.innerText=`Plano (${plan.goalDisplay} / ${days} dia(s))\n\nDinâmica calórica: ${calorieTarget.description}\n\nRefeições:\n${mealText}\n\nReceitas e ingredientes por refeição:\n${recipesText}\n\nLista de compras consolidada:\n${shopText}`;
   }
-  const dBtn=document.getElementById('downloadShoppingBtn');
-  if(dBtn) dBtn.classList.toggle('hidden',!shopItems.length);
+  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopItems.length);
 };
 
 window.downloadShoppingListPng=function(){
@@ -1578,9 +1561,9 @@ window.downloadShoppingListPng=function(){
   ctx.textAlign='center';
   ctx.font='bold 34px Arial';
   ctx.fillText('🛒 LISTA DE COMPRAS',canvas.width/2,80);
-  ctx.font='bold 20px Arial';
+  ctx.font='bold 22px Arial';
   ctx.fillStyle='#5eead4';
-  ctx.fillText(`${window.currentBalancedPlan.days} dia(s) • ${window.currentBalancedPlan.goalDisplay}`,canvas.width/2,118);
+  ctx.fillText(`${window.currentBalancedPlan.days} dia(s) • ${window.currentBalancedPlan.goalDisplay}`,canvas.width/2,120);
 
   ctx.textAlign='left';
   let y=172;
