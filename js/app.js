@@ -2145,6 +2145,12 @@ window.initHomeFitTool=function(){
   };
   const beep=(long=false)=>{ try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const c=new C(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=long?680:880; const d=long?0.45:0.18; const n=c.currentTime; g.gain.setValueAtTime(0.001,n); g.gain.exponentialRampToValueAtTime(0.35,n+0.01); g.gain.exponentialRampToValueAtTime(0.001,n+d); o.start(n); o.stop(n+d+0.05); setTimeout(()=>c.close(),700);}catch(e){} };
   const autoTime=()=>{ if(st.targetType==='reps') return; const b=st.intensity==='iniciante'?60:st.intensity==='intermediario'?75:90; $('hf-duration').value=b; st.perExerciseSec=b; st.remainingWork=b; $('hf-duration-label').innerText=b; updateDisplay(); };
+  const toEmbed=(url='')=>{
+    const safe=String(url||'').trim();
+    const m=safe.match(/(?:v=|shorts\/|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+    const id=m?m[1]:'';
+    return id?`https://www.youtube.com/embed/${id}?autoplay=0&controls=1&rel=0`:'';
+  };
   const VIDEO_DB={
     peito:{
       iniciante:[
@@ -2329,20 +2335,6 @@ window.initHomeFitTool=function(){
     catch(_){
       const m=(raw||'').match(/\{[\s\S]*\}$/);
       if(m) parsed=JSON.parse(m[0]);
-    const timeoutId=setTimeout(()=>{ try{ ctrl?.abort(); }catch(e){} },9000);
-    let parsed={};
-    try{
-      const res=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:550}),signal:ctrl?.signal});
-      if(!res.ok) throw new Error('AI proxy indisponível');
-      const data=await res.json();
-      const raw=(data?.choices?.[0]?.message?.content||'').trim().replace(/^```json\s*/i,'').replace(/```$/,'');
-      try{ parsed=JSON.parse(raw||'{}'); }
-      catch(_){
-        const m=(raw||'').match(/\{[\s\S]*\}$/);
-        if(m) parsed=JSON.parse(m[0]);
-      }
-    }finally{
-      clearTimeout(timeoutId);
     }
     const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps);
     ex.name=base.name;
