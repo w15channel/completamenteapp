@@ -1220,6 +1220,13 @@ window.BIOTYPE_PROFILES={
 
 };
 
+window.ACTIVITY_LEVELS={
+  sedentario:{name:'Sedentário',factor:1.2,summary:'Rotina majoritariamente sentada, com baixa movimentação diária.'},
+  moderado:{name:'Moderado',factor:1.5,summary:'Movimentação regular no dia e exercícios leves em alguns dias da semana.'},
+  ativo:{name:'Ativo',factor:1.8,summary:'Treinos frequentes e rotina com alta demanda corporal.'},
+  atleta:{name:'Atleta',factor:2.0,summary:'Alto volume de treino e desempenho físico como foco principal.'}
+};
+
 window.getMonthStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
 
 window.ensureHealthStructures=function(){
@@ -1240,6 +1247,8 @@ window.ensureHealthStructures=function(){
   if(!s.exercise || s.exercise.day!==window.getTodayStr()) s.exercise={day:window.getTodayStr(),goal:20,total:0,logs:[]};
   if(!Array.isArray(s.exercise.logs)) s.exercise.logs=[];
   if(!s.anxietyDaily || s.anxietyDaily.day!==window.getTodayStr()) s.anxietyDaily={day:window.getTodayStr(), score:null, completed:false};
+  if(!s.activityProfile) s.activityProfile={level:null,name:null,factor:1,summary:'',at:null,locked:false};
+  if(!Array.isArray(s.nutriHistory)) s.nutriHistory=[];
 };
 
 window.renderBiotypeOptions=function(){
@@ -1266,10 +1275,156 @@ window.updateBiotypeFromTraits=async function(){
   out.innerHTML=`<p class="font-black text-rose-300">Seu biotipo predominante: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p><p class="mt-2 text-[10px] text-amber-300"><b>Limitações comuns:</b> adaptação diferente a ganho de massa, resistência e recuperação. O progresso exige treino, alimentação e descanso individualizados.</p><p class="mt-1 text-[10px] text-slate-300">Seu resultado valida suas características integrais, mas não define sozinho sua capacidade física.</p>`;
   window.ensureHealthStructures();
 
-  window.userDataCache.saude.biotype={result:winner,at:Date.now()};
+  window.userDataCache.saude.biotype={result:winner,at:Date.now(),locked:true};
+  document.querySelectorAll('.biotype-opt').forEach((el)=>{el.disabled=true;});
 
   if(db) await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
 
+};
+
+window.renderActivityProfileState=function(){
+  const sel=document.getElementById('activity-level-select');
+  const exp=document.getElementById('activity-level-explanation');
+  const out=document.getElementById('activity-level-result');
+  if(!sel||!exp||!out) return;
+  window.ensureHealthStructures();
+  const s=window.userDataCache.saude;
+  const profile=window.ACTIVITY_LEVELS[sel.value];
+  exp.innerText=profile?profile.summary:'Selecione um perfil para ver a explicação.';
+  if(s.activityProfile?.locked && s.activityProfile.level){
+    out.classList.remove('hidden');
+    out.innerHTML=`<p class="font-black text-indigo-300">Perfil diário salvo: ${s.activityProfile.name}</p><p class="mt-1 text-slate-200">${s.activityProfile.summary}</p><p class="mt-1 text-[10px] text-slate-400">Fator de atividade aplicado: ${s.activityProfile.factor}x</p>`;
+    sel.value=s.activityProfile.level;
+    sel.disabled=true;
+  }else{
+    out.classList.add('hidden');
+    out.innerHTML='';
+    sel.disabled=false;
+  }
+};
+
+window.generateActivityProfile=async function(){
+  const sel=document.getElementById('activity-level-select');
+  if(!sel) return;
+  const profile=window.ACTIVITY_LEVELS[sel.value];
+  if(!profile) return alert('Selecione um nível de atividade válido.');
+  window.ensureHealthStructures();
+  if(window.userDataCache.saude.activityProfile?.locked) return alert('Perfil já definido. Use "Resetar info" para refazer os testes.');
+  window.userDataCache.saude.activityProfile={level:sel.value,name:profile.name,factor:profile.factor,summary:profile.summary,at:Date.now(),locked:true};
+  window.renderActivityProfileState();
+  window.renderCaloricNeed();
+  window.renderNutriHistory();
+  if(db) await db.ref('users/'+window.clientId+'/saude/activityProfile').set(window.userDataCache.saude.activityProfile);
+};
+
+window.resetHealthProfileInfo=async function(){
+  window.ensureHealthStructures();
+  window.userDataCache.saude.biotype={result:null,at:null,locked:false};
+  window.userDataCache.saude.activityProfile={level:null,name:null,factor:1,summary:'',at:null,locked:false};
+  document.querySelectorAll('.biotype-opt').forEach((el)=>{el.checked=false;el.disabled=false;});
+  const b=document.getElementById('biotype-result'); if(b){b.classList.add('hidden'); b.innerHTML='';}
+  const s=document.getElementById('activity-level-select'); if(s){s.value=''; s.disabled=false;}
+  const e=document.getElementById('activity-level-explanation'); if(e)e.innerText='Selecione um perfil para ver a explicação.';
+  const a=document.getElementById('activity-level-result'); if(a){a.classList.add('hidden'); a.innerHTML='';}
+  window.renderCaloricNeed();
+  window.renderNutriHistory();
+  if(db){
+    await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype);
+    await db.ref('users/'+window.clientId+'/saude/activityProfile').set(window.userDataCache.saude.activityProfile);
+  }
+};
+
+window.getEnergyContext=function(){
+  const s=window.userDataCache?.saude||{};
+  const w=parseFloat(s.weight)||0;
+  const imc=parseFloat(s.imc)||0;
+  const gender=(window.userDataCache?.gender||'M');
+  const pass=(window.userDataCache?.pass||'').trim();
+  let age=40;
+  if(/^\d{8}$/.test(pass)){
+    const d=parseInt(pass.slice(0,2),10),m=parseInt(pass.slice(2,4),10)-1,y=parseInt(pass.slice(4),10);
+    const born=new Date(y,m,d);
+    if(!Number.isNaN(born.getTime())){ const now=new Date(); age=now.getFullYear()-born.getFullYear(); const md=now.getMonth()-born.getMonth(); if(md<0 || (md===0 && now.getDate()<born.getDate())) age--; }
+  }
+  let gastoBasal=w?((gender==='H'?24:22)*w):1600;
+  if(age>30){ const decades=Math.floor((age-30)/10)+1; gastoBasal*=Math.max(0.7,1-(decades*0.1)); }
+  if(imc>=30) gastoBasal*=0.92;
+  const actFactor=parseFloat(s.activityProfile?.factor)||1.2;
+  const gastoTotal=Math.round(gastoBasal*actFactor);
+  const ingeridas=(s.nutriHistory||[]).filter((h)=>h.day===window.getTodayStr()).reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const extraBurn=Math.max(0, Number(s.exercise?.total||0)*5);
+  const superavit=Math.max(0, Math.round(ingeridas-(gastoTotal+extraBurn)));
+  return {age,gastoBasal:Math.round(gastoBasal),gastoTotal,ingeridas:Math.round(ingeridas),superavit,actFactor};
+};
+
+window.getBurnExerciseSuggestions=function(){
+  const w=parseFloat(window.userDataCache?.saude?.weight)||75;
+  return [
+    {name:'Caminhada',icon:'🚶',calPerHour:Math.round(3.5*w)},
+    {name:'Corrida leve',icon:'🏃',calPerHour:Math.round(8.3*w)},
+    {name:'Pedalada',icon:'🚴',calPerHour:Math.round(6.8*w)},
+    {name:'Musculação',icon:'💪',calPerHour:Math.round(6*w)}
+  ];
+};
+
+window.updateBurnSuggestionUI=function(){
+  const pane=document.getElementById('exercisePane'), btn=document.getElementById('burn-suggestion-btn'), info=document.getElementById('burn-info');
+  if(!pane||!btn||!info) return;
+  const c=window.getEnergyContext();
+  if(c.superavit<=0){
+    pane.classList.add('hidden'); btn.classList.add('hidden'); info.classList.remove('hidden');
+    info.innerText='Sem queima extra no momento: suas calorias do dia estão dentro da necessidade basal + atividade.';
+    return;
+  }
+  const list=window.getBurnExerciseSuggestions();
+  const idx=window.currentBurnSuggestionIdx||0;
+  const ex=list[idx%list.length];
+  const min=Math.max(1,Math.round((c.superavit/Math.max(1,ex.calPerHour))*60));
+  pane.classList.remove('hidden'); btn.classList.remove('hidden'); info.classList.remove('hidden');
+  document.getElementById('exIcon').innerText=ex.icon;
+  document.getElementById('exName').innerText=ex.name;
+  document.getElementById('exSurplus').innerText=`${c.superavit} kcal`;
+  document.getElementById('exTime').innerText=min+' min';
+  info.innerText=`Base diária: ${c.gastoTotal} kcal (basal ${c.gastoBasal} kcal x atividade ${c.actFactor}). Ingeridas hoje: ${c.ingeridas} kcal.`;
+};
+
+window.cycleBurnSuggestion=function(){
+  window.currentBurnSuggestionIdx=(window.currentBurnSuggestionIdx||0)+1;
+  window.updateBurnSuggestionUI();
+};
+
+window.generateBalancedMealPlan=async function(){
+  window.ensureHealthStructures();
+  const mealType=document.getElementById('balancedMealType')?.value||'Almoço';
+  const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10)));
+  const restrictions=(document.getElementById('balancedMealRestrictions')?.value||'').trim()||'Sem restrições declaradas';
+  const out=document.getElementById('balancedMealResult');
+  const btn=document.querySelector('button[onclick="window.generateBalancedMealPlan()"]');
+  const ctx=window.getEnergyContext();
+  const needPerMeal=Math.max(250,Math.round(ctx.gastoTotal/4));
+  const prompt=`Retorne APENAS JSON no formato {"meal_plan":["..."],"shopping_list":[{"item":"","qty":""}]}. Crie plano para ${mealType}, ${days} dias/semana, ~${needPerMeal} kcal por refeição. Restrições: ${restrictions}. Contexto: sexo ${window.userDataCache?.gender||'M'}, idade ${ctx.age}, biotipo ${window.userDataCache?.saude?.biotype?.result||'não definido'}, atividade ${window.userDataCache?.saude?.activityProfile?.name||'não definido'}.`;
+  const old=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';}
+  try{
+    const response=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'Atue como nutricionista brasileiro prático.'},{role:'user',content:prompt}],temperature:0.3})});
+    const data=await response.json();
+    const content=(data?.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
+    const chunk=content.match(/\{[\s\S]*\}/)?.[0]||'{}';
+    const parsed=JSON.parse(chunk);
+    const meals=Array.isArray(parsed.meal_plan)?parsed.meal_plan:[];
+    const shopping=Array.isArray(parsed.shopping_list)?parsed.shopping_list:[];
+    const textMeals=meals.length?meals.map((m,i)=>`${i+1}. ${m}`).join('\n'):'Sem plano retornado.';
+    const textShop=shopping.length?shopping.map((i)=>`• ${i.item||'Item'} - ${i.qty||'qtd'}`).join('\n'):'Sem itens de compra.';
+    if(out){out.classList.remove('hidden'); out.innerText=`Plano (${mealType} / ${days} dias):\n${textMeals}\n\nLista de compras:\n${textShop}`;}
+    const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopping.length);
+  }catch(e){
+    console.error(e); alert('Não foi possível gerar plano equilibrado agora.');
+  }finally{ if(btn){btn.disabled=false;btn.innerHTML=old;} }
+};
+
+window.downloadShoppingListPng=function(){
+  const target=document.getElementById('balancedMealResult'); if(!target||target.classList.contains('hidden')) return alert('Gere uma lista antes de baixar.');
+  html2canvas(target).then(canvas=>{ const link=document.createElement('a'); link.download=`Lista-Compras-${window.clientName||'Usuario'}.png`; link.href=canvas.toDataURL('image/png'); link.click(); });
 };
 
 window.resetWaterIfNewDay=async function(){
@@ -1358,6 +1513,15 @@ window.initSaudeTab=async function(){
   if(s.imc) document.getElementById('imc-result').innerText=`IMC: ${s.imc} (${s.imcCategory})`;
 
   window.renderBiotypeOptions();
+  if(s.biotype?.locked){
+    document.querySelectorAll('.biotype-opt').forEach((el)=>{el.disabled=true;});
+    const p=window.BIOTYPE_PROFILES[s.biotype.result];
+    const out=document.getElementById('biotype-result');
+    if(p&&out){ out.classList.remove('hidden'); out.innerHTML=`<p class="font-black text-rose-300">Seu biotipo predominante: ${p.emoji} ${p.name}</p><p class="mt-1 text-slate-200">${p.summary}</p>`; }
+  }
+  const activitySel=document.getElementById('activity-level-select');
+  if(activitySel && !activitySel.dataset.bound){ activitySel.addEventListener('change', window.renderActivityProfileState); activitySel.dataset.bound='1'; }
+  window.renderActivityProfileState();
   window.renderCaloricNeed();
   window.renderExerciseProgress();
   window.renderAnxietyDailyState();
@@ -1923,6 +2087,7 @@ window.doNutriAnalysis = async function() {
   const input = document.getElementById('mealInput');
   const qty = parseInt(document.getElementById('mealQty')?.value || '100', 10);
   const unit = document.getElementById('mealUnit')?.value || 'G';
+  const mealType = document.getElementById('mealType')?.value || 'Refeição';
   const text = (input?.value || '').trim();
   if (!text) return alert('Por favor, descreva o que você consumiu.');
 
@@ -1937,7 +2102,7 @@ Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras
   try {
     const response = await fetch(window.AI_PROXY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição: ${text}` }], temperature:0.3 })
+      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição (${mealType}): ${text}` }], temperature:0.3 })
     });
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content || '{}';
@@ -1946,37 +2111,16 @@ Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras
     const nutri = JSON.parse(jsonChunk);
 
     const itemCal = Number(nutri.total_cal || 0), itemP = Number(nutri.p || 0), itemC = Number(nutri.c || 0), itemF = Number(nutri.f || 0);
-    if (!window.userDataCache) window.userDataCache = {};
-    if (!window.userDataCache.saude) window.userDataCache.saude = {};
-    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+    window.ensureHealthStructures();
 
     const today = window.getTodayStr();
-    const entry = { meal: text, qty, unit, cal: Math.round(itemCal), p: Math.round(itemP), c: Math.round(itemC), f: Math.round(itemF), date: new Date().toLocaleDateString('pt-BR'), day: today };
+    const entry = { meal: text, mealType, qty, unit, cal: Math.round(itemCal), p: Math.round(itemP), c: Math.round(itemC), f: Math.round(itemF), date: new Date().toLocaleDateString('pt-BR'), day: today };
     window.userDataCache.saude.nutriHistory.unshift(entry);
     window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 120);
 
-    const todayItems = window.userDataCache.saude.nutriHistory.filter((h)=>h.day===today);
-    const totalCal = todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
-    const totalP = todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
-    const totalC = todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
-    const totalF = todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
-
-    document.getElementById('nutriResultPane')?.classList.remove('hidden');
-    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
-    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
-    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
-    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
-
-    const EXERCISES_MET = [{ name:'Corrida', icon:'🏃', met:8.3 },{ name:'Caminhada', icon:'🚶', met:3.5 },{ name:'Pedalada', icon:'🚴', met:6.8 },{ name:'Musculação', icon:'💪', met:6.0 }];
-    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
-    const weight = window.userDataCache?.saude?.weight || 75;
-    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
-    document.getElementById('exIcon').innerText = ex.icon;
-    document.getElementById('exName').innerText = ex.name;
-    document.getElementById('exTime').innerText = minutes + ' min';
-
     if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
     window.renderNutriHistory();
+    input.value='';
   } catch (error) {
     console.error('Erro na análise:', error);
     alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
@@ -2022,7 +2166,7 @@ window.renderNutriHistory=function(){
     <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in gap-2">
       <div class="flex flex-col min-w-0">
         <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
-        <span class="text-[8px] text-slate-500 font-bold">${h.qty||''}${h.unit||''} • ${h.date}</span>
+        <span class="text-[8px] text-slate-500 font-bold">${h.mealType||'Refeição'} • ${h.qty||''}${h.unit||''} • ${h.date}</span>
       </div>
       <div class="flex items-center gap-2">
         <span class="text-xs font-black text-emerald-400 whitespace-nowrap">${h.cal} kcal</span>
@@ -2030,16 +2174,22 @@ window.renderNutriHistory=function(){
       </div>
     </div>
   `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
+  window.updateBurnSuggestionUI();
 };
 
 window.renderCaloricNeed=function(){
   const el=document.getElementById('calorie-need-result'); if(!el) return;
   const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);
   if(!w||!h||!imc){ el.innerText='-- kcal/dia'; return; }
-  const base=w*24;
+  const base=w*((window.userDataCache?.gender||'M')==='H'?24:22);
   const factor=imc<18.5?1.15:imc<25?1:imc<30?0.9:0.82;
-  const kcal=Math.round(base*factor);
+  const ctx=window.getEnergyContext();
+  const ageFactor=ctx.age>30?Math.max(0.7,1-((Math.floor((ctx.age-30)/10)+1)*0.1)):1;
+  const activityFactor=parseFloat(s.activityProfile?.factor)||1.2;
+  const kcal=Math.round(base*factor*activityFactor*ageFactor);
   s.calorieNeed=kcal;
+  s.gastoBasalDiario=ctx.gastoBasal;
+  s.gastoEnergeticoTotalDiario=ctx.gastoTotal;
   if(window.userDataCache?.saude) window.userDataCache.saude.calorieNeed=kcal;
   el.innerText=`${kcal} kcal/dia`;
 };
