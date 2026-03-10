@@ -1379,56 +1379,28 @@ window.generateBalancedMealPlan=async function(){
   window.ensureHealthStructures();
   const mealType=document.getElementById('balancedMealType')?.value||'Almoço';
   const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10)));
-  const allergies=(document.getElementById('balancedMealAllergies')?.value||'').trim()||'Sem alergias declaradas';
-  const restrictions=(document.getElementById('balancedMealRestrictions')?.value||'').trim()||'Sem restrições alimentares declaradas';
-  const goal=(document.getElementById('dietGoal')?.value||'Equilíbrio geral').trim();
+  const restrictions=(document.getElementById('balancedMealRestrictions')?.value||'').trim()||'Sem restrições declaradas';
   const out=document.getElementById('balancedMealResult');
   const btn=document.querySelector('button[onclick="window.generateBalancedMealPlan()"]');
   const ctx=window.getEnergyContext();
-  const needPerMeal=Math.max(220,Math.round(ctx.gastoTotal/4));
-  const prompt=`Retorne APENAS JSON válido no formato {"meal_plan":[{"day":1,"meal_name":"","recipe":"","items":[{"item":"","qty":""}],"kcal":0}],"shopping_list":[{"item":"","qty":""}]}.
-
-Tarefa: criar refeições saudáveis, práticas e brasileiras para ${mealType}, por ${days} dias na semana.
-
-Regras: use alimentos populares do Brasil, informe ingredientes com medida (g, ml, unidade, colher etc), mantenha praticidade para rotina real.
-
-Contexto nutricional diário da pessoa: meta por refeição ~${needPerMeal} kcal.
-Intenção da dieta: ${goal}.
-Alergias: ${allergies}.
-Restrições: ${restrictions}.
-Perfil: sexo ${window.userDataCache?.gender||'M'}, idade ${ctx.age}, biotipo ${window.userDataCache?.saude?.biotype?.result||'não definido'}, atividade ${window.userDataCache?.saude?.activityProfile?.name||'não definido'}.`;
+  const needPerMeal=Math.max(250,Math.round(ctx.gastoTotal/4));
+  const prompt=`Retorne APENAS JSON no formato {"meal_plan":["..."],"shopping_list":[{"item":"","qty":""}]}. Crie plano para ${mealType}, ${days} dias/semana, ~${needPerMeal} kcal por refeição. Restrições: ${restrictions}. Contexto: sexo ${window.userDataCache?.gender||'M'}, idade ${ctx.age}, biotipo ${window.userDataCache?.saude?.biotype?.result||'não definido'}, atividade ${window.userDataCache?.saude?.activityProfile?.name||'não definido'}.`;
   const old=btn?btn.innerHTML:'';
   if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';}
   try{
-    const response=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider_hint:'grok',messages:[{role:'system',content:'Você é nutricionista brasileiro e responde em JSON estrito.'},{role:'user',content:prompt}],temperature:0.35,max_tokens:1500})});
+    const response=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'Atue como nutricionista brasileiro prático.'},{role:'user',content:prompt}],temperature:0.3})});
     const data=await response.json();
     const content=(data?.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
-    let parsed={};
-    try{
-      const chunk=content.match(/\{[\s\S]*\}/)?.[0]||'{}';
-      parsed=JSON.parse(chunk);
-    }catch(_e){
-      const fixResp=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider_hint:'grok',messages:[{role:'system',content:'Converta para JSON válido sem texto extra.'},{role:'user',content:`Converta para {"meal_plan":[{"day":1,"meal_name":"","recipe":"","items":[{"item":"","qty":""}],"kcal":0}],"shopping_list":[{"item":"","qty":""}]}:
-${content}`}],temperature:0,max_tokens:1500})});
-      const fixData=await fixResp.json();
-      const fixContent=(fixData?.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
-      const fixChunk=fixContent.match(/\{[\s\S]*\}/)?.[0]||'{}';
-      parsed=JSON.parse(fixChunk);
-    }
+    const chunk=content.match(/\{[\s\S]*\}/)?.[0]||'{}';
+    const parsed=JSON.parse(chunk);
     const meals=Array.isArray(parsed.meal_plan)?parsed.meal_plan:[];
     const shopping=Array.isArray(parsed.shopping_list)?parsed.shopping_list:[];
-    const textMeals=meals.length?meals.map((m,i)=>{
-      const items=Array.isArray(m.items)?m.items.map(it=>`   - ${it.item||'Item'} (${it.qty||'qtd'})`).join('\n'):'   - Itens não informados';
-      return `${i+1}) Dia ${m.day||i+1}: ${m.meal_name||mealType} (${m.kcal||needPerMeal} kcal)\nReceita: ${m.recipe||'Sem descrição'}\nIngredientes:\n${items}`;
-    }).join('\n\n'):'Sem plano retornado.';
+    const textMeals=meals.length?meals.map((m,i)=>`${i+1}. ${m}`).join('\n'):'Sem plano retornado.';
     const textShop=shopping.length?shopping.map((i)=>`• ${i.item||'Item'} - ${i.qty||'qtd'}`).join('\n'):'Sem itens de compra.';
-    if(out){
-      out.classList.remove('hidden');
-      out.innerText=`${mealType} | ${days} dias/semana | Objetivo: ${goal}\nAlergias: ${allergies}\nRestrições: ${restrictions}\n\nREFEIÇÕES GERADAS:\n${textMeals}\n\nLISTA DE COMPRAS CONSOLIDADA:\n${textShop}`;
-    }
-    const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopping.length && !meals.length);
+    if(out){out.classList.remove('hidden'); out.innerText=`Plano (${mealType} / ${days} dias):\n${textMeals}\n\nLista de compras:\n${textShop}`;}
+    const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopping.length);
   }catch(e){
-    console.error(e); alert('Não foi possível gerar refeições agora. Verifique a conexão com a IA e tente novamente.');
+    console.error(e); alert('Não foi possível gerar plano equilibrado agora.');
   }finally{ if(btn){btn.disabled=false;btn.innerHTML=old;} }
 };
 
@@ -1601,6 +1573,471 @@ window.removeWater=async function(){
 
 };
 
+// NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
+window.doNutriAnalysis = async function() {
+  const input = document.getElementById('mealInput');
+  const qty = parseInt(document.getElementById('mealQty')?.value || '100', 10);
+  const unit = document.getElementById('mealUnit')?.value || 'G';
+  const mealType = document.getElementById('mealType')?.value || 'Refeição';
+  const text = (input?.value || '').trim();
+  if (!text) return alert('Por favor, descreva o que você consumiu.');
+
+  const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
+  const originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...'; btn.disabled = true; }
+
+  const systemPrompt = `Atue como um nutricionista digital de alta precisão.
+Retorne APENAS um JSON com o formato: {"total_cal":numero,"p":numero,"c":numero,"f":numero,"items":[{"n":"item","cal":numero}]}
+Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras quando necessário.`;
+
+  try {
+    const response = await fetch(window.AI_PROXY_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição (${mealType}): ${text}` }], temperature:0.3 })
+    });
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '{}';
+    const rawContent = content.replace(/```json|```/g, '').trim();
+    const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
+    const nutri = JSON.parse(jsonChunk);
+
+    const itemCal = Number(nutri.total_cal || 0), itemP = Number(nutri.p || 0), itemC = Number(nutri.c || 0), itemF = Number(nutri.f || 0);
+
+    if (!window.userDataCache) window.userDataCache = {};
+
+    if (!window.userDataCache.saude) window.userDataCache.saude = {};
+
+    if (!window.userDataCache.saude.nutriHistory) window.userDataCache.saude.nutriHistory = [];
+
+
+
+    const today = window.getTodayStr();
+
+    const entry = { meal: text, qty, unit, cal: Math.round(itemCal), p: Math.round(itemP), c: Math.round(itemC), f: Math.round(itemF), date: new Date().toLocaleDateString('pt-BR'), day: today };
+
+    window.userDataCache.saude.nutriHistory.unshift(entry);
+
+    window.userDataCache.saude.nutriHistory = window.userDataCache.saude.nutriHistory.slice(0, 120);
+
+
+
+    const todayItems = window.userDataCache.saude.nutriHistory.filter((h)=>h.day===today);
+
+    const totalCal = todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+
+    const totalP = todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+
+    const totalC = todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+
+    const totalF = todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+
+
+
+    document.getElementById('nutriResultPane')?.classList.remove('hidden');
+
+    document.getElementById('nutriTotalCal').innerText = Math.round(totalCal);
+
+    document.getElementById('nutriProt').innerText = Math.round(totalP) + 'g';
+
+    document.getElementById('nutriCarb').innerText = Math.round(totalC) + 'g';
+
+    document.getElementById('nutriGord').innerText = Math.round(totalF) + 'g';
+
+
+
+    const EXERCISES_MET = [{ name:'Corrida', icon:'🏃', met:8.3 },{ name:'Caminhada', icon:'🚶', met:3.5 },{ name:'Pedalada', icon:'🚴', met:6.8 },{ name:'Musculação', icon:'💪', met:6.0 }];
+
+    const ex = EXERCISES_MET[Math.floor(Math.random() * EXERCISES_MET.length)];
+
+    const weight = window.userDataCache?.saude?.weight || 75;
+
+    const minutes = Math.max(1, Math.round((totalCal / (ex.met * weight)) * 60));
+
+    document.getElementById('exIcon').innerText = ex.icon;
+
+    document.getElementById('exName').innerText = ex.name;
+
+    document.getElementById('exTime').innerText = minutes + ' min';
+
+
+
+    if (db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+
+    window.renderNutriHistory();
+
+  } catch (error) {
+
+    console.error('Erro na análise:', error);
+
+    alert('Não foi possível processar a análise agora. Tente novamente em instantes.');
+
+  } finally {
+
+    if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
+
+  }
+
+};
+
+
+
+window.deleteNutriEntry=async function(idx){
+
+  if(!window.userDataCache?.saude?.nutriHistory) return;
+
+  window.userDataCache.saude.nutriHistory.splice(idx,1);
+
+  if(db) await db.ref('users/' + window.clientId + '/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+
+  const today=window.getTodayStr();
+
+  const todayItems=(window.userDataCache.saude.nutriHistory||[]).filter((h)=>h.day===today);
+
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+
+  document.getElementById('nutriTotalCal').innerText=Math.round(totalCal);
+
+  document.getElementById('nutriProt').innerText=Math.round(totalP)+'g';
+
+  document.getElementById('nutriCarb').innerText=Math.round(totalC)+'g';
+
+  document.getElementById('nutriGord').innerText=Math.round(totalF)+'g';
+
+  window.renderNutriHistory();
+
+};
+
+
+
+window.renderNutriHistory=function(){
+
+  const container=document.getElementById('nutriHistory');
+
+  if(!container) return;
+
+  const history=(window.userDataCache?.saude?.nutriHistory||[]);
+
+  const today=window.getTodayStr();
+
+  const todayItems=history.filter((h)=>h.day===today);
+
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+
+  const pane=document.getElementById('nutriResultPane');
+
+  if(pane && totalCal>0) pane.classList.remove('hidden');
+
+  const elCal=document.getElementById('nutriTotalCal'); if(elCal) elCal.innerText=Math.round(totalCal);
+
+  const elP=document.getElementById('nutriProt'); if(elP) elP.innerText=Math.round(totalP)+'g';
+
+  const elC=document.getElementById('nutriCarb'); if(elC) elC.innerText=Math.round(totalC)+'g';
+
+  const elF=document.getElementById('nutriGord'); if(elF) elF.innerText=Math.round(totalF)+'g';
+
+  container.innerHTML = history.slice(0,10).map((h,idx)=>`
+
+    <div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in gap-2">
+
+      <div class="flex flex-col min-w-0">
+
+        <span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span>
+
+        <span class="text-[8px] text-slate-500 font-bold">${h.qty||''}${h.unit||''} • ${h.date}</span>
+
+      </div>
+
+      <div class="flex items-center gap-2">
+
+        <span class="text-xs font-black text-emerald-400 whitespace-nowrap">${h.cal} kcal</span>
+
+        <button onclick="window.deleteNutriEntry(${idx})" class="text-[10px] px-2 py-1 rounded bg-rose-900/40 border border-rose-500/40 text-rose-300">Excluir</button>
+
+      </div>
+
+    </div>
+
+  `).join('') || '<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
+
+};
+
+
+
+window.renderCaloricNeed=function(){
+
+  const el=document.getElementById('calorie-need-result'); if(!el) return;
+
+  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight); const h=parseFloat(s.height); const imc=parseFloat(s.imc);
+
+  if(!w||!h||!imc){ el.innerText='-- kcal/dia'; return; }
+
+  const base=w*24;
+
+  const factor=imc<18.5?1.15:imc<25?1:imc<30?0.9:0.82;
+
+  el.innerText=`${Math.round(base*factor)} kcal/dia`;
+
+};
+
+window.renderExerciseProgress=function(){
+
+  window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise;
+
+  const total=Math.round(ex.total||0), goal=ex.goal||20, pct=Math.min(100, Math.round((total/goal)*100));
+
+  const goalEl=document.getElementById('exercise-goal-text'), leftEl=document.getElementById('ex-left-text'), bar=document.getElementById('ex-progress-bar');
+
+  if(goalEl) goalEl.innerText=`Meta diária: ${goal} min`;
+
+  if(leftEl) leftEl.innerText = total>=goal ? 'Meta diária concluída' : `Faltam ${goal-total} min`;
+
+  if(bar) bar.style.width = `${pct}%`;
+
+};
+
+window.renderAnxietyDailyState=function(){
+
+  window.ensureHealthStructures(); const a=window.userDataCache.saude.anxietyDaily; const bar=document.getElementById('ansio-bar'); if(!bar) return;
+
+  const score=(a.day===window.getTodayStr() && a.score!=null)?a.score:0;
+
+  bar.style.width=score+'%';
+
+  if(score<=25) bar.className='bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]';
+
+  else if(score<=50) bar.className='bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]';
+
+  else if(score<=75) bar.className='bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+
+  else bar.className='bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
+
+};
+
+window.addExercise=async function(){
+
+  window.ensureHealthStructures(); const sport=document.getElementById('health-sport')?.value; const mins=parseInt(document.getElementById('health-sport-time')?.value,10);
+
+  if(!sport||!mins||mins<=0) return alert('Informe exercício e duração válida.');
+
+  const ex=window.userDataCache.saude.exercise; ex.logs.unshift({sport, mins, at:Date.now()}); ex.logs=ex.logs.slice(0,30); ex.total=Math.max(0,(ex.total||0)+mins);
+
+  document.getElementById('health-sport-time').value='';
+
+  window.renderExerciseProgress();
+
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
+
+};
+
+window.saveGoals=async function(){
+
+  const week=(document.getElementById('rt-goal-week')?.value||'').trim(); const month=(document.getElementById('rt-goal-month')?.value||'').trim();
+
+  if(!window.userDataCache) return; window.userDataCache.goals={week,month}; if(db) await db.ref('users/'+window.clientId+'/goals').set(window.userDataCache.goals);
+
+};
+
+window.renderTasks=function(){
+
+  const todo=document.getElementById('tasks-todo'), done=document.getElementById('tasks-done'); if(!todo||!done) return;
+
+  todo.innerHTML='<div class="text-xs text-slate-500">Cadastre tarefas para visualizar sua rotina diária.</div>';
+
+  done.innerHTML=''; document.getElementById('area-todo').classList.remove('hidden'); document.getElementById('area-done').classList.add('hidden');
+
+};
+
+window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');};
+
+window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');};
+
+window.saveNewTask=function(){alert('Cadastro completo de tarefas será liberado em breve.'); window.closeTaskModal();};
+
+
+
+
+
+
+
+// CONFIGURAÇÕES DE EXERCÍCIOS GUIADOS
+
+const WORKOUT_DB = {
+
+  cardio: [
+
+    { n: 'Polichinelos', d: 'Mantenha o ritmo constante e respire pelo nariz.', type: 'time', val: 45 },
+
+    { n: 'Corrida no Lugar', d: 'Eleve os joelhos e use os braços para equilíbrio.', type: 'time', val: 60 },
+
+    { n: 'Burpees', d: 'Movimento completo para condicionamento metabólico.', type: 'unit', val: 12 }
+
+  ],
+
+  forca: [
+
+    { n: 'Agachamento Livre', d: 'Peso nos calcanhares e coluna neutra.', type: 'unit', val: 20 },
+
+    { n: 'Flexão de Braços', d: 'Cotovelos a 45 graus do corpo.', type: 'unit', val: 15 },
+
+    { n: 'Prancha Abdominal', d: 'Core contraído e corpo em linha reta.', type: 'time', val: 40 }
+
+  ]
+
+};
+
+window.workoutState = { active:false, mode:null, currentIdx:0, list:[], totalMins:0, prepIv:null, exIv:null, exStartAt:null, elapsedSec:0 };
+
+window.startWorkoutSession=function(mode){
+
+  const duration=parseInt(document.getElementById('ex-total-duration')?.value||'20',10);
+
+  const list=(WORKOUT_DB[mode]||[]).map(i=>({...i}));
+
+  if(!list.length) return;
+
+  window.workoutState.mode=mode; window.workoutState.list=list; window.workoutState.currentIdx=0; window.workoutState.totalMins=duration; window.workoutState.active=true;
+
+  document.getElementById('ex-setup-panel')?.classList.add('hidden');
+
+  document.getElementById('ex-finish-area')?.classList.add('hidden');
+
+  document.getElementById('ex-active-session')?.classList.remove('hidden');
+
+  window.runPreparation();
+
+};
+
+window.runPreparation=function(){
+
+  clearInterval(window.workoutState.prepIv); clearInterval(window.workoutState.exIv);
+
+  let timeLeft=20;
+
+  const display=document.getElementById('ex-prep-timer');
+
+  const overlay=document.getElementById('ex-prep-overlay');
+
+  const card=document.getElementById('ex-current-card');
+
+  const nextEx=window.workoutState.list[window.workoutState.currentIdx];
+
+  if(display) display.innerText=timeLeft;
+
+  if(nextEx) document.getElementById('ex-next-name').innerText=`Próximo: ${nextEx.n}`;
+
+  overlay?.classList.remove('hidden');
+
+  card?.classList.add('hidden');
+
+  window.workoutState.prepIv=setInterval(()=>{
+
+    timeLeft--; if(display) display.innerText=timeLeft;
+
+    if(timeLeft<=0){ clearInterval(window.workoutState.prepIv); overlay?.classList.add('hidden'); window.startCurrentExercise(); }
+
+  },1000);
+
+};
+
+window.startCurrentExercise=function(){
+
+  clearInterval(window.workoutState.exIv);
+
+  const ex=window.workoutState.list[window.workoutState.currentIdx]; if(!ex) return window.finishWorkout();
+
+  const card=document.getElementById('ex-current-card'); const title=document.getElementById('ex-title'); const desc=document.getElementById('ex-desc'); const badge=document.getElementById('ex-type-badge'); const counter=document.getElementById('ex-main-counter');
+
+  card?.classList.remove('hidden'); if(title) title.innerText=ex.n; if(desc) desc.innerText=ex.d;
+
+  if(ex.type==='time'){
+
+    let sec=ex.val; if(badge) badge.innerText=`Tempo: ${sec}s`; if(counter) counter.innerText=sec;
+
+    window.workoutState.exIv=setInterval(()=>{ sec--; if(counter) counter.innerText=Math.max(0,sec); if(sec<=0){ clearInterval(window.workoutState.exIv); window.playBipe(); window.nextWorkoutStep(); } },1000);
+
+  } else {
+
+    if(badge) badge.innerText=`Fazer: ${ex.val} un`; if(counter) counter.innerText=ex.val;
+
+  }
+
+};
+
+window.nextWorkoutStep=function(){
+
+  clearInterval(window.workoutState.exIv);
+
+  window.workoutState.currentIdx++;
+
+  if(window.workoutState.currentIdx < window.workoutState.list.length) window.runPreparation();
+
+  else window.finishWorkout();
+
+};
+
+window.finishWorkout=async function(){
+
+  clearInterval(window.workoutState.prepIv); clearInterval(window.workoutState.exIv);
+
+  window.workoutState.active=false;
+
+  document.getElementById('ex-active-session')?.classList.add('hidden');
+
+  document.getElementById('ex-finish-area')?.classList.remove('hidden');
+
+  document.getElementById('cert-summary').innerText=`Você completou ${window.workoutState.totalMins} minutos de dedicação ao seu corpo hoje.`;
+
+  window.ensureHealthStructures();
+
+  const ex=window.userDataCache.saude.exercise; ex.total=Math.max(0,(ex.total||0)+window.workoutState.totalMins);
+
+  ex.logs.unshift({sport:`Sessão guiada (${window.workoutState.mode||'treino'})`, mins:window.workoutState.totalMins, at:Date.now()}); ex.logs=ex.logs.slice(0,30);
+
+  window.renderExerciseProgress();
+
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
+
+};
+
+window.resetWorkoutSession=function(showSetup=true){
+
+  clearInterval(window.workoutState?.prepIv); clearInterval(window.workoutState?.exIv);
+
+  window.workoutState={ active:false, mode:null, currentIdx:0, list:[], totalMins:0, prepIv:null, exIv:null, exStartAt:null, elapsedSec:0 };
+
+  if(showSetup) document.getElementById('ex-setup-panel')?.classList.remove('hidden');
+
+  document.getElementById('ex-active-session')?.classList.add('hidden');
+
+  document.getElementById('ex-finish-area')?.classList.add('hidden');
+
+};
+
+window.playBipe=function(){
+
+  try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const osc=ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value=600; osc.start(); setTimeout(()=>osc.stop(),500);}catch(e){}
+
+};
+
+window.downloadWorkoutCert=function(){
+
+  const target=document.getElementById('ex-certificate'); if(!target) return;
+
+  html2canvas(target).then(canvas=>{ const link=document.createElement('a'); link.download=`Treino-WR-${window.clientName||'Usuario'}.png`; link.href=canvas.toDataURL('image/png'); link.click(); });
+
+};
 // NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
 window.doNutriAnalysis = async function() {
   const input = document.getElementById('mealInput');
