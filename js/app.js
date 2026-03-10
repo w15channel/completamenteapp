@@ -1508,8 +1508,6 @@ window.generateBalancedMealPlan=async function(){
       dayMeals.push({type,name:pick.name,cal:pick.cal,calAdjusted:adjustedCal,observation:calorieTarget.description,ing:pick.ing||[]});
       (pick.ing||[]).forEach((ig)=>allIngredients.push(ig));
     });
-    plan.meals.push({day,items:dayMeals});
-  }
 
   allIngredients.forEach((ig)=>{
     const key=String(ig.item||'').trim().toLowerCase();
