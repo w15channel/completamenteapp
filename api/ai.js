@@ -7,15 +7,22 @@ function providerConfig() {
       name: 'xAI Grok',
       url: XAI_OPENAI_COMPAT_URL,
       apiKey: process.env.XAI_API_KEY,
-      model: process.env.XAI_MODEL || 'grok-2-latest'
+      model: process.env.XAI_MODEL || 'grok-3-latest',
+      fallbackModels: ['grok-3-mini-latest', 'grok-2-latest']
     };
   }
   return {
     name: 'Groq',
     url: GROQ_OPENAI_COMPAT_URL,
     apiKey: process.env.GROQ_API_KEY,
-    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+    fallbackModels: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
   };
+}
+
+function getModelsToTry(provider) {
+  const all = [provider.model, ...(provider.fallbackModels || [])];
+  return [...new Set(all.filter(Boolean))];
 }
 
 export default async function handler(req, res) {
@@ -43,28 +50,41 @@ export default async function handler(req, res) {
   if (!messages.length) return res.status(400).json({ error: 'Envie `messages` (array) ou `mensagem` (string) no corpo da requisição.' });
 
   try {
-    const response = await fetch(provider.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${provider.apiKey}`
-      },
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
-        max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: `Erro ao consultar ${provider.name}.`,
-        details: data?.error?.message || 'Sem detalhes.'
+    let lastError = null;
+    for (const model of getModelsToTry(provider)) {
+      const response = await fetch(provider.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${provider.apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
+          max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
+        })
       });
+
+      const data = await response.json();
+      if (response.ok) return res.status(200).json(data);
+
+      const details = data?.error?.message || 'Sem detalhes.';
+      lastError = { status: response.status, details };
+
+      const modelIssue = /model|not.?found|deprecat|unsupported|does not exist/i.test(details);
+      if (!modelIssue) {
+        return res.status(response.status).json({
+          error: `Erro ao consultar ${provider.name}.`,
+          details
+        });
+      }
     }
-    return res.status(200).json(data);
+
+    return res.status(lastError?.status || 502).json({
+      error: `Erro ao consultar ${provider.name}.`,
+      details: lastError?.details || 'Nenhum modelo disponível respondeu com sucesso.'
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Falha ao conectar com a inteligência artificial.' });
   }

@@ -2329,7 +2329,8 @@ window.initHomeFitTool=function(){
     const timeoutPromise=new Promise((_,rej)=>setTimeout(()=>{ try{ ctrl?.abort(); }catch(e){} rej(new Error('timeout')); },9000));
     const res=await Promise.race([fetchPromise, timeoutPromise]);
     if(!res || !res.ok) throw new Error('AI proxy indisponível');
-    const data=await res.json();
+    let data={};
+    try{ data=await res.json(); }catch(_){ throw new Error('Resposta inválida da IA'); }
     const raw=(data?.choices?.[0]?.message?.content||'').trim().replace(/^```json\s*/i,'').replace(/```$/,'');
     try{ parsed=JSON.parse(raw||'{}'); }
     catch(_){
@@ -2401,7 +2402,29 @@ window.initHomeFitTool=function(){
   document.querySelectorAll('#hf-intensity .hf-seg').forEach(b=>b.onclick=()=>{ st.intensity=b.dataset.val; setSeg('hf-intensity',st.intensity); autoTime(); });
   document.querySelectorAll('#hf-target-type .hf-seg').forEach(b=>b.onclick=()=>{ st.targetType=b.dataset.val; setSeg('hf-target-type',st.targetType); $('hf-reps-box').classList.toggle('hidden',st.targetType!=='reps'); $('hf-time-box').classList.toggle('hidden',st.targetType!=='tempo'); autoTime(); });
   document.querySelectorAll('#hf-mode .hf-seg').forEach(b=>b.onclick=()=>{ st.mode=b.dataset.val; setSeg('hf-mode',st.mode); });
-  $('hf-generate').onclick=async()=>{ const body=$('hf-body').value||'corpo-todo'; const reps=Number($('hf-reps').value)||15; $('hf-badge').innerText='Gerando online...'; try{ st.current=await askExerciseAI(body,st.intensity,st.targetType,st.perExerciseSec,reps); }catch(e){ st.current=null; } if(!st.current){ st.current=generateLocal(body,st.intensity,st.targetType,st.perExerciseSec,reps); $('hf-badge').innerText='Offline (fallback)'; } renderEx(st.current); resetTimer(); };
+  $('hf-generate').onclick=async()=>{
+    const btn=$('hf-generate');
+    const body=$('hf-body').value||'corpo-todo';
+    const reps=Number($('hf-reps').value)||15;
+    let usedFallback=false;
+    $('hf-badge').innerText='Gerando online...';
+    btn.disabled=true;
+    btn.classList.add('opacity-60','cursor-not-allowed');
+    try{
+      st.current=await askExerciseAI(body,st.intensity,st.targetType,st.perExerciseSec,reps);
+      if(!st.current) throw new Error('resposta vazia');
+    }catch(e){
+      usedFallback=true;
+      st.current=generateLocal(body,st.intensity,st.targetType,st.perExerciseSec,reps);
+      console.warn('HomeFit IA indisponível, fallback local aplicado.',e);
+    }finally{
+      btn.disabled=false;
+      btn.classList.remove('opacity-60','cursor-not-allowed');
+    }
+    if(usedFallback) $('hf-badge').innerText='Offline (fallback)';
+    renderEx(st.current);
+    resetTimer();
+  };
   $('hf-btn-random').onclick=async()=>{ const keys=Object.keys(BODIES); $('hf-body').value=keys[Math.floor(Math.random()*keys.length)]; const ints=['iniciante','intermediario','avancado']; st.intensity=ints[Math.floor(Math.random()*ints.length)]; setSeg('hf-intensity',st.intensity); const types=['reps','tempo']; st.targetType=types[Math.floor(Math.random()*types.length)]; setSeg('hf-target-type',st.targetType); $('hf-reps-box').classList.toggle('hidden',st.targetType!=='reps'); $('hf-time-box').classList.toggle('hidden',st.targetType!=='tempo'); autoTime(); $('hf-generate').click(); };
   $('hf-btn-start').onclick=startTimer; $('hf-btn-pause').onclick=pauseTimer; $('hf-btn-reset').onclick=resetTimer;
   $('hf-open-music').onclick=()=>{ const box=$('hf-music-bg'); const frame=$('hf-music-frame'); if(!box||!frame) return; box.classList.remove('hidden'); frame.src='https://www.youtube.com/embed/H_oPsHyEI7k?autoplay=1&loop=1&playlist=H_oPsHyEI7k&controls=0&modestbranding=1'; $('hf-open-music').innerText='Música tocando no fundo'; };
