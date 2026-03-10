@@ -224,24 +224,6 @@ window.showSaudeSubTab=function(id){
 
 }
 
-window.initSaudeTab=function(){
-
-    window.showSaudeSubTab('sd-perfil');
-
-    if(!window.userDataCache.saude)window.userDataCache.saude={water:{}, exerciseLogs:{}};
-
-    const s = window.userDataCache.saude;
-
-    if(s.weight) document.getElementById('health-weight').value = s.weight;
-
-    if(s.height) document.getElementById('health-height').value = s.height;
-
-    if(s.imc) document.getElementById('imc-result').innerText = `IMC: ${s.imc} (${s.imcCategory})`;
-
-    window.renderHydration();
-    window.renderCaloricNeed();
-}
-
 window.calcIMC=async function(){
 
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
@@ -1592,58 +1574,32 @@ window.removeWater=async function(){
 };
 
 // NOVA LÓGICA NUTRICIONAL VIA IA (PRECISÃO PROFISSIONAL)
-
 window.doNutriAnalysis = async function() {
-
   const input = document.getElementById('mealInput');
-
   const qty = parseInt(document.getElementById('mealQty')?.value || '100', 10);
-
   const unit = document.getElementById('mealUnit')?.value || 'G';
-
+  const mealType = document.getElementById('mealType')?.value || 'Refeição';
   const text = (input?.value || '').trim();
-
   if (!text) return alert('Por favor, descreva o que você consumiu.');
 
-
-
   const btn = document.querySelector('button[onclick="window.doNutriAnalysis()"]');
-
   const originalBtnText = btn ? btn.innerHTML : '';
-
   if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analisando...'; btn.disabled = true; }
 
-
-
   const systemPrompt = `Atue como um nutricionista digital de alta precisão.
-
 Retorne APENAS um JSON com o formato: {"total_cal":numero,"p":numero,"c":numero,"f":numero,"items":[{"n":"item","cal":numero}]}
-
 Considere a porção informada: ${qty}${unit}. Use médias realistas brasileiras quando necessário.`;
 
-
-
   try {
-
     const response = await fetch(window.AI_PROXY_URL, {
-
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-
-      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição: ${text}` }], temperature:0.3 })
-
+      body: JSON.stringify({ messages:[{ role:'system', content: systemPrompt },{ role:'user', content:`Analise esta refeição (${mealType}): ${text}` }], temperature:0.3 })
     });
-
     const data = await response.json();
-
     const content = data?.choices?.[0]?.message?.content || '{}';
-
     const rawContent = content.replace(/```json|```/g, '').trim();
-
     const jsonChunk = rawContent.match(/\{[\s\S]*\}/)?.[0] || '{}';
-
     const nutri = JSON.parse(jsonChunk);
-
-
 
     const itemCal = Number(nutri.total_cal || 0), itemP = Number(nutri.p || 0), itemC = Number(nutri.c || 0), itemF = Number(nutri.f || 0);
 
