@@ -2302,7 +2302,53 @@ window.initHomeFitTool=function(){
   };
   const getCatalogExercise=(bodyKey,intensity)=>{ const pool=VIDEO_DB?.[bodyKey]?.[intensity]||VIDEO_DB?.['corpo-todo']?.iniciante||[]; return pool[Math.floor(Math.random()*pool.length)]||null; };
   const generateLocal=(bodyKey,intensity,targetType,perSec,reps)=>{ const base=getCatalogExercise(bodyKey,intensity)||{name:'Exercício funcional',steps:['Posicione-se com segurança.','Ative o abdômen.','Execute com controle.','Respire continuamente.','Finalize com calma.'],video:''}; const musclesMap={peito:['peitorais','tríceps'],costas:['dorsais','lombar'],ombros:['deltoides'],bracos:['bíceps','tríceps'],abdomen:['core'],gluteos:['glúteos'],pernas:['quadríceps'],mobilidade:['coluna'],'corpo-todo':['core','membros']}; return {id:uid(),bodyKey,intensity,targetType,perExerciseSec:Math.max(60,perSec),targetReps:targetType==='reps'?reps:null,name:base.name,version:base.version||'V1',videoUrl:base.video,videoEmbed:toEmbed(base.video),emoji:{peito:'🤸',costas:'🧍',ombros:'💪',bracos:'🏋️',abdomen:'🧘',gluteos:'🍑',pernas:'🏃','corpo-todo':'⚡',mobilidade:'🌿'}[bodyKey]||'🏋️',muscles:musclesMap[bodyKey]||['grupo alvo'],focusDesc:'Execução guiada para casa com segurança articular.',intensityDesc:intensity==='iniciante'?'Ritmo confortável e técnico.':intensity==='intermediario'?'Desafio moderado e consistente.':'Alta exigência com técnica refinada.',targetDesc:targetType==='reps'?`${reps} repetições com técnica.`:`${Math.max(60,perSec)}s contínuos com controle.`,steps:base.steps,preExecutionGuide:['Base estável: pés e mãos firmes no apoio recomendado no vídeo.','Postura: mantenha coluna neutra, pescoço alinhado e olhar fixo à frente.','Controle: execute cada repetição sem pressa, evitando movimentos bruscos.','Respiração: solte o ar no esforço e puxe o ar no retorno.','Segurança: interrompa em caso de dor aguda, tontura ou falta de ar importante.'],breathing:'Solte o ar no esforço e inspire no retorno.',posture:'Se sentir dor em articulação, reduza amplitude.',progression:'Aumente gradualmente volume e controle.',restNote:'Parabéns! Faça repouso ativo de 1 minuto, hidrate-se e normalize a respiração.',createdAt:new Date(),voiceScriptPrep:`Prepare-se para ${base.name}. Você terá vinte segundos para posicionar.`,voiceScriptStart:'Início da execução. Mantenha ritmo, alinhamento e respiração.'}; };
-  const askExerciseAI=async(bodyKey,intensity,targetType,perSec,reps)=>{ const base=getCatalogExercise(bodyKey,intensity); if(!base) return generateLocal(bodyKey,intensity,targetType,perSec,reps); const proxy=window.AI_PROXY_URL||window.CHAT_AI_PROXY_URL; if(!proxy){ const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps); ex.videoUrl=base.video; ex.videoEmbed=toEmbed(base.video); return ex; } const userPrompt=`Reescreva explicações para o exercício ${base.name} para leigos e idosos. Responda SOMENTE JSON válido com: focusDesc, intensityDesc, targetDesc, preExecutionGuide(array 5), steps(array 5), breathing, posture, progression, restNote.`; const messages=[{role:'system',content:'Você é especialista em prescrição caseira com linguagem simples e segura.'},{role:'user',content:userPrompt}]; const res=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:550})}); const data=await res.json(); const raw=(data?.choices?.[0]?.message?.content||'').trim().replace(/^```json\s*/i,'').replace(/```$/,''); const parsed=JSON.parse(raw||'{}'); const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps); ex.name=base.name; ex.version=base.version||'V1'; ex.videoUrl=base.video; ex.videoEmbed=toEmbed(base.video); ex.focusDesc=parsed.focusDesc||ex.focusDesc; ex.intensityDesc=parsed.intensityDesc||ex.intensityDesc; ex.targetDesc=parsed.targetDesc||ex.targetDesc; ex.preExecutionGuide=(Array.isArray(parsed.preExecutionGuide)&&parsed.preExecutionGuide.length?parsed.preExecutionGuide:ex.preExecutionGuide).slice(0,6); ex.steps=(Array.isArray(parsed.steps)&&parsed.steps.length?parsed.steps:base.steps).slice(0,6); ex.breathing=parsed.breathing||ex.breathing; ex.posture=parsed.posture||ex.posture; ex.progression=parsed.progression||ex.progression; ex.restNote=parsed.restNote||ex.restNote; return ex; };
+  const askExerciseAI=async(bodyKey,intensity,targetType,perSec,reps)=>{
+    const base=getCatalogExercise(bodyKey,intensity);
+    if(!base) return generateLocal(bodyKey,intensity,targetType,perSec,reps);
+    const proxy=window.AI_PROXY_URL||window.CHAT_AI_PROXY_URL;
+    if(!proxy){
+      const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps);
+      ex.videoUrl=base.video;
+      ex.videoEmbed=toEmbed(base.video);
+      return ex;
+    }
+    const userPrompt=`Reescreva explicações para o exercício ${base.name} para leigos e idosos. Responda SOMENTE JSON válido com: focusDesc, intensityDesc, targetDesc, preExecutionGuide(array 5), steps(array 5), breathing, posture, progression, restNote.`;
+    const messages=[
+      {role:'system',content:'Você é especialista em prescrição caseira com linguagem simples e segura.'},
+      {role:'user',content:userPrompt}
+    ];
+    const ctrl=('AbortController' in window)?new AbortController():null;
+    const timeoutId=setTimeout(()=>{ try{ ctrl?.abort(); }catch(e){} },9000);
+    let parsed={};
+    try{
+      const res=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:550}),signal:ctrl?.signal});
+      if(!res.ok) throw new Error('AI proxy indisponível');
+      const data=await res.json();
+      const raw=(data?.choices?.[0]?.message?.content||'').trim().replace(/^```json\s*/i,'').replace(/```$/,'');
+      try{ parsed=JSON.parse(raw||'{}'); }
+      catch(_){
+        const m=(raw||'').match(/\{[\s\S]*\}$/);
+        if(m) parsed=JSON.parse(m[0]);
+      }
+    }finally{
+      clearTimeout(timeoutId);
+    }
+    const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps);
+    ex.name=base.name;
+    ex.version=base.version||'V1';
+    ex.videoUrl=base.video;
+    ex.videoEmbed=toEmbed(base.video);
+    ex.focusDesc=parsed.focusDesc||ex.focusDesc;
+    ex.intensityDesc=parsed.intensityDesc||ex.intensityDesc;
+    ex.targetDesc=parsed.targetDesc||ex.targetDesc;
+    ex.preExecutionGuide=(Array.isArray(parsed.preExecutionGuide)&&parsed.preExecutionGuide.length?parsed.preExecutionGuide:ex.preExecutionGuide).slice(0,6);
+    ex.steps=(Array.isArray(parsed.steps)&&parsed.steps.length?parsed.steps:base.steps).slice(0,6);
+    ex.breathing=parsed.breathing||ex.breathing;
+    ex.posture=parsed.posture||ex.posture;
+    ex.progression=parsed.progression||ex.progression;
+    ex.restNote=parsed.restNote||ex.restNote;
+    return ex;
+  };
   const normalizeGuideItem=(item)=>{
     if(typeof item==='string') return item;
     if(item&&typeof item==='object') return item.text||item.step||item.description||item.title||JSON.stringify(item);
