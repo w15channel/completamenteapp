@@ -1,8 +1,9 @@
 const GROQ_OPENAI_COMPAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const XAI_OPENAI_COMPAT_URL = 'https://api.x.ai/v1/chat/completions';
 
-function providerConfig() {
-  if (process.env.XAI_API_KEY) {
+function providerConfig(hint) {
+  const wantsGrok = String(hint || '').toLowerCase().includes('grok') || String(hint || '').toLowerCase().includes('xai');
+  if ((wantsGrok && process.env.XAI_API_KEY) || (process.env.XAI_API_KEY && !process.env.GROQ_API_KEY)) {
     return {
       name: 'xAI Grok',
       url: XAI_OPENAI_COMPAT_URL,
@@ -10,11 +11,19 @@ function providerConfig() {
       model: process.env.XAI_MODEL || 'grok-2-latest'
     };
   }
+  if (process.env.GROQ_API_KEY) {
+    return {
+      name: 'Groq',
+      url: GROQ_OPENAI_COMPAT_URL,
+      apiKey: process.env.GROQ_API_KEY,
+      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+    };
+  }
   return {
-    name: 'Groq',
-    url: GROQ_OPENAI_COMPAT_URL,
-    apiKey: process.env.GROQ_API_KEY,
-    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+    name: 'xAI Grok',
+    url: XAI_OPENAI_COMPAT_URL,
+    apiKey: process.env.XAI_API_KEY,
+    model: process.env.XAI_MODEL || 'grok-2-latest'
   };
 }
 
@@ -27,7 +36,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido. Use POST.' });
 
-  const provider = providerConfig();
+  const body = req.body || {};
+  const provider = providerConfig(body.provider_hint);
   if (!provider.apiKey) {
     return res.status(500).json({
       error: 'Chave da IA não configurada.',
@@ -35,7 +45,6 @@ export default async function handler(req, res) {
     });
   }
 
-  const body = req.body || {};
   const incomingMessages = Array.isArray(body.messages) ? body.messages : [];
   const prompt = typeof body.mensagem === 'string' ? body.mensagem.trim() : '';
   const messages = incomingMessages.length ? incomingMessages : prompt ? [{ role: 'user', content: prompt }] : [];
