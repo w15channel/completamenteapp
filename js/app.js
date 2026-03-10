@@ -92,9 +92,9 @@ window.login = async function(isAuto) {
 
 
 
-        if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) {
+        if (!n || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p)) {
 
-            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
+            return alert("Atenção: Digite Nome e Sobrenome e a Senha (exatamente 8 números).");
 
         }
 
@@ -118,6 +118,12 @@ window.login = async function(isAuto) {
 
             if (!snap.exists()) {
 
+                if (!g && !isAuto) {
+
+                    return alert("Para primeiro acesso, selecione seu gênero.");
+
+                }
+
                 const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
 
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
@@ -132,7 +138,13 @@ window.login = async function(isAuto) {
 
                 if (u.pass !== p) return alert("Senha incorreta.");
 
-                
+                if (g && u.gender !== g) {
+
+                    await db.ref('users/' + window.clientId + '/gender').set(g);
+
+                    u.gender = g;
+
+                }
 
                 window.userDataCache = u || window.userDataCache;
 
