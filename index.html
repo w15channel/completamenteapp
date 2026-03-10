@@ -226,6 +226,22 @@
 
                         </div>
 
+                        <div class="mt-4 bg-slate-900/40 border border-white/20 rounded-xl p-3">
+                            <p class="text-[10px] text-rose-100 font-bold uppercase mb-2">Perfil de atividade diária</p>
+                            <select id="activity-level-select" class="w-full p-2 rounded-lg bg-slate-900/80 border border-slate-600 text-xs text-white outline-none">
+                                <option value="" selected disabled>Selecione seu nível</option>
+                                <option value="sedentario">Sedentário</option>
+                                <option value="moderado">Moderado</option>
+                                <option value="ativo">Ativo</option>
+                                <option value="atleta">Atleta</option>
+                            </select>
+                            <div id="activity-level-explanation" class="mt-2 text-[10px] text-slate-300 bg-slate-950/40 border border-slate-700 rounded-lg p-2">Selecione um perfil para ver a explicação.</div>
+                            <button onclick="window.generateActivityProfile()" class="w-full mt-3 bg-indigo-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Gerar perfil</button>
+                            <div id="activity-level-result" class="hidden mt-3 text-[11px] text-white bg-slate-900/70 border border-slate-600 rounded-lg p-3"></div>
+                        </div>
+
+                        <button onclick="window.resetHealthProfileInfo()" class="w-full mt-4 bg-slate-700 hover:bg-slate-600 text-slate-100 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Resetar info de perfil e biotipo</button>
+
                     </div>
 
                 </div>
@@ -302,6 +318,12 @@
                     <div class="flex flex-col gap-4">
                         <div class="glass-card p-4 border-emerald-500/20">
                             <label class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 block">Descreva sua Refeição</label>
+                            <select id="mealType" class="w-full mb-2 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none focus:border-emerald-500">
+                                <option value="Café da Manhã">Café da Manhã</option>
+                                <option value="Almoço">Almoço</option>
+                                <option value="Lanche">Lanche</option>
+                                <option value="Jantar">Jantar</option>
+                            </select>
                             <div class="grid grid-cols-3 gap-2 mb-2">
                                 <input id="mealQty" type="number" value="100" min="1" class="col-span-1 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-sm text-white text-center outline-none focus:border-emerald-500" />
                                 <select id="mealUnit" class="col-span-2 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none focus:border-emerald-500">
@@ -332,13 +354,32 @@
                                 </div>
                             </div>
 
-                            <div id="exercisePane" class="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl flex items-center gap-4">
+                            <div id="exercisePane" class="hidden bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl flex items-center gap-4">
                                 <div id="exIcon" class="text-3xl">🏃</div>
                                 <div class="flex-1">
                                     <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest" id="exName">Corrida</p>
-                                    <p class="text-xs text-slate-300 leading-tight">Para queimar esta refeição, você precisaria de <b class="text-white" id="exTime">0 min</b> desta atividade.</p>
+                                    <p class="text-xs text-slate-300 leading-tight">Seu superávit diário é de <b class="text-white" id="exSurplus">0 kcal</b>. Para compensar, você precisaria de <b class="text-white" id="exTime">0 min</b> desta atividade.</p>
                                 </div>
                             </div>
+                            <button id="burn-suggestion-btn" onclick="window.cycleBurnSuggestion()" class="hidden w-full mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Sugestão de queima calórica</button>
+                            <div id="burn-info" class="hidden mt-2 text-[10px] text-amber-200"></div>
+                        </div>
+
+                        <div class="glass-card p-4 border-teal-500/20">
+                            <p class="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-2">Gerar refeição equilibrada + lista de compras</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="balancedMealType" class="bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none">
+                                    <option value="Café da Manhã">Café da Manhã</option>
+                                    <option value="Almoço">Almoço</option>
+                                    <option value="Lanche">Lanche</option>
+                                    <option value="Jantar">Jantar</option>
+                                </select>
+                                <input id="balancedMealDays" type="number" min="1" max="7" value="3" class="bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white outline-none" placeholder="Dias" />
+                            </div>
+                            <input id="balancedMealRestrictions" type="text" class="w-full mt-2 bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs text-white outline-none" placeholder="Alergias/restrições (ex: lactose, glúten)" />
+                            <button onclick="window.generateBalancedMealPlan()" class="w-full mt-3 bg-teal-600 hover:bg-teal-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Gerar plano do dia</button>
+                            <div id="balancedMealResult" class="hidden mt-3 p-3 rounded-lg bg-slate-900/70 border border-slate-700 text-[11px] text-slate-200 whitespace-pre-line"></div>
+                            <button id="downloadShoppingBtn" onclick="window.downloadShoppingListPng()" class="hidden w-full mt-2 bg-sky-600 hover:bg-sky-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Baixar/Compartilhar lista PNG</button>
                         </div>
 
                         <div class="mt-2">
