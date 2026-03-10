@@ -2329,6 +2329,20 @@ window.initHomeFitTool=function(){
     catch(_){
       const m=(raw||'').match(/\{[\s\S]*\}$/);
       if(m) parsed=JSON.parse(m[0]);
+    const timeoutId=setTimeout(()=>{ try{ ctrl?.abort(); }catch(e){} },9000);
+    let parsed={};
+    try{
+      const res=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,temperature:0.4,max_tokens:550}),signal:ctrl?.signal});
+      if(!res.ok) throw new Error('AI proxy indisponível');
+      const data=await res.json();
+      const raw=(data?.choices?.[0]?.message?.content||'').trim().replace(/^```json\s*/i,'').replace(/```$/,'');
+      try{ parsed=JSON.parse(raw||'{}'); }
+      catch(_){
+        const m=(raw||'').match(/\{[\s\S]*\}$/);
+        if(m) parsed=JSON.parse(m[0]);
+      }
+    }finally{
+      clearTimeout(timeoutId);
     }
     const ex=generateLocal(bodyKey,intensity,targetType,perSec,reps);
     ex.name=base.name;
