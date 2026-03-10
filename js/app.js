@@ -1375,38 +1375,244 @@ window.cycleBurnSuggestion=function(){
   window.updateBurnSuggestionUI();
 };
 
-window.generateBalancedMealPlan=async function(){
-  window.ensureHealthStructures();
-  const mealType=document.getElementById('balancedMealType')?.value||'Almoço';
-  const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10)));
-  const restrictions=(document.getElementById('balancedMealRestrictions')?.value||'').trim()||'Sem restrições declaradas';
-  const out=document.getElementById('balancedMealResult');
-  const btn=document.querySelector('button[onclick="window.generateBalancedMealPlan()"]');
+window.balancedMealRecipes={
+  cafe:[
+    {name:'Pão francês com ovos mexidos e café com leite',ing:[{item:'pão francês',qty:'1 unidade'},{item:'ovos',qty:'2 unidades'},{item:'leite',qty:'200 ml'},{item:'café',qty:'1 xícara'}],cal:430,tags:['gluten','lactose','ovo','diaadia']},
+    {name:'Pão integral com queijo branco e mamão',ing:[{item:'pão integral',qty:'2 fatias'},{item:'queijo branco',qty:'60 g'},{item:'mamão',qty:'1/2 unidade'}],cal:360,tags:['gluten','lactose','diaadia']},
+    {name:'Tapioca com frango desfiado e banana',ing:[{item:'goma de tapioca',qty:'80 g'},{item:'frango desfiado',qty:'80 g'},{item:'banana',qty:'1 unidade'}],cal:390,tags:['carne','diaadia']},
+    {name:'Cuscuz com ovo e queijo coalho',ing:[{item:'flocão de milho',qty:'80 g'},{item:'ovo',qty:'1 unidade'},{item:'queijo coalho',qty:'40 g'}],cal:370,tags:['lactose','ovo','diaadia']}
+  ],
+  almoco:[
+    {name:'Arroz, feijão, frango grelhado e salada',ing:[{item:'arroz',qty:'150 g'},{item:'feijão',qty:'120 g'},{item:'peito de frango',qty:'160 g'},{item:'alface',qty:'80 g'},{item:'tomate',qty:'1 unidade'}],cal:640,tags:['carne','diaadia']},
+    {name:'Arroz, feijão, carne moída e cenoura',ing:[{item:'arroz',qty:'140 g'},{item:'feijão',qty:'100 g'},{item:'carne moída',qty:'150 g'},{item:'cenoura',qty:'100 g'}],cal:690,tags:['carne','diaadia']},
+    {name:'Peixe assado com purê de batata e legumes',ing:[{item:'filé de peixe',qty:'180 g'},{item:'batata',qty:'220 g'},{item:'abobrinha',qty:'120 g'},{item:'cebola',qty:'1 unidade'}],cal:590,tags:['peixe','diaadia']},
+    {name:'Arroz, lentilha, proteína de soja e couve',ing:[{item:'arroz',qty:'130 g'},{item:'lentilha',qty:'130 g'},{item:'proteína de soja',qty:'90 g'},{item:'couve',qty:'80 g'}],cal:560,tags:['soja','vegetariano']}
+  ],
+  janta:[
+    {name:'Sopa de legumes com frango desfiado',ing:[{item:'batata',qty:'140 g'},{item:'cenoura',qty:'100 g'},{item:'abóbora',qty:'120 g'},{item:'frango desfiado',qty:'100 g'}],cal:430,tags:['carne','diaadia']},
+    {name:'Omelete com tomate e arroz com feijão',ing:[{item:'ovos',qty:'2 unidades'},{item:'tomate',qty:'1 unidade'},{item:'arroz',qty:'100 g'},{item:'feijão',qty:'80 g'}],cal:520,tags:['ovo','diaadia']},
+    {name:'Crepioca de queijo e salada',ing:[{item:'goma de tapioca',qty:'70 g'},{item:'ovo',qty:'1 unidade'},{item:'queijo branco',qty:'50 g'},{item:'alface',qty:'60 g'}],cal:410,tags:['lactose','ovo','diaadia']},
+    {name:'Refogado de proteína de soja com legumes',ing:[{item:'proteína de soja',qty:'100 g'},{item:'abobrinha',qty:'100 g'},{item:'cenoura',qty:'80 g'},{item:'cebola',qty:'1 unidade'}],cal:400,tags:['soja','vegetariano']}
+  ],
+  lanche:[
+    {name:'Banana com aveia e leite',ing:[{item:'banana',qty:'1 unidade'},{item:'aveia',qty:'30 g'},{item:'leite',qty:'200 ml'}],cal:290,tags:['lactose','diaadia']},
+    {name:'Maçã com pasta de amendoim',ing:[{item:'maçã',qty:'1 unidade'},{item:'pasta de amendoim',qty:'20 g'}],cal:230,tags:['amendoim']},
+    {name:'Iogurte natural com granola',ing:[{item:'iogurte natural',qty:'170 g'},{item:'granola',qty:'30 g'}],cal:250,tags:['lactose','gluten']},
+    {name:'Pão com pasta de grão-de-bico',ing:[{item:'pão integral',qty:'2 fatias'},{item:'pasta de grão-de-bico',qty:'60 g'}],cal:300,tags:['gluten']}
+  ]
+};
+
+window.balancedGoalDisplay={
+  diaadia:'Dia a dia brasileiro 🏠',
+  ganho:'Ganho de massa muscular 💪',
+  perda:'Perder peso ⚖️',
+  performance:'Performance e Resistência Física 🏃',
+  foco:'Foco Cognitivo e Saúde Mental 🧠',
+  imunidade:'Imunidade e Recuperação 🛡️',
+  intestinal:'Saúde Intestinal (Microbiota) 🦠',
+  longevidade:'Longevidade e Prevenção de Doenças 🌿',
+  posop:'Pós Operatório 🏥',
+  sono:'Melhora da Qualidade do Sono 😴'
+};
+
+window.getBalancedGoalNutritionProfile=function(goal){
   const ctx=window.getEnergyContext();
-  const needPerMeal=Math.max(250,Math.round(ctx.gastoTotal/4));
-  const prompt=`Retorne APENAS JSON no formato {"meal_plan":["..."],"shopping_list":[{"item":"","qty":""}]}. Crie plano para ${mealType}, ${days} dias/semana, ~${needPerMeal} kcal por refeição. Restrições: ${restrictions}. Contexto: sexo ${window.userDataCache?.gender||'M'}, idade ${ctx.age}, biotipo ${window.userDataCache?.saude?.biotype?.result||'não definido'}, atividade ${window.userDataCache?.saude?.activityProfile?.name||'não definido'}.`;
-  const old=btn?btn.innerHTML:'';
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';}
-  try{
-    const response=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'Atue como nutricionista brasileiro prático.'},{role:'user',content:prompt}],temperature:0.3})});
-    const data=await response.json();
-    const content=(data?.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
-    const chunk=content.match(/\{[\s\S]*\}/)?.[0]||'{}';
-    const parsed=JSON.parse(chunk);
-    const meals=Array.isArray(parsed.meal_plan)?parsed.meal_plan:[];
-    const shopping=Array.isArray(parsed.shopping_list)?parsed.shopping_list:[];
-    const textMeals=meals.length?meals.map((m,i)=>`${i+1}. ${m}`).join('\n'):'Sem plano retornado.';
-    const textShop=shopping.length?shopping.map((i)=>`• ${i.item||'Item'} - ${i.qty||'qtd'}`).join('\n'):'Sem itens de compra.';
-    if(out){out.classList.remove('hidden'); out.innerText=`Plano (${mealType} / ${days} dias):\n${textMeals}\n\nLista de compras:\n${textShop}`;}
-    const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopping.length);
-  }catch(e){
-    console.error(e); alert('Não foi possível gerar plano equilibrado agora.');
-  }finally{ if(btn){btn.disabled=false;btn.innerHTML=old;} }
+  const h=parseFloat(window.userDataCache?.saude?.height)||1.7;
+  const gender=(window.userDataCache?.gender||'M');
+  const idealWeight=Math.max(45, Math.min(95, 22*(h*h)));
+  const idealBase=(gender==='H'?24:22)*idealWeight;
+  const activityFactor=parseFloat(window.userDataCache?.saude?.activityProfile?.factor)||1.2;
+  const idealTotal=Math.round(idealBase*activityFactor);
+  const currentNeed=Math.max(1300,ctx.gastoTotal||2000);
+  const profiles={
+    diaadia:{kcal:Math.round(currentNeed),desc:'Plano tradicional para suprir aproximadamente 100% da necessidade calórica diária.'},
+    ganho:{kcal:Math.round(currentNeed*1.15),desc:'Superávit calórico de ~15% para favorecer ganho de massa muscular.'},
+    perda:{kcal:Math.round(idealTotal*0.85),desc:'Déficit moderado (~15%) com base no peso ideal para altura (IMC alvo 22).'},
+    performance:{kcal:Math.round(currentNeed*1.12),desc:'Leve superávit para melhorar energia, resistência e recuperação física.'},
+    foco:{kcal:Math.round(currentNeed*1.0),desc:'Manutenção calórica com refeições mais estáveis para foco e energia mental.'},
+    imunidade:{kcal:Math.round(currentNeed*1.05),desc:'Aporte levemente acima da manutenção para sustentar recuperação e imunidade.'},
+    intestinal:{kcal:Math.round(currentNeed*0.98),desc:'Próximo da manutenção, priorizando alimentos leves e boa digestibilidade.'},
+    longevidade:{kcal:Math.round(currentNeed*0.95),desc:'Leve redução calórica para equilíbrio metabólico no longo prazo.'},
+    posop:{kcal:Math.round(currentNeed*1.1),desc:'Aporte energético ampliado para suporte de cicatrização e recuperação.'},
+    sono:{kcal:Math.round(currentNeed*0.95),desc:'Leve redução e distribuição mais leve para favorecer qualidade do sono.'}
+  };
+  const selected=profiles[goal]||profiles.diaadia;
+  return {...selected, currentNeed, idealTotal};
+};
+
+window.normalizeRestrictionText=function(text){
+  return (text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+};
+
+window.parseBalancedRestrictions=function(rawText){
+  const normalized=window.normalizeRestrictionText(rawText);
+  if(!normalized) return [];
+  const keys=[];
+  const has=(...words)=>words.some((w)=>normalized.includes(w));
+  if(has('sem lactose','lactose','leite')) keys.push('lactose');
+  if(has('sem gluten','gluten','trigo')) keys.push('gluten');
+  if(has('sem nozes','nozes','castanha','amendoim')) keys.push('amendoim');
+  if(has('sem carne','vegetar')) keys.push('carne');
+  if(has('sem peixe','nao como peixe')) keys.push('peixe');
+  if(has('sem ovo','alergia a ovo')) keys.push('ovo');
+  if(has('sem soja','alergia soja')) keys.push('soja');
+  return [...new Set(keys)];
+};
+
+window.parseQtyToBase=function(qtyText){
+  const raw=(qtyText||'').toString().trim().toLowerCase().replace(',', '.');
+  if(!raw) return null;
+  const fractionMatch=raw.match(/(\d+)\/(\d+)/);
+  let num=fractionMatch?(Number(fractionMatch[1])/Number(fractionMatch[2])):null;
+  if(num===null){ const n=raw.match(/\d+(?:\.\d+)?/); num=n?Number(n[0]):null; }
+  if(num===null || Number.isNaN(num)) return {kind:'text',text:qtyText};
+
+  if(/\bkg\b/.test(raw)) return {kind:'mass',value:num*1000,base:'g'};
+  if(/\bg\b/.test(raw)) return {kind:'mass',value:num,base:'g'};
+  if(/\bl\b/.test(raw) && !/ml/.test(raw)) return {kind:'volume',value:num*1000,base:'ml'};
+  if(/\bml\b/.test(raw)) return {kind:'volume',value:num,base:'ml'};
+  if(/xicara|xic/.test(raw)) return {kind:'count',value:num,base:'xícara'};
+  if(/colher/.test(raw)) return {kind:'count',value:num,base:'colher'};
+  if(/fatia/.test(raw)) return {kind:'count',value:num,base:'fatia'};
+  if(/unidade|un\b|unid/.test(raw)) return {kind:'count',value:num,base:'unidade'};
+  if(/lata/.test(raw)) return {kind:'count',value:num,base:'lata'};
+  return {kind:'text',text:qtyText};
+};
+
+window.formatAggregatedQty=function(parsed){
+  if(parsed.kind==='mass'){
+    if(parsed.value>=1000) return `${(parsed.value/1000).toFixed(parsed.value%1000===0?0:1)} kg`;
+    return `${Math.round(parsed.value)} g`;
+  }
+  if(parsed.kind==='volume'){
+    if(parsed.value>=1000) return `${(parsed.value/1000).toFixed(parsed.value%1000===0?0:1)} L`;
+    return `${Math.round(parsed.value)} ml`;
+  }
+  if(parsed.kind==='count') return `${Math.round(parsed.value*10)/10} ${parsed.base}${parsed.value>1?'s':''}`;
+  return parsed.text;
+};
+
+window.aggregateShoppingList=function(shoppingMap){
+  const merged=[];
+  Array.from(shoppingMap.entries()).forEach(([item,qtys])=>{
+    const buckets={};
+    const freeText=[];
+    qtys.forEach((q)=>{
+      const parsed=window.parseQtyToBase(q);
+      if(!parsed) return;
+      if(parsed.kind==='text'){ freeText.push(parsed.text); return; }
+      const key=`${parsed.kind}:${parsed.base}`;
+      buckets[key]=(buckets[key]||0)+parsed.value;
+    });
+    const qtyParts=Object.entries(buckets).map(([k,val])=>{
+      const [kind,base]=k.split(':');
+      return window.formatAggregatedQty({kind,value:val,base});
+    });
+    const finalQty=[...qtyParts,...freeText].join(' + ');
+    merged.push({item,qty:finalQty||'a gosto'});
+  });
+  return merged.sort((a,b)=>a.item.localeCompare(b.item));
+};
+
+window.generateBalancedMealPlan=async function(){
+  const goal=document.getElementById('balancedMealGoal')?.value||'diaadia';
+  const mealType=document.getElementById('balancedMealType')?.value||'completo';
+  const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10)));
+  const restrictionsRaw=document.getElementById('balancedMealRestrictions')?.value||'';
+  const restrictions=window.parseBalancedRestrictions(restrictionsRaw);
+  const out=document.getElementById('balancedMealResult');
+  const mealTypes=mealType==='completo'?['cafe','almoco','lanche','janta']:[mealType];
+  const profile=window.getBalancedGoalNutritionProfile(goal);
+  const targetPerMeal=Math.max(220, Math.round(profile.kcal/mealTypes.length));
+
+  const plan={goal,days,goalDisplay:window.balancedGoalDisplay[goal]||window.balancedGoalDisplay.diaadia,meals:[],shopping:new Map(),profile};
+
+  for(let day=1;day<=days;day++){
+    const dayMeals=[];
+    mealTypes.forEach((type)=>{
+      const pool=(window.balancedMealRecipes[type]||[])
+        .filter((r)=>!restrictions.some((key)=>r.tags?.includes(key)))
+        .sort((a,b)=>Math.abs(a.cal-targetPerMeal)-Math.abs(b.cal-targetPerMeal));
+      if(!pool.length) return;
+      const pick=pool[Math.floor(Math.random()*Math.min(2,pool.length))];
+      dayMeals.push({type,name:pick.name,cal:pick.cal,ing:pick.ing});
+      pick.ing.forEach((ig)=>{
+        if(!plan.shopping.has(ig.item)) plan.shopping.set(ig.item,[]);
+        plan.shopping.get(ig.item).push(ig.qty);
+      });
+    });
+    plan.meals.push({day,items:dayMeals});
+  }
+
+  const mealText=plan.meals.map((d)=>{
+    if(!d.items.length) return `Dia ${d.day}: sem opções compatíveis com as restrições informadas.`;
+    const items=d.items.map((m)=>{
+      const ingText=m.ing.map((ig)=>`   • ${ig.item}: ${ig.qty}`).join('\n');
+      return `- ${m.name} (${m.cal} kcal)\n  Ingredientes:\n${ingText}`;
+    }).join('\n');
+    return `Dia ${d.day}\n${items}`;
+  }).join('\n\n');
+  const shopItems=window.aggregateShoppingList(plan.shopping);
+  const shopText=shopItems.length?shopItems.map((i)=>`• ${i.item}: ${i.qty}`).join('\n'):'Sem itens de compra para o filtro escolhido.';
+
+  window.currentBalancedPlan={...plan,shoppingItems:shopItems,restrictionsRaw};
+  if(out){
+    out.classList.remove('hidden');
+    out.innerText=`Plano (${plan.goalDisplay} / ${days} dia(s))
+Meta calórica diária: ~${profile.kcal} kcal
+Meta por refeição: ~${targetPerMeal} kcal
+Dinâmica: ${profile.desc}
+Restrições: ${restrictionsRaw||'não informadas'}
+
+${mealText}
+
+Lista de compras (somada):
+${shopText}`;
+  }
+  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shopItems.length);
 };
 
 window.downloadShoppingListPng=function(){
-  const target=document.getElementById('balancedMealResult'); if(!target||target.classList.contains('hidden')) return alert('Gere uma lista antes de baixar.');
-  html2canvas(target).then(canvas=>{ const link=document.createElement('a'); link.download=`Lista-Compras-${window.clientName||'Usuario'}.png`; link.href=canvas.toDataURL('image/png'); link.click(); });
+  if(!window.currentBalancedPlan) return alert('Gere uma lista antes de baixar.');
+  const items=window.currentBalancedPlan.shoppingItems||[];
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=760;
+  canvas.height=Math.max(560,250+(items.length*56));
+
+  ctx.fillStyle='#0f172a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='#14b8a6';
+  ctx.lineWidth=6;
+  ctx.strokeRect(24,24,canvas.width-48,canvas.height-48);
+
+  ctx.fillStyle='#e2e8f0';
+  ctx.textAlign='center';
+  ctx.font='bold 34px Arial';
+  ctx.fillText('🛒 LISTA DE COMPRAS',canvas.width/2,80);
+  ctx.font='bold 20px Arial';
+  ctx.fillStyle='#5eead4';
+  ctx.fillText(`${window.currentBalancedPlan.days} dia(s) • ${window.currentBalancedPlan.goalDisplay}`,canvas.width/2,116);
+  ctx.fillStyle='#cbd5e1';
+  ctx.font='16px Arial';
+  ctx.fillText(`Meta diária ~${window.currentBalancedPlan.profile?.kcal||0} kcal`,canvas.width/2,142);
+
+  ctx.textAlign='left';
+  let y=186;
+  items.forEach((row)=>{
+    ctx.fillStyle='#f87171';
+    ctx.font='bold 22px Arial';
+    ctx.fillText(row.item.charAt(0).toUpperCase()+row.item.slice(1),56,y);
+    ctx.fillStyle='#e2e8f0';
+    ctx.font='19px Arial';
+    ctx.fillText(row.qty,56,y+24);
+    y+=56;
+  });
+
+  const link=document.createElement('a');
+  link.download=`Lista-Compras-${window.clientName||'Usuario'}.png`;
+  link.href=canvas.toDataURL('image/png');
+  link.click();
 };
 
 window.resetWaterIfNewDay=async function(){
