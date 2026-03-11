@@ -92,10 +92,12 @@ window.login = async function(isAuto) {
 
 
 
-        if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) {
+        const hasName = n.length > 0;
+        const hasFullName = n.split(' ').filter(Boolean).length >= 2;
+        const hasValidPin = /^[0-9]{8}$/.test(p);
 
-            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
-
+        if (!isAuto && (!g || !hasName || !p)) {
+            return alert("Atenção: Selecione seu gênero, informe seu nome e senha para continuar.");
         }
 
 
@@ -117,6 +119,9 @@ window.login = async function(isAuto) {
             const snap = await db.ref('users/' + window.clientId).once('value');
 
             if (!snap.exists()) {
+                if (!isAuto && (!hasFullName || !hasValidPin)) {
+                    return alert("Para novo cadastro, informe Nome e Sobrenome e uma senha com exatamente 8 números.");
+                }
 
                 const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
 
