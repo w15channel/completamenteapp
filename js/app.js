@@ -859,6 +859,87 @@ window.extractJsonObject=function(text=''){
     try{ return JSON.parse(candidate.slice(start,end+1)); }catch(_e){ return null; }
   }
 };
+window.renderCaloricNeed=function(){
+  const resultEl=document.getElementById('calorie-need-result');
+  if(!resultEl) return;
+  
+  const s=window.userDataCache?.saude||{};
+  const weight=parseFloat(s.weight)||0;
+  const height=parseFloat(s.height)||0;
+  const imc=parseFloat(s.imc)||0;
+  const age=window.getUserAge()||40;
+  const gender=window.getUserGender()||'masculino';
+  const biotype=s.biotype?.result||'mesomorfo';
+  const activityFactor=s.activityProfile?.factor||1.2;
+  
+  if(!weight || !height){
+    resultEl.innerText='-- kcal/dia';
+    return;
+  }
+  
+  // Cálculo da taxa metabólica basal (TMB) usando fórmula de Harris-Benedict
+  let tmb;
+  if(gender==='masculino'){
+    tmb = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+  } else {
+    tmb = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+  }
+  
+  // Ajuste por biotipo
+  const biotypeFactors = {
+    ectomorfo: 1.05,  // Metabolismo mais acelerado
+    mesomorfo: 1.0,   // Metabolismo padrão
+    endomorfo: 0.95   // Metabolismo mais lento
+  };
+  
+  const biotypeFactor = biotypeFactors[biotype] || 1.0;
+  
+  // Ajuste por IMC
+  let imcAdjustment = 1.0;
+  if(imc < 18.5) imcAdjustment = 1.1;      // Abaixo do peso precisa mais calorias
+  else if(imc >= 18.5 && imc < 25) imcAdjustment = 1.0;  // Peso normal
+  else if(imc >= 25 && imc < 30) imcAdjustment = 0.95;    // Sobrepeso
+  else imcAdjustment = 0.9;                           // Obesidade
+  
+  // Cálculo final: TMB × fator atividade × fator biotipo × ajuste IMC
+  const calorieNeed = Math.round(tmb * activityFactor * biotypeFactor * imcAdjustment);
+  
+  // Armazenar para uso em outras funções
+  window.userDataCache.saude.calorieNeed = calorieNeed;
+  
+  // Exibir resultado
+  resultEl.innerText=`${calorieNeed.toLocaleString('pt-BR')} kcal/dia`;
+  
+  // Adicionar descrição informativa
+  const descEl=document.getElementById('calorie-need-description');
+  if(descEl){
+    const activityName=s.activityProfile?.name||'Não definido';
+    const biotypeName=window.BIOTYPE_PROFILES[biotype]?.name||'Não definido';
+    descEl.innerHTML=`Baseado em: ${age} anos, ${gender}, ${biotypeName}, ${activityName}`;
+  }
+};
+window.getUserAge=function(){
+  if(/^\d{8}$/.test((window.userDataCache?.pass||'').trim())){
+    const d=parseInt(window.userDataCache.pass.slice(0,2),10);
+    const m=parseInt(window.userDataCache.pass.slice(2,4),10)-1;
+    const y=parseInt(window.userDataCache.pass.slice(4),10);
+    const born=new Date(y,m,d);
+    if(!Number.isNaN(born.getTime())){
+      const now=new Date();
+      let age=now.getFullYear()-born.getFullYear();
+      const md=now.getMonth()-born.getMonth();
+      if(md<0 || (md===0 && now.getDate()<born.getDate())) age--;
+      return age;
+    }
+  }
+  return 40; // padrão se não conseguir calcular
+};
+window.getUserGender=function(){
+  // Tentar obter do cache ou de algum campo
+  return window.userDataCache?.profile?.gender || 
+         document.getElementById('user-gender')?.value || 
+         'masculino'; // padrão
+};
 window.computeGoalCalorieTarget=function(goal){
   const strategy=window.balancedGoalCalorieStrategies[goal]||window.balancedGoalCalorieStrategies.diaadia; return {multiplier:strategy.mult,description:strategy.desc};
 };
