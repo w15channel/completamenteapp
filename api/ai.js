@@ -116,11 +116,24 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido. Use POST.' });
 
   const body = req.body || {};
+  
+  // Se provider_hint especificar openai explicitamente, usar APENAS OpenAI sem fallback
+  const normalizedHint = String(body.provider_hint || '').toLowerCase();
+  const forceOpenAI = normalizedHint === 'openai' || normalizedHint.includes('gpt');
+  
   const providers = providerCandidates(body.provider_hint);
-  if (!providers.some((provider) => provider.apiKey)) {
+  
+  // Filtrar para usar apenas OpenAI se forçado
+  const filteredProviders = forceOpenAI 
+    ? providers.filter(p => p.name === 'OpenAI')
+    : providers;
+  
+  if (!filteredProviders.some((provider) => provider.apiKey)) {
     return res.status(500).json({
       error: 'Chave da IA não configurada.',
-      details: 'Defina OPENAI_API_KEY, GEMINI_API_KEY, QWEEN_API_KEY (ou QWEN_API_KEY) ou GROQ_API_KEY no ambiente da Vercel.'
+      details: forceOpenAI 
+        ? 'OPENAI_API_KEY não está configurada no ambiente da Vercel.'
+        : 'Defina OPENAI_API_KEY, GEMINI_API_KEY, QWEEN_API_KEY (ou QWEN_API_KEY) ou GROQ_API_KEY no ambiente da Vercel.'
     });
   }
 
@@ -132,7 +145,7 @@ export default async function handler(req, res) {
 
   const providerErrors = [];
 
-  for (const provider of providers) {
+  for (const provider of filteredProviders) {
     if (!provider.apiKey) continue;
     try {
       if (provider.type === 'gemini') {

@@ -726,24 +726,48 @@ window.validateMealProgression=function(meals, goal='diaadia'){
   
   return meals;
 };
-window.normalizeMealPlanStructure=function(mealPlan, goal='diaadia'){
-  const slots=goal==='perda' ? ['Café da Manhã','Almoço','Lanche da Tarde','Lanche leve noturno'] : ['Café da Manhã','Almoço','Lanche da Tarde','Jantar leve'];
+window.normalizeMealPlanStructure=function(mealPlan, goal='diaadia', mealTypeLabel=''){
+  // Se for refeição específica (não plano completo), não forçar todos os slots
+  const isPlanoCompleto = mealTypeLabel.includes('Completo') || mealTypeLabel.includes('completo');
+  
+  // Slots padrão apenas para plano completo
+  const defaultSlots=goal==='perda' ? ['Café da Manhã','Almoço','Lanche da Tarde','Lanche leve noturno'] : ['Café da Manhã','Almoço','Lanche da Tarde','Jantar leve'];
+  
   return (Array.isArray(mealPlan)?mealPlan:[]).map((d,idx)=>{
     const meals=Array.isArray(d?.meals)?d.meals:[];
     const mapped={};
     meals.forEach((m)=>{ const slot=window.normalizeMealSlotName(m?.name||m?.meal||'', goal); if(slot && !mapped[slot]) mapped[slot]=m; });
-    const normalizedMeals=slots.map((slot)=>{
-      const src=mapped[slot]||{};
-      const recipeName=String(src.recipe_name||src.title||src.name||slot).trim();
-      const ingredients=Array.isArray(src.ingredients)?src.ingredients.filter(Boolean):[];
-      const items=Array.isArray(src.items)?src.items.filter(Boolean):[];
-      const prep=String(src.preparation||src.preparo||'Preparo simples com ingredientes frescos e porção adequada ao objetivo.').trim();
-      const safeItems=items.length?items:ingredients.length?ingredients:['Receita não detalhada pela IA.'];
-      return {name:slot,time:String(src.time||'').trim(),recipe_name:recipeName,ingredients,preparation:prep,items:safeItems,kcal:Number(src.kcal)||0};
-    });
-    // Aplicar validação de progressão para refeições mais leves após o almoço
-    const validatedMeals = window.validateMealProgression(normalizedMeals, goal);
-    return {day:Number(d?.day)||idx+1, meals:validatedMeals};
+    
+    let normalizedMeals;
+    
+    if (isPlanoCompleto) {
+      // Plano completo: mostrar todos os slots padrão
+      normalizedMeals=defaultSlots.map((slot)=>{
+        const src=mapped[slot]||{};
+        const recipeName=String(src.recipe_name||src.title||src.name||slot).trim();
+        const ingredients=Array.isArray(src.ingredients)?src.ingredients.filter(Boolean):[];
+        const items=Array.isArray(src.items)?src.items.filter(Boolean):[];
+        const prep=String(src.preparation||src.preparo||'Preparo simples com ingredientes frescos e porção adequada ao objetivo.').trim();
+        const safeItems=items.length?items:ingredients.length?ingredients:['Receita não detalhada pela IA.'];
+        return {name:slot,time:String(src.time||'').trim(),recipe_name:recipeName,ingredients,preparation:prep,items:safeItems,kcal:Number(src.kcal)||0};
+      });
+      // Aplicar validação de progressão para refeições mais leves após o almoço
+      normalizedMeals = window.validateMealProgression(normalizedMeals, goal);
+    } else {
+      // Refeição específica: mostrar apenas as refeições que foram realmente geradas
+      normalizedMeals = meals.map((m) => {
+        const slot = window.normalizeMealSlotName(m?.name || m?.meal || '', goal) || m?.name || 'Refeição';
+        const src = m;
+        const recipeName = String(src.recipe_name || src.title || src.name || slot).trim();
+        const ingredients = Array.isArray(src.ingredients) ? src.ingredients.filter(Boolean) : [];
+        const items = Array.isArray(src.items) ? src.items.filter(Boolean) : [];
+        const prep = String(src.preparation || src.preparo || 'Preparo simples com ingredientes frescos.').trim();
+        const safeItems = items.length ? items : ingredients.length ? ingredients : ['Receita não detalhada.'];
+        return {name: slot, time: String(src.time || '').trim(), recipe_name: recipeName, ingredients, preparation: prep, items: safeItems, kcal: Number(src.kcal) || 0};
+      }).filter(m => m.recipe_name && m.recipe_name !== 'Receita não detalhada.' && m.recipe_name !== m.name);
+    }
+    
+    return {day:Number(d?.day)||idx+1, meals:normalizedMeals};
   });
 };
 window.extractJsonObject=function(text=''){
@@ -860,7 +884,7 @@ window.generateBalancedMealPlan=async function(){
   const aiData=window.extractJsonObject(aiText)||{};
   const shoppingList=Array.isArray(aiData.shopping_list)?aiData.shopping_list.map((item)=>({item:String(item?.item||'').trim(),qty:String(item?.qty||'quantidade a gosto').trim()})).filter((entry)=>entry.item):[];
   const rawMealPlan=Array.isArray(aiData.meal_plan)?aiData.meal_plan:[];
-  const mealPlan=window.normalizeMealPlanStructure(rawMealPlan, goal);
+  const mealPlan=window.normalizeMealPlanStructure(rawMealPlan, goal, mealTypeLabel);
   const tips=Array.isArray(aiData.tips)?aiData.tips.filter(Boolean):[];
   const notes=String(aiData.notes||'').trim();
   window.currentBalancedPlan={goalDisplay:planGoalDisplay,days,shoppingList,aiText,mealPlan,tips,notes};
