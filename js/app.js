@@ -667,12 +667,18 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
       'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
       'IMPORTANTE: Gere APENAS receitas para o tipo de refeição solicitado. NÃO gere outras refeições.',
       'Use APENAS RECEITAS BRASILEIRAS REAIS E COESAS. NUNCA sugira ingredientes soltos.',
-      'Use PREPARAÇÕES COMUNS NO BRASIL: arroz, feijão, frango, peixes, ovos, tapioca, pão de queijo, mandioca, batata doce, legumes, saladas, iogurte, frutas, sucos, sopas, vitaminas.',
+      'Use PREPARAÇÕES COMUNS NO BRASIL: arroz, feijão, peixes, ovos, tapioca, pão de queijo, mandioca, batata doce, legumes, saladas, iogurte, frutas, sucos, sopas, vitaminas.',
       `Tipo de refeição solicitado: ${mealTypeLabel}.`,
       `Objetivo: ${goalLabel}.`,
       `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
       `Preferências extras: ${preferences||'nenhuma'}.`,
       `Para ${days} dia(s), gere ${days} receita(s) diferentes de ${mealTypeLabel}.`,
+      'ATENÇÃO ÀS RESTRIÇÕES:',
+      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: Permitir APENAS peixes e frutos do mar. PROIBIDO: carnes bovinas, suínas, aves, embutidos. Nozes e castanhas são permitidas.' : '',
+      restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO qualquer alimento de origem animal (carnes, laticínios, ovos, mel).' : '',
+      restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: Permitir ovos e laticínios. PROIBIDO: carnes, frango, peixe.' : '',
+      restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO glúten (trigo, centeio, cevida, aveia). Use farinha de arroz, mandioca, milho.' : '',
+      restrictionLabels.includes('Lactose') ? '- INTOLERANTE À LACTOSE: PROIBIDO laticínios. Use leite vegetal, queijos sem lactose.' : '',
       'Cada receita deve ter: nome brasileiro, ingredientes com quantidades, modo de preparo, e kcal.',
       'EXEMPLOS para Café da Manhã: "Tapioca com queijo", "Pão de queijo com café", "Vitamina de frutas", "Omelete de queijo"',
       'EXEMPLOS para Almoço: "Feijão com arroz e bife", "Frango grelhado com salada", "Sopa de legumes"',
@@ -681,7 +687,7 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
       'Retorne SOMENTE JSON válido sem markdown, no formato:',
       `{"meal_plan":[{"day":1,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Nome da Receita","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}],"shopping_list":[{"item":"ingrediente","qty":"quantidade"}],"tips":["dica relevante"],"notes":"observações"}`,
       'A lista de compras deve conter itens para todas as receitas geradas.'
-    ].join('\n');
+    ].filter(line => line.trim() !== '').join('\n');
   }
 };
 window.normalizeMealSlotName=function(name='', goal='diaadia'){
@@ -748,15 +754,49 @@ window.extractJsonObject=function(text=''){
   }catch(_err){
     // Tentar encontrar e combinar múltiplos objetos JSON
     const jsonObjects = [];
-    const regex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+    // Regex melhorado para capturar objetos JSON completos (compatível com JavaScript)
+    const regex = /\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\})*\})*\}))*\}/g;
     let match;
     
+    // Tentativa 1: Usar regex melhorado
     while ((match = regex.exec(candidate)) !== null) {
       try {
         const parsed = JSON.parse(match[0]);
         jsonObjects.push(parsed);
       } catch (e) {
         // Ignorar objetos inválidos
+      }
+    }
+    
+    // Tentativa 2: Se não funcionou, tentar abordagem manual
+    if (jsonObjects.length === 0) {
+      const lines = candidate.split('\n').filter(line => line.trim().startsWith('{'));
+      for (const line of lines) {
+        try {
+          // Encontrar o objeto completo correspondente
+          const startIndex = candidate.indexOf(line);
+          if (startIndex !== -1) {
+            let braceCount = 0;
+            let endIndex = startIndex;
+            
+            for (let i = startIndex; i < candidate.length; i++) {
+              if (candidate[i] === '{') braceCount++;
+              if (candidate[i] === '}') braceCount--;
+              if (braceCount === 0) {
+                endIndex = i;
+                break;
+              }
+            }
+            
+            if (braceCount === 0 && endIndex > startIndex) {
+              const jsonStr = candidate.substring(startIndex, endIndex + 1);
+              const parsed = JSON.parse(jsonStr);
+              jsonObjects.push(parsed);
+            }
+          }
+        } catch (e) {
+          // Ignorar objetos inválidos
+        }
       }
     }
     
