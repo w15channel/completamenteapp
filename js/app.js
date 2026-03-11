@@ -224,6 +224,20 @@ Verifique o console (F12) para logs detalhados.`;
     btn.disabled = false;
   }
 };
+window.ensureHealthStructures=function(){
+  if(!window.userDataCache) window.userDataCache={};
+  if(!window.userDataCache.saude) window.userDataCache.saude={};
+  const s=window.userDataCache.saude;
+  if(!s.water) s.water={total:0,history:[],day:window.getTodayStr(),goalReachedAt:null};
+  if(!Array.isArray(s.water.history)) s.water.history=[];
+  if(!s.healthGoalLog || s.healthGoalLog.month!==window.getMonthStr()) s.healthGoalLog={month:window.getMonthStr(),entries:[]};
+  if(!Array.isArray(s.healthGoalLog.entries)) s.healthGoalLog.entries=[];
+  if(!s.exercise || s.exercise.day!==window.getTodayStr()) s.exercise={day:window.getTodayStr(),goal:20,total:0,logs:[]};
+  if(!Array.isArray(s.exercise.logs)) s.exercise.logs=[];
+  if(!s.anxietyDaily || s.anxietyDaily.day!==window.getTodayStr()) s.anxietyDaily={day:window.getTodayStr(), score:null, completed:false};
+};
+window.getMonthStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+window.getTodayStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 window.showSaudeSubTab=function(id){
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
     ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
@@ -251,9 +265,17 @@ window.getHydrationGoal=function(){
 };
 window.renderHydration=function(){
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
-  const totalEl=document.getElementById('water-total'); const goalEl=document.getElementById('water-goal-text'); const bar=document.getElementById('water-progress-bar');
+  const totalEl=document.getElementById('water-total'); const goalEl=document.getElementById('water-goal-text'); const bar=document.getElementById('water-progress-bar'); const lastEl=document.getElementById('water-last-entry');
   const goal=window.getHydrationGoal(); const total=w.total||0; const pct=Math.min(100, Math.round((total/goal)*100));
   if(totalEl) totalEl.innerText=`${total} ml`; if(goalEl) goalEl.innerText=`Meta: ${goal} ml`; if(bar) bar.style.width=`${pct}%`;
+  if(lastEl){
+    if(w.lastEntry){
+      const dt=new Date(w.lastEntry.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      lastEl.innerText=`Último lançamento: ${w.lastEntry.amount}ml (${w.lastEntry.label} = ${w.lastEntry.valid}ml) às ${dt}`;
+    } else {
+      lastEl.innerText='Último lançamento: --';
+    }
+  }
 };
 window.getHydrationFactor=function(drinkType){
     if(drinkType==='juice') return 0.5; if(drinkType==='soda') return 0.25; if(drinkType==='tea') return 0.75; return 1;
@@ -1078,6 +1100,56 @@ window.extractJsonObject=function(text=''){
     if(start===-1||end===-1||end<=start) return null;
     try{ return JSON.parse(candidate.slice(start,end+1)); }catch(_e){ return null; }
   }
+};
+window.addWater=async function(){
+  await window.resetWaterIfNewDay();
+  const amount=parseInt(document.getElementById('water-amount-input').value), type=document.getElementById('water-drink-type').value;
+  if(!amount||amount<=0) return alert('Informe uma quantidade válida em ml.');
+  const labels={water:'Água',juice:'Suco',soda:'Refrigerante',tea:'Chá/Infusão'}; const valid=Math.round(amount*window.getHydrationFactor(type));
+  window.ensureHealthStructures(); const now=Date.now(); const w=window.userDataCache.saude.water;
+  const entry={amount,valid,type,label:labels[type]||'Água',at:now}; w.total=Math.max(0,(w.total||0)+valid); w.lastEntry=entry; w.history.push(entry);
+  const goal=window.getHydrationGoal();
+  if(w.total>=goal && !w.goalReachedAt){
+    w.goalReachedAt=now; alert('Parabéns por cuidar da saúde! Meta de líquidos concluída hoje.');
+    window.userDataCache.saude.healthGoalLog.entries.push({text:`Meta de hidratação concluída em ${new Date(now).toLocaleDateString('pt-BR')}`,at:now});
+  }
+  window.renderHydration(); window.renderWaterHistory(); window.renderHealthGoalsLog();
+  if(w.total>=goal && (window.waterReminderInterval || window.waterReminderTimeout)){
+    clearInterval(window.waterReminderInterval); clearTimeout(window.waterReminderTimeout);
+    window.waterReminderInterval=null; window.waterReminderTimeout=null;
+    const b=document.getElementById('water-reminder-btn'); if(b)b.innerHTML='<i class="fas fa-bell"></i> Lembrete';
+  }
+  if(db){ await db.ref('users/'+window.clientId+'/saude/water').set(w); await db.ref('users/'+window.clientId+'/saude/healthGoalLog').set(window.userDataCache.saude.healthGoalLog); }
+};
+window.removeWater=async function(){
+  await window.resetWaterIfNewDay(); window.ensureHealthStructures(); const now=Date.now(); const w=window.userDataCache.saude.water;
+  const entry={amount:250,valid:-250,type:'remove',label:'Ajuste manual',at:now}; w.total=Math.max(0,(w.total||0)-250); w.lastEntry=entry; w.history.push(entry);
+  window.renderHydration(); window.renderWaterHistory();
+  if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w);
+};
+window.resetWaterIfNewDay=async function(){
+  window.ensureHealthStructures();
+  const w=window.userDataCache.saude.water;
+  const today=window.getTodayStr();
+  if(w.day!==today){ w.day=today; w.total=0; w.history=[]; w.goalReachedAt=null; w.lastEntry=null; if(db) await db.ref('users/'+window.clientId+'/saude/water').set(w); }
+};
+window.getUserAge=function(){
+  const pass=window.userDataCache?.pass||'';
+  if(!/^\d{8}$/.test(pass)) return 40;
+  const day=parseInt(pass.slice(0,2),10);
+  const month=parseInt(pass.slice(2,4),10)-1;
+  const year=parseInt(pass.slice(4),10);
+  const birth=new Date(year,month,day);
+  if(isNaN(birth.getTime())) return 40;
+  const today=new Date();
+  let age=today.getFullYear()-birth.getFullYear();
+  const monthDiff=today.getMonth()-birth.getMonth();
+  if(monthDiff<0 || (monthDiff===0 && today.getDate()<birth.getDate())) age--;
+  return age;
+};
+window.getUserGender=function(){
+  const gender=window.userDataCache?.gender||'M';
+  return gender==='M'?'masculino':'feminino';
 };
 window.renderCaloricNeed=function(){
   const resultEl=document.getElementById('calorie-need-result');
