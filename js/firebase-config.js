@@ -1,12 +1,12 @@
-// Configuração do Firebase - Usa variáveis de ambiente em produção
+// Configuração do Firebase - Credenciais corretas baseadas na versão funcional
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "completamenteapp.firebaseapp.com",
-  databaseURL: process.env.FIREBASE_DATABASE_URL || "https://completamenteapp-default-rtdb.firebaseio.com",
-  projectId: process.env.FIREBASE_PROJECT_ID || "completamenteapp",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "completamenteapp.firebasestorage.app",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "343038230333",
-  appId: process.env.FIREBASE_APP_ID || "1:343038230333:web:2338b20d2e706743b40f54"
+  apiKey: "AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",
+  authDomain: "completamenteapp.firebaseapp.com",
+  databaseURL: "https://completamenteapp-default-rtdb.firebaseio.com",
+  projectId: "completamenteapp",
+  storageBucket: "completamenteapp.firebasestorage.app",
+  messagingSenderId: "343038230333",
+  appId: "1:343038230333:web:2338b20d2e706743b40f54"
 };
 
 // Variável global do Firebase para uso em todo o aplicativo
@@ -92,6 +92,107 @@ window.diagnoseFirebaseConnection = async function() {
 setTimeout(() => {
   window.diagnoseFirebaseConnection();
 }, 2000);
+
+// Função de sincronização robusta (baseada na versão antiga funcional)
+window.robustSync = async function(userId) {
+  if (!window.db || !userId) {
+    console.log("⚠️ Firebase ou userId não disponível");
+    return false;
+  }
+  
+  try {
+    console.log("🔄 Iniciando sincronização robusta para:", userId);
+    
+    // 1. Sincronizar dados do usuário (abordagem simples e direta)
+    const snap = await db.ref('users/' + userId).once('value');
+    if (snap.exists()) {
+      const userData = snap.val();
+      
+      // Mesclar dados preservando informações locais importantes
+      if (window.userDataCache) {
+        // Preservar dados locais que possam não estar no Firebase
+        const localPreserve = {
+          relacional: window.userDataCache.relacional || {},
+          saude: window.userDataCache.saude || {},
+          financas: window.userDataCache.financas || { transactions: [] }
+        };
+        
+        // Atualizar com dados do Firebase, mas preservar dados locais
+        window.userDataCache = {
+          ...userData,
+          relacional: { ...localPreserve.relacional, ...userData.relacional },
+          saude: { ...localPreserve.saude, ...userData.saude },
+          financas: { ...localPreserve.financas, ...userData.financas }
+        };
+      } else {
+        window.userDataCache = userData;
+      }
+      
+      console.log("✅ Dados do usuário sincronizados com sucesso");
+      
+      // 2. Sincronizar dados globais importantes
+      await Promise.all([
+        syncMuralData(),
+        syncChatData(userId),
+        syncAdminData()
+      ]);
+      
+      return true;
+    } else {
+      console.log("ℹ️ Usuário não encontrado no Firebase, mantendo dados locais");
+      return false;
+    }
+    
+  } catch (error) {
+    console.error("❌ Erro na sincronização robusta:", error);
+    return false;
+  }
+};
+
+// Sincronizar mural
+window.syncMuralData = async function() {
+  try {
+    const snap = await db.ref('mural').once('value');
+    const data = snap.val() || {};
+    window.muralData = Object.keys(data)
+      .map(id => ({ id, ...data[id] }))
+      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    console.log(`✅ Mural sincronizado: ${window.muralData.length} posts`);
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar mural:", error);
+  }
+};
+
+// Sincronizar chats
+window.syncChatData = async function(userId) {
+  try {
+    const snap = await db.ref('chats').once('value');
+    const allChats = snap.val() || {};
+    
+    // Filtrar chats do usuário atual
+    window.userChats = {};
+    Object.keys(allChats).forEach(chatId => {
+      if (chatId.startsWith(userId + '_')) {
+        window.userChats[chatId] = allChats[chatId];
+      }
+    });
+    
+    console.log(`✅ Chats sincronizados: ${Object.keys(window.userChats).length} conversas`);
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar chats:", error);
+  }
+};
+
+// Sincronizar dados admin
+window.syncAdminData = async function() {
+  try {
+    const snap = await db.ref('admin_auth').once('value');
+    window.adminData = snap.val();
+    console.log("✅ Dados admin sincronizados");
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar dados admin:", error);
+  }
+};
 
 // Função de sincronização automática completa (baseada na versão antiga)
 window.autoSyncAllData = async function(userId) {

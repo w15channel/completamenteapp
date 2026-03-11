@@ -36,13 +36,12 @@ window.login = async function(isAuto) {
         window.clientId = n.replace(/\s+/g, '_'); window.clientName = n.split(' ')[0];
         if (!window.userDataCache) window.userDataCache = { relacional: {}, saude: {}, financas: { transactions: [] } };
         if (window.db) {
-            // Usar sincronização automática completa (baseada na versão antiga melhorada)
-            console.log("🔄 Iniciando sincronização automática no login...");
-            const syncSuccess = await window.autoSyncAllData(window.clientId);
+            // Usar sincronização robusta (baseada na versão antiga funcional)
+            console.log("🔄 Iniciando sincronização robusta no login...");
+            const syncSuccess = await window.robustSync(window.clientId);
             
-            // Se sincronização falhar, tentar sincronização básica
             if (!syncSuccess) {
-                console.log("⚠️ Sincronização completa falhou, tentando sincronização básica...");
+                console.log("⚠️ Sincronização robusta falhou, tentando abordagem padrão...");
                 await window.syncUserData(window.clientId);
             }
             
@@ -161,63 +160,61 @@ window.manualSyncData=async function(){
   btn.disabled = true;
   
   try{
-    console.log("🔄 Iniciando sincronização manual completa...");
+    console.log("🔄 Iniciando sincronização manual robusta...");
     
-    // 1. Forçar diagnóstico primeiro
-    await window.diagnoseFirebaseConnection();
+    // 1. Usar sincronização robusta principal
+    const syncSuccess = await window.robustSync(window.clientId);
     
-    // 2. Recuperar TODOS os dados do Firebase
-    console.log("📥 Recuperando dados completos do Firebase...");
-    const recoveredData = await window.recoverAllFirebaseData();
-    
-    if(recoveredData){
-      console.log("✅ Dados recuperados com sucesso!");
+    if(syncSuccess){
+      console.log("✅ Sincronização robusta concluída com sucesso!");
       
-      // 3. Carregar dados específicos
-      await window.loadMuralFromFirebase();
-      await window.loadChatsFromFirebase();
+      // 2. Tentar recuperação adicional de dados completos
+      console.log("📥 Tentando recuperação adicional de dados...");
+      const additionalData = await window.recoverAllFirebaseData();
       
-      // 4. Forçar salvamento dos dados atuais
-      await window.forceSaveUserData();
+      if(additionalData){
+        console.log("✅ Dados adicionais recuperados!");
+      }
       
-      // 5. Exibir resumo detalhado
+      // 3. Exibir resumo detalhado
       const summary = `
-🎉 SINCRONIZAÇÃO COMPLETA REALIZADA!
+🎉 SINCRONIZAÇÃO ROBUSTA CONCLUÍDA!
 
-📊 Dados Recuperados:
-• 👥 Usuários: ${Object.keys(recoveredData.users).length}
-• 🖼️ Mural: ${recoveredData.mural.length} posts
-• 💬 Chats: ${Object.keys(recoveredData.chats).length}
-• ⚙️ Config Admin: ${recoveredData.admin_auth ? 'Disponível' : 'Não encontrado'}
-• 🤖 Status IA: ${Object.keys(recoveredData.ai_status).length}
+📊 Status da Sincronização:
+• ✅ Dados do usuário: Sincronizados
+• ✅ Mural: ${window.muralData ? window.muralData.length : 0} posts
+• ✅ Chats: ${window.userChats ? Object.keys(window.userChats).length : 0} conversas
+• ✅ Config Admin: ${window.adminData ? 'Disponível' : 'Não encontrado'}
+${additionalData ? `• ✅ Dados adicionais: Recuperados` : ''}
 
-💾 Backup salvo em localStorage com timestamp: ${recoveredData.timestamp}
+🔄 Métodos utilizados:
+• 📡 Sincronização robusta (principal)
+• 📥 Recuperação adicional (backup)
 
-✅ Seus dados pessoais foram restaurados!
-✅ Mural e históricos de chat foram carregados!
-✅ Interface atualizada com os dados recuperados!
+✅ Interface atualizada com os dados sincronizados!
+✅ Seus dados importantes foram preservados e restaurados!
 
-Verifique o console (F12) para logs detalhados de todos os dados.`;
+Verifique o console (F12) para logs detalhados.`;
       
       alert(summary);
       
-      // 6. Atualizar interface se necessário
-      if(window.userDataCache.saude){
-        window.renderHydration();
-        window.renderCaloricNeed();
+      // 4. Atualizar interface se necessário
+      if(window.userDataCache && window.userDataCache.saude){
+        if(typeof window.renderHydration === 'function') window.renderHydration();
+        if(typeof window.renderCaloricNeed === 'function') window.renderCaloricNeed();
       }
       
-      // 7. Se estiver na aba de relaxamento, atualizar mural
+      // 5. Se estiver na aba de relaxamento, atualizar mural
       const currentTab = document.querySelector('.tab-content.active');
       if(currentTab && currentTab.id === 'relaxation'){
         const muralTab = document.getElementById('rx-mural');
         if(muralTab && !muralTab.classList.contains('hidden')){
-          window.loadMural();
+          if(typeof window.loadMural === 'function') window.loadMural();
         }
       }
       
     } else {
-      alert("⚠️ Não foi possível recuperar dados. Verifique sua conexão e tente novamente.");
+      alert("⚠️ Não foi possível sincronizar. Verifique sua conexão e tente novamente.");
     }
   } catch(error){
     console.error("❌ Erro na sincronização manual:", error);
