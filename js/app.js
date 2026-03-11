@@ -943,6 +943,44 @@ window.getUserGender=function(){
 window.computeGoalCalorieTarget=function(goal){
   const strategy=window.balancedGoalCalorieStrategies[goal]||window.balancedGoalCalorieStrategies.diaadia; return {multiplier:strategy.mult,description:strategy.desc};
 };
+window.renderExerciseProgress=function(){
+  window.ensureHealthStructures(); const ex=window.userDataCache.saude.exercise;
+
+  const total=Math.round(ex.total||0), goal=ex.goal||20, pct=Math.min(100, Math.round((total/goal)*100));
+
+  const goalEl=document.getElementById('exercise-goal-text'), leftEl=document.getElementById('ex-left-text'), bar=document.getElementById('ex-progress-bar');
+
+  if(goalEl) goalEl.innerText=`Meta diária: ${goal} min`;
+
+  if(leftEl) leftEl.innerText = total>=goal ? 'Meta diária concluída' : `Faltam ${goal-total} min`;
+
+  if(bar) bar.style.width = `${pct}%`;
+
+};
+window.renderAnxietyDailyState=function(){
+  window.ensureHealthStructures(); const a=window.userDataCache.saude.anxietyDaily; const bar=document.getElementById('ansio-bar'); if(!bar) return;
+
+  const score=(a.day===window.getTodayStr() && a.score!=null)?a.score:0;
+
+  bar.style.width=score+'%';
+
+  if(score<=25) bar.className='bg-blue-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.8)]';
+
+  else if(score<=50) bar.className='bg-green-500 h-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.8)]';
+
+  else if(score<=75) bar.className='bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+
+  else bar.className='bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
+
+};
+window.addExercise=async function(){
+  window.ensureHealthStructures(); const sport=document.getElementById('health-sport')?.value; const mins=parseInt(document.getElementById('health-sport-time')?.value,10);
+  if(!sport||!mins||mins<=0) return alert('Informe exercício e duração válida.');
+  const ex=window.userDataCache.saude.exercise; ex.logs.unshift({sport, mins, at:Date.now()}); ex.logs=ex.logs.slice(0,30); ex.total=Math.max(0,(ex.total||0)+mins);
+  document.getElementById('health-sport-time').value='';
+  window.renderExerciseProgress();
+  if(db) await db.ref('users/'+window.clientId+'/saude/exercise').set(ex);
+};
 window.parseQtyForShopping=function(qty=''){
   const txt=String(qty||'').trim().toLowerCase(); const m=txt.match(/^(\d+(?:[\.,]\d+)?)\s*(.*)$/); if(!m) return null;
   const value=parseFloat(m[1].replace(',','.')); if(Number.isNaN(value)) return null; let unit=(m[2]||'').trim()||'unidades';
