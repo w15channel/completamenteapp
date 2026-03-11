@@ -742,7 +742,52 @@ window.extractJsonObject=function(text=''){
   const raw=String(text||'').trim();
   const fenced=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate=fenced?fenced[1].trim():raw;
-  try{ return JSON.parse(candidate); }catch(_err){
+  
+  try{ 
+    return JSON.parse(candidate); 
+  }catch(_err){
+    // Tentar encontrar e combinar múltiplos objetos JSON
+    const jsonObjects = [];
+    const regex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+    let match;
+    
+    while ((match = regex.exec(candidate)) !== null) {
+      try {
+        const parsed = JSON.parse(match[0]);
+        jsonObjects.push(parsed);
+      } catch (e) {
+        // Ignorar objetos inválidos
+      }
+    }
+    
+    if (jsonObjects.length > 0) {
+      // Combinar múltiplos objetos em um único
+      const combined = {
+        meal_plan: [],
+        shopping_list: [],
+        tips: [],
+        notes: ""
+      };
+      
+      jsonObjects.forEach(obj => {
+        if (obj.meal_plan && Array.isArray(obj.meal_plan)) {
+          combined.meal_plan = combined.meal_plan.concat(obj.meal_plan);
+        }
+        if (obj.shopping_list && Array.isArray(obj.shopping_list)) {
+          combined.shopping_list = combined.shopping_list.concat(obj.shopping_list);
+        }
+        if (obj.tips && Array.isArray(obj.tips)) {
+          combined.tips = combined.tips.concat(obj.tips);
+        }
+        if (obj.notes && typeof obj.notes === 'string') {
+          combined.notes += (combined.notes ? ' ' : '') + obj.notes;
+        }
+      });
+      
+      return combined;
+    }
+    
+    // Fallback para método original
     const start=candidate.indexOf('{'); const end=candidate.lastIndexOf('}');
     if(start===-1||end===-1||end<=start) return null;
     try{ return JSON.parse(candidate.slice(start,end+1)); }catch(_e){ return null; }
