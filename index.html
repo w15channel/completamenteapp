@@ -535,7 +535,7 @@
                         <h3 class="text-sm font-black text-white uppercase tracking-wider"><i class="fas fa-house-medical mr-2 text-emerald-400"></i>HomeFit IA</h3>
                         <span id="hf-counter-label" class="text-[10px] text-slate-400 font-black uppercase">0 exercícios na sessão</span>
                     </div>
-                    <div class="grid md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                         <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3 space-y-3">
                             <button id="hf-btn-random" class="w-full bg-slate-800 border border-slate-600 text-slate-200 text-[10px] font-black uppercase py-2 rounded-lg">IA Surpreender</button>
                             <div>
@@ -574,31 +574,35 @@
                             </div>
                             <label class="text-[10px] text-slate-400 flex items-center gap-2"><input id="hf-voice-check" type="checkbox"> Ler comandos em voz alta</label>
                         </div>
-                        <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3">
-                            <div class="flex justify-between items-center mb-2"><p class="text-[10px] uppercase text-slate-400 font-black">Guia do exercício atual</p><span id="hf-badge" class="text-[9px] px-2 py-1 rounded-full border border-slate-600 text-slate-400">Aguardando</span></div>
-                            <div id="hf-prescription" class="mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 p-2 text-[11px] text-amber-100">
-                                Gere um exercício para visualizar os cuidados de <b>Antes de iniciar</b>.
-                            </div>
-                            <div id="hf-exercise-container" class="space-y-2 max-h-96 overflow-y-auto text-xs text-slate-300">
-                                Configure e clique em <b>Gerar exercício com IA</b> para receber um guia inteligente.
-                            </div>
-                        </div>
-                        <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3 space-y-3">
-                            <div class="border border-slate-700 rounded-lg p-2">
-                                <p id="hf-timer-status" class="text-[10px] uppercase text-slate-400 font-black">Pronto</p>
-                                <p id="hf-timer-display" class="text-3xl font-black tracking-widest text-white">00:60</p>
-                                <p id="hf-session-info" class="text-[10px] text-slate-500">Sessão alvo: 20 min • 0 exercícios concluídos</p>
-                                <div class="mt-2 flex gap-1"><button id="hf-btn-start" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2 rounded">Play</button><button id="hf-btn-pause" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Pausar</button><button id="hf-btn-reset" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Reset</button></div>
-                                <p id="hf-phase-badge" class="text-[10px] mt-2 text-emerald-400 font-bold">Fase: parada</p>
-                            </div>
-                            <div class="border border-slate-700 rounded-lg p-2">
-                                <div class="flex justify-between items-center mb-2"><p class="text-[10px] uppercase text-slate-400 font-black">Histórico</p><button id="hf-clear-history" class="text-[10px] px-2 py-1 rounded bg-slate-800 border border-slate-600">Limpar</button></div>
-                                <div id="hf-history" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-400">Nenhum exercício concluído ainda.</div>
-                            </div>
-                            <div class="border border-slate-700 rounded-lg p-2">
-                                <p class="text-[10px] uppercase text-slate-400 font-black mb-2">Ficha compartilhável</p>
-                                <div class="flex gap-1"><button id="hf-generate-card" class="flex-1 bg-sky-600 text-white text-[10px] font-black py-2 rounded">Gerar ficha PNG</button><a id="hf-download-link" download="homefit-ficha.png" class="hidden flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded text-center">Baixar PNG</a></div>
-                                <canvas id="hf-share-canvas" width="600" height="320" class="w-full mt-2 rounded bg-slate-950"></canvas>
+                        <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3 lg:col-span-2">
+                            <div class="grid lg:grid-cols-2 gap-3">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2"><p class="text-[10px] uppercase text-slate-400 font-black">Guia do exercício atual</p><span id="hf-badge" class="text-[9px] px-2 py-1 rounded-full border border-slate-600 text-slate-400">Aguardando</span></div>
+                                    <div id="hf-prescription" class="mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 p-2 text-[11px] text-amber-100">
+                                        Gere um exercício para visualizar os cuidados de <b>Antes de iniciar</b>.
+                                    </div>
+                                    <div id="hf-exercise-container" class="space-y-2 max-h-96 overflow-y-auto text-xs text-slate-300">
+                                        Configure e clique em <b>Gerar exercício com IA</b> para receber um guia inteligente.
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="border border-slate-700 rounded-lg p-2">
+                                        <p id="hf-timer-status" class="text-[10px] uppercase text-slate-400 font-black">Pronto</p>
+                                        <p id="hf-timer-display" class="text-3xl font-black tracking-widest text-white">00:60</p>
+                                        <p id="hf-session-info" class="text-[10px] text-slate-500">Sessão alvo: 20 min • 0 exercícios concluídos</p>
+                                        <div class="mt-2 flex gap-1"><button id="hf-btn-start" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2 rounded">Play</button><button id="hf-btn-pause" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Pausar</button><button id="hf-btn-reset" class="flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded">Reset</button></div>
+                                        <p id="hf-phase-badge" class="text-[10px] mt-2 text-emerald-400 font-bold">Fase: parada</p>
+                                    </div>
+                                    <div class="border border-slate-700 rounded-lg p-2">
+                                        <div class="flex justify-between items-center mb-2"><p class="text-[10px] uppercase text-slate-400 font-black">Histórico</p><button id="hf-clear-history" class="text-[10px] px-2 py-1 rounded bg-slate-800 border border-slate-600">Limpar</button></div>
+                                        <div id="hf-history" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-400">Nenhum exercício concluído ainda.</div>
+                                    </div>
+                                    <div class="border border-slate-700 rounded-lg p-2">
+                                        <p class="text-[10px] uppercase text-slate-400 font-black mb-2">Ficha compartilhável</p>
+                                        <div class="flex gap-1"><button id="hf-generate-card" class="flex-1 bg-sky-600 text-white text-[10px] font-black py-2 rounded">Gerar ficha PNG</button><a id="hf-download-link" download="homefit-ficha.png" class="hidden flex-1 bg-slate-700 text-white text-[10px] font-black py-2 rounded text-center">Baixar PNG</a></div>
+                                        <canvas id="hf-share-canvas" width="600" height="320" class="w-full mt-2 rounded bg-slate-950"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
