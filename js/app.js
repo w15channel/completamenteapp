@@ -629,7 +629,7 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return { text:'Nenhum texto foi enviado para a IA.', provider:'Sem provedor' };
   try{
-    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'openai',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
     const data = await response.json();
     return { text:data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.', provider:data?.provider||'Provedor IA' };
   }catch(error){ console.error('Erro na IA:',error); return { text:'Falha na comunicação com a IA para montar o plano.', provider:'Indisponível' }; }
