@@ -566,7 +566,7 @@ window.balancedMealRestrictionOptions=[
   {id:'ovolacto',label:'Ovolactovegetariano',desc:'Sem carnes; permite vegetais, ovos e laticínios.',tags:['carne','frango','peixe']},
   {id:'lacto',label:'Lactovegetariano',desc:'Sem carnes e ovos; mantém laticínios.',tags:['carne','frango','peixe','ovo']},
   {id:'ovo',label:'Ovovegetariano',desc:'Sem carnes e laticínios; mantém ovos.',tags:['carne','frango','peixe','lactose']},
-  {id:'pescetariano',label:'Pescetariano (sem frutos do mar)',desc:'Sem carnes bovinas/suínas/aves e sem crustáceos/moluscos; permite peixes.',tags:['carne','frango','frutosmar']},
+  {id:'pescetariano',label:'Pescetariano',desc:'Sem carnes bovinas/suínas/aves, crustáceos/moluscos e embutidos animais; permite peixes.',tags:['carne','frango','frutosmar','embutidos']},
   {id:'lowcarb',label:'Low Carb',desc:'Reduz fortemente carboidratos; foco em proteínas e gorduras.',tags:['lowcarb']},
   {id:'liquida',label:'Dieta Líquida',desc:'Permite somente fluidos ou alimentos líquidos.',tags:['liquida']},
   {id:'celiaco',label:'Celíaco (Isenção de Glúten)',desc:'Exclusão total de glúten (trigo, centeio e cevada).',tags:['gluten']},
@@ -603,12 +603,33 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
   try{
-    const response=await fetch(window.AI_PROXY_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:800})});
-    const data = await response.json(); return data.choices[0].message.content;
+    const response=await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const data = await response.json(); return data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.';
   }catch(error){ console.error('Erro na IA:',error); return 'Falha na conexão com a IA.'; }
 };
 window.buildBalancedPlanPrompt=function({goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
-  return ['Você é nutricionista esportivo.', 'Crie um plano alimentar em português, prático e seguro.', `Objetivo: ${goalLabel}.`, `Período: ${days} dia(s).`, `Tipo: ${mealTypeLabel}.`, `Restrições: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`, `Preferências extras: ${preferences||'nenhuma'}.`, 'Retorne apenas 1) Plano por dia, 2) Lista de compras, 3) Dicas.'].join('\n');
+  return [
+    'Você é nutricionista esportivo e deve responder em português do Brasil.',
+    'Crie um plano alimentar prático e seguro, respeitando as restrições fixas.',
+    `Objetivo: ${goalLabel}.`,
+    `Período: ${days} dia(s).`,
+    `Tipo: ${mealTypeLabel}.`,
+    `Restrições: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
+    `Preferências extras: ${preferences||'nenhuma'}.`,
+    'Retorne SOMENTE JSON válido sem markdown, no formato:',
+    '{"meal_plan":[{"day":1,"meals":[{"name":"","time":"","items":[""],"kcal":0}]}],"shopping_list":[{"item":"","qty":""}],"tips":[""],"notes":""}',
+    'A lista de compras deve conter itens consolidados para todo o período e quantidades aproximadas.'
+  ].join('\n');
+};
+window.extractJsonObject=function(text=''){
+  const raw=String(text||'').trim();
+  const fenced=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate=fenced?fenced[1].trim():raw;
+  try{ return JSON.parse(candidate); }catch(_err){
+    const start=candidate.indexOf('{'); const end=candidate.lastIndexOf('}');
+    if(start===-1||end===-1||end<=start) return null;
+    try{ return JSON.parse(candidate.slice(start,end+1)); }catch(_e){ return null; }
+  }
 };
 window.computeGoalCalorieTarget=function(goal){
   const strategy=window.balancedGoalCalorieStrategies[goal]||window.balancedGoalCalorieStrategies.diaadia; return {multiplier:strategy.mult,description:strategy.desc};
@@ -624,52 +645,36 @@ window.formatShoppingQty=function(sum){
   return `${Number.isInteger(sum.value)?Math.floor(sum.value):sum.value.toFixed(1).replace('.',',')} ${sum.unit}`;
 };
 window.generateBalancedMealPlan=async function(){
-  const goal=document.getElementById('balancedMealGoal')?.value||'diaadia'; const mealType=document.getElementById('balancedMealType')?.value||'completo'; const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10))); const preferences=(document.getElementById('balancedMealPreferences')?.value||'').trim(); const out=document.getElementById('balancedMealResult'); const mealTypes=mealType==='completo'?['cafe','almoco','lanche','janta']:[mealType]; const calorieTarget=window.computeGoalCalorieTarget(goal); const restrictionData=window.getSelectedMealRestrictions(); const restrictions=restrictionData.tags;
-  const plan={goal,days,goalDisplay:window.balancedGoalDisplay[goal]||window.balancedGoalDisplay.diaadia,meals:[],shopping:new Map(),calorieTarget}; const allIngredients=[];
-  for(let day=1;day<=days;day++){
-    const dayMeals=[];
-    mealTypes.forEach((type)=>{
-      const pool=window.filtrarReceitasPlano(window.balancedMealRecipes?.[type]||[], restrictions);
-      if(!pool.length) return; const pick=pool[Math.floor(Math.random()*pool.length)]; const adjustedCal=Math.round((pick.cal||0)*calorieTarget.multiplier);
-      dayMeals.push({type,name:pick.name,cal:pick.cal,calAdjusted:adjustedCal,observation:calorieTarget.description,ing:pick.ing||[]});
-      (pick.ing||[]).forEach((ig)=>allIngredients.push(ig));
-    });
-    plan.meals.push({day,items:dayMeals});
-  }
-  allIngredients.forEach((ig)=>{
-    const key=String(ig.item||'').trim().toLowerCase();
-    if(!plan.shopping.has(key)) plan.shopping.set(key,{item:ig.item,parsed:[],raw:[]});
-    const bucket=plan.shopping.get(key); const parsed=window.parseQtyForShopping(ig.qty);
-    if(parsed) bucket.parsed.push(parsed); else bucket.raw.push(ig.qty);
-  });
-  const shopItems=Array.from(plan.shopping.values()).sort((a,b)=>a.item.localeCompare(b.item));
-  const normalizedItems=shopItems.map((data)=>{
-    const byUnit=new Map(); (data.parsed||[]).forEach((p)=>byUnit.set(p.unit,(byUnit.get(p.unit)||0)+p.value));
-    const consolidated=[...byUnit.entries()].map(([unit,value])=>window.formatShoppingQty({unit,value}));
-    const extras=data.raw||[]; return {item:data.item,qty:[...consolidated,...extras].join(' + ')||'quantidade a gosto'};
-  });
-  const totalCal=plan.meals.reduce((acc,d)=>acc+d.items.reduce((s,m)=>s+(m.calAdjusted||0),0),0); const avgCal=plan.meals.length?Math.round(totalCal/plan.meals.length):0;
+  const goal=document.getElementById('balancedMealGoal')?.value||'diaadia'; const mealType=document.getElementById('balancedMealType')?.value||'completo'; const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10))); const preferences=(document.getElementById('balancedMealPreferences')?.value||'').trim(); const out=document.getElementById('balancedMealResult'); const planGoalDisplay=window.balancedGoalDisplay[goal]||window.balancedGoalDisplay.diaadia; const restrictionData=window.getSelectedMealRestrictions();
   const mealTypeLabel=(document.getElementById('balancedMealType')?.selectedOptions?.[0]?.textContent||mealType).trim();
-  const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||plan.goalDisplay).trim();
+  const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||planGoalDisplay).trim();
   out.classList.remove('hidden'); out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>A IA está elaborando o plano, aguarde...</div>`;
   const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
   const aiText=await window.consultarIA(promptIA);
-  window.currentBalancedPlan={...plan,shoppingList:normalizedItems,aiText};
+  const aiData=window.extractJsonObject(aiText)||{};
+  const shoppingList=Array.isArray(aiData.shopping_list)?aiData.shopping_list.map((item)=>({item:String(item?.item||'').trim(),qty:String(item?.qty||'quantidade a gosto').trim()})).filter((entry)=>entry.item):[];
+  const mealPlan=Array.isArray(aiData.meal_plan)?aiData.meal_plan:[];
+  const tips=Array.isArray(aiData.tips)?aiData.tips.filter(Boolean):[];
+  const notes=String(aiData.notes||'').trim();
+  window.currentBalancedPlan={goalDisplay:planGoalDisplay,days,shoppingList,aiText,mealPlan,tips,notes};
   if(out){
-    const mealCards=plan.meals.map((d)=>{
-      if(!d.items.length) return `<div><b>Dia ${d.day}</b><br><span>Sem opções compatíveis com as restrições.</span></div>`;
-      const items=d.items.map((m)=>{
-        const ingredients=(m.ing||[]).map((ig)=>`<li>${ig.item}: ${ig.qty}</li>`).join('');
-        return `<div style="margin-top:8px;padding:8px;border:1px solid #334155;border-radius:8px;"><b>${m.name}</b> <span style="color:#67e8f9;">(${m.calAdjusted} kcal)</span><ul style="margin-left:16px;">${ingredients}</ul><div style="font-size:10px;color:#94a3b8;">${m.observation}</div></div>`;
+    const mealCards=mealPlan.length?mealPlan.map((d,idx)=>{
+      const meals=Array.isArray(d?.meals)?d.meals:[];
+      if(!meals.length) return `<div style="margin-bottom:10px;"><b>📅 Dia ${d?.day||idx+1}</b><br><span>Sem refeições detalhadas.</span></div>`;
+      const items=meals.map((m)=>{
+        const mealItems=Array.isArray(m?.items)?m.items.map((it)=>`<li>${it}</li>`).join(''):'<li>Sem itens.</li>';
+        return `<div style="margin-top:8px;padding:8px;border:1px solid #334155;border-radius:8px;"><b>${m?.time?`${m.time} • `:''}${m?.name||'Refeição'}</b>${m?.kcal?` <span style="color:#67e8f9;">(${m.kcal} kcal)</span>`:''}<ul style="margin-left:16px;">${mealItems}</ul></div>`;
       }).join('');
-      return `<div style="margin-bottom:10px;"><b>📅 Dia ${d.day}</b>${items}</div>`;
-    }).join('');
-    const shoppingHtml=normalizedItems.length ? normalizedItems.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>Sem itens de compra.</li>';
-    const aiHtml=aiText?`<div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>🤖 Plano gerado por IA</b><br>${aiText}</div><hr style="margin:10px 0;border-color:#334155;"/>`:'';
+      return `<div style="margin-bottom:10px;"><b>📅 Dia ${d?.day||idx+1}</b>${items}</div>`;
+    }).join(''):'';
+    const shoppingHtml=shoppingList.length ? shoppingList.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>A IA não retornou itens de compra.</li>';
+    const fallbackRaw=!mealPlan.length && aiText ? `<hr style="margin:10px 0;border-color:#334155;"/><div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>Saída textual da IA</b><br>${aiText}</div>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
-    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${plan.goalDisplay}<br><b>🔥 Média diária (Sugestão DB Local):</b> ${avgCal} kcal<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}</div><hr style="margin:10px 0;border-color:#334155;"/>${aiHtml}<div><b>📦 Sugestão local de apoio (Offline)</b></div><div>${mealCards}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Banco Local)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul></div>`;
+    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (OpenAI)</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
+    const notesHtml=notes?`<div style="margin-top:8px;font-size:10px;color:#94a3b8;"><b>Observação:</b> ${notes}</div>`:'';
+    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> OpenAI (OPENAI_API_KEY)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - OpenAI)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
   }
-  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !normalizedItems.length);
+  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
 };
 window.downloadShoppingListPng=function(){
   if(!window.currentBalancedPlan?.shoppingList?.length) return alert('Gere uma lista antes de baixar.');
