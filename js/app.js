@@ -876,39 +876,54 @@ window.renderCaloricNeed=function(){
   const age=window.getUserAge()||40;
   const gender=window.getUserGender()||'masculino';
   const biotype=s.biotype?.result||'mesomorfo';
-  const activityFactor=s.activityProfile?.factor||1.2;
   
   if(!weight || !height){
     resultEl.innerText='-- kcal/dia';
     return;
   }
   
-  // Cálculo da taxa metabólica basal (TMB) usando fórmula de Harris-Benedict
+  // Cálculo da taxa metabólica basal (TMB) usando fórmula de Harris-Benedict revisada
   let tmb;
   if(gender==='masculino'){
-    tmb = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    // 66,5 + (13,75 × peso) + (5,003 × altura) - (6,75 × idade)
+    tmb = 66.5 + (13.75 * weight) + (5.003 * height) - (6.75 * age);
   } else {
-    tmb = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    // 655,1 + (9,563 × peso) + (1,85 × altura) - (4,676 × idade)
+    tmb = 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
   }
   
-  // Ajuste por biotipo
-  const biotypeFactors = {
-    ectomorfo: 1.05,  // Metabolismo mais acelerado
-    mesomorfo: 1.0,   // Metabolismo padrão
-    endomorfo: 0.95   // Metabolismo mais lento
-  };
+  // Aplicar Fator de Atividade Física
+  // Sedentário: 1,2 | Moderado: 1,55 | Ativo: 1,725 | Atleta: 1,9
+  let activityFactor;
+  const activityLevel = s.activityProfile?.level || 'sedentario';
+  if(activityLevel === 'sedentario') activityFactor = 1.2;
+  else if(activityLevel === 'moderado') activityFactor = 1.55;
+  else if(activityLevel === 'ativo') activityFactor = 1.725;
+  else if(activityLevel === 'atleta') activityFactor = 1.9;
+  else activityFactor = 1.2; // padrão
   
-  const biotypeFactor = biotypeFactors[biotype] || 1.0;
+  // Calcular gasto total com atividade
+  const gastoComAtividade = tmb * activityFactor;
   
-  // Ajuste por IMC
-  let imcAdjustment = 1.0;
-  if(imc < 18.5) imcAdjustment = 1.1;      // Abaixo do peso precisa mais calorias
-  else if(imc >= 18.5 && imc < 25) imcAdjustment = 1.0;  // Peso normal
-  else if(imc >= 25 && imc < 30) imcAdjustment = 0.95;    // Sobrepeso
-  else imcAdjustment = 0.9;                           // Obesidade
+  // Aplicar ajuste baseado no biotipo
+  // Ectomorfo: +10% | Mesomorfo: mantém | Endomorfo: -10%
+  let calorieNeed;
+  if(biotype === 'ectomorfo'){
+    // Adicionar 10% devido à ineficiência metabólica e alta termogênese
+    calorieNeed = gastoComAtividade * 1.10;
+  } else if(biotype === 'mesomorfo'){
+    // Manter inalterado por representar equilíbrio genético
+    calorieNeed = gastoComAtividade;
+  } else if(biotype === 'endomorfo'){
+    // Subtrair 10% devido à elevada eficiência metabólica
+    calorieNeed = gastoComAtividade * 0.90;
+  } else {
+    // Padrão caso biotipo não definido
+    calorieNeed = gastoComAtividade;
+  }
   
-  // Cálculo final: TMB × fator atividade × fator biotipo × ajuste IMC
-  const calorieNeed = Math.round(tmb * activityFactor * biotypeFactor * imcAdjustment);
+  // Resultado final: Necessidade Calórica Estimada em quilocalorias diárias
+  calorieNeed = Math.round(calorieNeed);
   
   // Armazenar para uso em outras funções
   window.userDataCache.saude.calorieNeed = calorieNeed;
