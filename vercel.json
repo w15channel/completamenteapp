@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node@2.0.0"
+    }
+  },
   "build": {
     "env": {
       "OPENAI_MODEL": "gpt-4o-mini",
