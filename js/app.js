@@ -592,6 +592,7 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
     if(restrictionTags.includes('frango') && ingText.includes('frango')) return false;
     if(restrictionTags.includes('peixe') && (ingText.includes('peixe') || ingText.includes('tilapia') || ingText.includes('atum') || ingText.includes('salmao'))) return false;
     if(restrictionTags.includes('frutosmar') && (ingText.includes('camarao') || ingText.includes('mexilhao') || ingText.includes('lula') || ingText.includes('polvo'))) return false;
+    if(restrictionTags.includes('embutidos') && (ingText.includes('presunto') || ingText.includes('salame') || ingText.includes('salsicha') || ingText.includes('linguica'))) return false;
     if(restrictionTags.includes('ovo') && ingText.includes('ovo')) return false;
     if(restrictionTags.includes('mel') && ingText.includes('mel')) return false;
     if(restrictionTags.includes('nozes') && (ingText.includes('amendoim') || ingText.includes('castanha') || ingText.includes('noz'))) return false;
@@ -601,11 +602,12 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
   });
 };
 window.consultarIA=async function(prompt){
-  if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
+  if(!prompt||!prompt.trim()) return { text:'Nenhum texto foi enviado para a IA.', provider:'Sem provedor' };
   try{
-    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
-    const data = await response.json(); return data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.';
-  }catch(error){ console.error('Erro na IA:',error); return 'Falha na conexão com a IA.'; }
+    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'openai',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const data = await response.json();
+    return { text:data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.', provider:data?.provider||'Provedor IA' };
+  }catch(error){ console.error('Erro na IA:',error); return { text:'Falha na comunicação com a IA para montar o plano.', provider:'Indisponível' }; }
 };
 window.buildBalancedPlanPrompt=function({goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
   return [
@@ -650,7 +652,9 @@ window.generateBalancedMealPlan=async function(){
   const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||planGoalDisplay).trim();
   out.classList.remove('hidden'); out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>A IA está elaborando o plano, aguarde...</div>`;
   const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
-  const aiText=await window.consultarIA(promptIA);
+  const aiResponse=await window.consultarIA(promptIA);
+  const aiText=aiResponse?.text||'';
+  const providerName=aiResponse?.provider||'Provedor IA';
   const aiData=window.extractJsonObject(aiText)||{};
   const shoppingList=Array.isArray(aiData.shopping_list)?aiData.shopping_list.map((item)=>({item:String(item?.item||'').trim(),qty:String(item?.qty||'quantidade a gosto').trim()})).filter((entry)=>entry.item):[];
   const mealPlan=Array.isArray(aiData.meal_plan)?aiData.meal_plan:[];
@@ -670,9 +674,9 @@ window.generateBalancedMealPlan=async function(){
     const shoppingHtml=shoppingList.length ? shoppingList.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>A IA não retornou itens de compra.</li>';
     const fallbackRaw=!mealPlan.length && aiText ? `<hr style="margin:10px 0;border-color:#334155;"/><div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>Saída textual da IA</b><br>${aiText}</div>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
-    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
+    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
     const notesHtml=notes?`<div style="margin-top:8px;font-size:10px;color:#94a3b8;"><b>Observação:</b> ${notes}</div>`:'';
-    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> Gemini (GEMINI_API_KEY)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
+    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> ${providerName} (fallback automático OpenAI/Gemini/Qwen/Groq)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - ${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
   }
   const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
 };
