@@ -9,15 +9,16 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID || "1:343038230333:web:2338b20d2e706743b40f54"
 };
 
-let db = null;
+// Variável global do Firebase para uso em todo o aplicativo
+window.db = null;
 let firebaseOffline = false;
 
 try {
   firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
+  window.db = firebase.database();
   
   // Testar conexão
-  db.ref('.info/connected').on('value', (snapshot) => {
+  window.db.ref('.info/connected').on('value', (snapshot) => {
     if (snapshot.val() === true) {
       console.log("Firebase conectado com sucesso");
       firebaseOffline = false;
@@ -52,9 +53,14 @@ window.diagnoseFirebaseConnection = async function() {
   console.log("🔍 Diagnosticando conexão Firebase...");
   console.log("📍 Database URL:", firebaseConfig.databaseURL);
   
+  if (!window.db) {
+    console.error("❌ Firebase DB não inicializado");
+    return false;
+  }
+  
   try {
     // Testar conexão básica
-    const testRef = db.ref('.info/connected');
+    const testRef = window.db.ref('.info/connected');
     const snapshot = await new Promise((resolve) => {
       testRef.once('value', resolve);
     });
@@ -64,13 +70,13 @@ window.diagnoseFirebaseConnection = async function() {
     
     // Testar escrita/leitura
     const testPath = `test/connection_${Date.now()}`;
-    await db.ref(testPath).set({ timestamp: Date.now(), status: "test" });
-    const readSnapshot = await db.ref(testPath).once('value');
+    await window.db.ref(testPath).set({ timestamp: Date.now(), status: "test" });
+    const readSnapshot = await window.db.ref(testPath).once('value');
     const testData = readSnapshot.val();
     
     if (testData && testData.status === "test") {
       console.log("✅ Teste de escrita/leitura: SUCESSO");
-      await db.ref(testPath).remove(); // Limpar teste
+      await window.db.ref(testPath).remove(); // Limpar teste
     } else {
       console.log("❌ Teste de escrita/leitura: FALHOU");
     }

@@ -35,12 +35,12 @@ window.login = async function(isAuto) {
         if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
         window.clientId = n.replace(/\s+/g, '_'); window.clientName = n.split(' ')[0];
         if (!window.userDataCache) window.userDataCache = { relacional: {}, saude: {}, financas: { transactions: [] } };
-        if (db) {
-            const snap = await db.ref('users/' + window.clientId).once('value');
+        if (window.db) {
+            const snap = await window.db.ref('users/' + window.clientId).once('value');
             if (!snap.exists()) {
                 const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
-                await db.ref('users/' + window.clientId).set(newUser);
+                await window.db.ref('users/' + window.clientId).set(newUser);
                 window.userDataCache = newUser;
             } else {
                 const u = snap.val();
@@ -49,7 +49,7 @@ window.login = async function(isAuto) {
                 if (!window.userDataCache.relacional) window.userDataCache.relacional = {};
                 if (partnerCode && window.userDataCache.relacional.linkedPartner !== partnerCode) {
                     window.userDataCache.relacional.linkedPartner = partnerCode;
-                    await db.ref('users/' + window.clientId + '/relacional/linkedPartner').set(partnerCode);
+                    await window.db.ref('users/' + window.clientId + '/relacional/linkedPartner').set(partnerCode);
                 }
             }
         } else {
@@ -137,7 +137,7 @@ window.calcIMC=async function(){
     if(!window.userDataCache.saude) window.userDataCache.saude={};
     window.userDataCache.saude.weight = w; window.userDataCache.saude.height = h; window.userDataCache.saude.imc = imc; window.userDataCache.saude.imcCategory = cat;
     window.renderHydration(); window.renderCaloricNeed();
-    if(db) await db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
+    if(window.db) await window.db.ref('users/'+window.clientId+'/saude').set(window.userDataCache.saude);
 }
 window.getHydrationGoal=function(){
     const weight = parseFloat(window.userDataCache?.saude?.weight);
@@ -176,7 +176,7 @@ window.saveCardio=async function(){
     else { rank = "Atenção (Fora do Padrão)"; color = "text-red-500"; }
     const resBox = document.getElementById('cardio-result'); resBox.innerText = `Resultado: ${beats} bpm (${rank})`; resBox.className = `mt-4 p-4 rounded-xl text-sm font-bold border border-slate-600 bg-slate-900 block ${color}`;
     if(!window.userDataCache.saude.cardio) window.userDataCache.saude.cardio = []; window.userDataCache.saude.cardio.push({beats, rank, date: new Date().toLocaleString()});
-    if(db) await db.ref('users/'+window.clientId+'/saude/cardio').set(window.userDataCache.saude.cardio);
+    if(window.db) await window.db.ref('users/'+window.clientId+'/saude/cardio').set(window.userDataCache.saude.cardio);
 }
 window.startAnxietyCheck=function(){
     window.ensureHealthStructures(); const today = window.getTodayStr(); const a = window.userDataCache.saude.anxietyDaily;
@@ -208,19 +208,19 @@ window.callAnsAI=async function(overrideText){
             else if(score <= 75) bar.className = 'bg-yellow-400 h-full transition-all duration-700 shadow-[0_0_10px_rgba(250,204,21,0.8)]'; 
             else bar.className = 'bg-red-600 h-full transition-all duration-700 shadow-[0_0_10px_rgba(220,38,38,0.8)]';
             window.userDataCache.saude.anxietyScore = score; window.userDataCache.saude.anxietyDaily = {day:window.getTodayStr(), score, completed:true};
-            if(db){ await db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score); await db.ref('users/'+window.clientId+'/saude/anxietyDaily').set(window.userDataCache.saude.anxietyDaily); }
+            if(window.db){ await window.db.ref('users/'+window.clientId+'/saude/anxietyScore').set(score); await window.db.ref('users/'+window.clientId+'/saude/anxietyDaily').set(window.userDataCache.saude.anxietyDaily); }
         }
     }catch(e){} finally{ btn.disabled=false; }
 }
 window.showRelSubTab=function(id){document.querySelectorAll('#relacional .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');['rel-pessoal','rel-parceria','rel-cupom','rel-amor'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='rel-parceria')window.loadLinkedPartner();}
 window.initRelacionalTab=function(){window.showRelSubTab('rel-pessoal');if(!window.userDataCache.relacional)window.userDataCache.relacional={};const rel=window.userDataCache.relacional;if(rel.age)document.getElementById('rel-age-input').value=rel.age;if(rel.shareCode)document.getElementById('rel-share-code').value=rel.shareCode;else window.generateRelShareCode();}
-window.generateRelShareCode=async function(){const code=Math.random().toString(36).substring(2,8).toUpperCase();document.getElementById('rel-share-code').value=code;if(!window.userDataCache.relacional)window.userDataCache.relacional={};window.userDataCache.relacional.shareCode=code; if(db) await db.ref('users/'+window.clientId+'/relacional/shareCode').set(code);}
+window.generateRelShareCode=async function(){const code=Math.random().toString(36).substring(2,8).toUpperCase();document.getElementById('rel-share-code').value=code;if(!window.userDataCache.relacional)window.userDataCache.relacional={};window.userDataCache.relacional.shareCode=code; if(window.db) await window.db.ref('users/'+window.clientId+'/relacional/shareCode').set(code);}
 window.copyRelShareCode=function(){const input=document.getElementById('rel-share-code');input.select();document.execCommand("copy");alert("Código copiado.");}
 window.loadLinkedPartner=async function(){
     const code=window.userDataCache.relacional?.linkedPartner;
     if(!code){document.getElementById('rel-partner-setup').classList.remove('hidden');document.getElementById('rel-partner-content').classList.add('hidden');return;}
-    document.getElementById('rel-partner-setup').classList.add('hidden'); if(!db) return;
-    const snap=await db.ref('users').once('value');const users=snap.val()||{};let partner=null;
+    document.getElementById('rel-partner-setup').classList.add('hidden'); if(!window.db) return;
+    const snap=await window.db.ref('users').once('value');const users=snap.val()||{};let partner=null;
     for(const key in users){if(users[key].relacional?.shareCode===code){partner=users[key];break;}}
     if(partner){
         const pRel=partner.relacional||{}; const pSau=partner.saude||{}; const pFin=partner.financas||{transactions:[]}; const pGoals=partner.goals||{};
