@@ -35,7 +35,7 @@ try {
 
 // Função para verificar status do Firebase
 window.isFirebaseOnline = function() {
-  return !firebaseOffline && db !== null;
+  return !firebaseOffline && window.db !== null;
 };
 
 // Função para operações seguras
@@ -92,3 +92,69 @@ window.diagnoseFirebaseConnection = async function() {
 setTimeout(() => {
   window.diagnoseFirebaseConnection();
 }, 2000);
+
+// Função para sincronizar dados do usuário
+window.syncUserData = async function(userId) {
+  if (!window.db || !userId) {
+    console.warn("❌ Impossível sincronizar: Firebase não disponível ou userId ausente");
+    return false;
+  }
+  
+  try {
+    console.log("🔄 Sincronizando dados do usuário:", userId);
+    
+    // Buscar dados completos do usuário
+    const userSnapshot = await window.db.ref('users/' + userId).once('value');
+    const userData = userSnapshot.val();
+    
+    if (userData) {
+      console.log("✅ Dados encontrados no Firebase:", userData);
+      
+      // Mesclar com cache local, priorizando dados do Firebase
+      if (!window.userDataCache) {
+        window.userDataCache = {};
+      }
+      
+      // Preservar dados locais temporários se existirem
+      const localBackup = { ...window.userDataCache };
+      
+      // Sobrescrever com dados do Firebase
+      window.userDataCache = { ...userData };
+      
+      // Restaurar dados locais importantes que podem não estar no Firebase
+      if (localBackup.relacional && !window.userDataCache.relacional) {
+        window.userDataCache.relacional = localBackup.relacional;
+      }
+      
+      console.log("✅ Dados sincronizados com sucesso");
+      return true;
+    } else {
+      console.log("ℹ️ Nenhum dado encontrado para o usuário:", userId);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Erro na sincronização:", error);
+    return false;
+  }
+};
+
+// Função para forçar salvamento imediato
+window.forceSaveUserData = async function() {
+  if (!window.db || !window.clientId) {
+    console.warn("❌ Impossível salvar: Firebase ou clientId não disponível");
+    return false;
+  }
+  
+  try {
+    console.log("💾 Forçando salvamento dos dados...");
+    
+    // Salvar dados completos do usuário
+    await window.db.ref('users/' + window.clientId).set(window.userDataCache);
+    
+    console.log("✅ Dados salvos com sucesso");
+    return true;
+  } catch (error) {
+    console.error("❌ Erro ao salvar dados:", error);
+    return false;
+  }
+};

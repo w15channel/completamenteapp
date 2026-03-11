@@ -36,21 +36,27 @@ window.login = async function(isAuto) {
         window.clientId = n.replace(/\s+/g, '_'); window.clientName = n.split(' ')[0];
         if (!window.userDataCache) window.userDataCache = { relacional: {}, saude: {}, financas: { transactions: [] } };
         if (window.db) {
-            const snap = await window.db.ref('users/' + window.clientId).once('value');
-            if (!snap.exists()) {
+            // Primeiro, tentar sincronizar dados existentes
+            await window.syncUserData(window.clientId);
+            
+            // Se não encontrou dados ou sincronização falhou, criar novo usuário
+            if (!window.userDataCache || !window.userDataCache.pass) {
                 const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
                 await window.db.ref('users/' + window.clientId).set(newUser);
                 window.userDataCache = newUser;
+                console.log("✅ Novo usuário criado:", window.clientId);
             } else {
-                const u = snap.val();
-                if (u.pass !== p) return alert("Senha incorreta.");
-                window.userDataCache = u || window.userDataCache;
+                // Validar senha do usuário existente
+                if (window.userDataCache.pass !== p) return alert("Senha incorreta.");
+                
+                // Atualizar dados se necessário
                 if (!window.userDataCache.relacional) window.userDataCache.relacional = {};
                 if (partnerCode && window.userDataCache.relacional.linkedPartner !== partnerCode) {
                     window.userDataCache.relacional.linkedPartner = partnerCode;
                     await window.db.ref('users/' + window.clientId + '/relacional/linkedPartner').set(partnerCode);
                 }
+                console.log("✅ Usuário existente carregado:", window.clientId);
             }
         } else {
             window.userDataCache.pass = p; window.userDataCache.fullName = n; window.userDataCache.gender = g || 'M';
@@ -117,6 +123,48 @@ window.testConnectivity=async function(){
   
   console.table(results);
   return results;
+};
+window.manualSyncData=async function(){
+  if(!window.clientId){
+    alert("Faça login primeiro para sincronizar dados.");
+    return;
+  }
+  
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Sincronizando...';
+  btn.disabled = true;
+  
+  try{
+    console.log("🔄 Iniciando sincronização manual...");
+    
+    // Forçar diagnóstico primeiro
+    await window.diagnoseFirebaseConnection();
+    
+    // Sincronizar dados do usuário
+    const synced = await window.syncUserData(window.clientId);
+    
+    if(synced){
+      // Forçar salvamento dos dados atuais
+      await window.forceSaveUserData();
+      
+      alert("✅ Dados sincronizados com sucesso! Verifique o console para detalhes.");
+      
+      // Atualizar interface se necessário
+      if(window.userDataCache.saude){
+        window.renderHydration();
+        window.renderCaloricNeed();
+      }
+    } else {
+      alert("⚠️ Não foi possível sincronizar. Verifique sua conexão e tente novamente.");
+    }
+  } catch(error){
+    console.error("❌ Erro na sincronização manual:", error);
+    alert("❌ Erro ao sincronizar: " + error.message);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 };
 window.showSaudeSubTab=function(id){
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
