@@ -65,9 +65,18 @@ window.login = async function(isAuto) {
         document.querySelectorAll('.client-name').forEach(e => e.innerText = window.clientName);
         window.showTab('home');
     } catch (error) {
-        console.error("Erro no Login:", error); alert("Houve um erro de conexão. Iniciando modo de proteção offline.");
+        console.error("Erro no Login:", error);
+        
+        // Verificar se é erro de conexão Firebase
+        if (window.isFirebaseOnline && !window.isFirebaseOnline()) {
+            alert("Conexão com banco de dados instável. Modo offline ativado - suas alterações serão salvas localmente.");
+        } else {
+            alert("Erro de conexão. Verifique sua internet e tente novamente.");
+        }
+        
         window.userDataCache = window.userDataCache || { relacional: {}, saude: {}, financas: { transactions: [] } };
-        document.querySelectorAll('.client-name').forEach(e => e.innerText = window.clientName || 'Usuário'); window.showTab('home');
+        document.querySelectorAll('.client-name').forEach(e => e.innerText = window.clientName || 'Usuário'); 
+        window.showTab('home');
     }
 };
 window.logoutUser=function(){localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');window.location.reload();}
