@@ -584,7 +584,7 @@ window.renderBalancedMealRestrictions=function(){
   const selectedSet=new Set(window.selectedMealRestrictionIds||[]);
   container.innerHTML=window.balancedMealRestrictionOptions.map((opt)=>{
     const checked=selectedSet.has(opt.id);
-    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer"><input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();window.toggleBalancedRestriction('${opt.id}')" class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
+    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer"><input type="checkbox" ${checked?'checked':''} onclick="window.toggleBalancedRestriction('${opt.id}')" class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
   }).join('');
 };
 window.getSelectedMealRestrictions=function(){
@@ -622,20 +622,23 @@ window.consultarIA=async function(prompt){
 window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
   const jantarSlot=goal==='perda'?'Lanche leve noturno (substitui jantar tradicional)':'Jantar leve';
   return [
-    'Você é nutricionista e chef focado em alimentação brasileira prática. Responda em português do Brasil.',
-    'Monte um plano APENAS com receitas reais/coerentes (nada de ingredientes soltos sem preparo).',
-    'Use majoritariamente preparações comuns no Brasil (ex: arroz, feijão, frango, peixes, legumes, tapioca, omelete, sopas, saladas, iogurte sem lactose quando aplicável).',
-    'Estrutura fixa por dia (não criar lanche da manhã nem ceia): 1) Café da Manhã, 2) Almoço, 3) Lanche da Tarde, 4) '+jantarSlot+'.',
-    'Após o almoço, as refeições devem ficar progressivamente mais leves em volume e densidade calórica.',
+    'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
+    'IMPORTANTE: Monte um plano APENAS com RECEITAS BRASILEIRAS REAIS E COESAS.',
+    'NUNCA sugira ingredientes soltos (ex: "consumir amendoim"). Cada ingrediente deve fazer parte de uma receita completa.',
+    'Use PREPARAÇÕES COMUNS NO BRASIL: arroz (branco, integral, à grega), feijão (carioca, preto, lentilha), frango grelhado/assado/cozido, peixes (tilápia, sardinha, salmão), carne vermelha magra, ovos, tapioca, pão de queijo, mandioca, batata doce, abóbora, legumes refogados, saladas temperadas, iogurte natural, frutas, sucos naturais, sopas, canjas, vitaminas.',
+    'EVITE ingredientes que não são comuns na culinária brasileira diária.',
+    'Estrutura fixa por dia (NÃO criar lanche da manhã nem ceia): 1) Café da Manhã, 2) Almoço, 3) Lanche da Tarde, 4) '+jantarSlot+'.',
+    'REGRA DE PROGRESSÃO: Após o almoço, as refeições devem ficar PROGRESSIVAMENTE mais leves em volume e densidade calórica. Lanche da tarde deve ser moderado e '+jantarSlot+' muito leve.',
     `Objetivo: ${goalLabel}.`,
     `Período: ${days} dia(s).`,
     `Tipo solicitado: ${mealTypeLabel}.`,
     `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
     `Preferências extras: ${preferences||'nenhuma'}.`,
-    'Cada refeição deve trazer receita com: nome da receita, ingredientes, modo de preparo curto e kcal.',
+    'Cada refeição deve conter: nome da receita brasileira, ingredientes com quantidades, modo de preparo passo a passo, e kcal aproximadas.',
+    'EXEMPLOS DE RECEITAS: "Frango com mandioca cozida", "Arroz com feijão e bife grelhado", "Tapioca com queijo e frango desfiado", "Sopa de legumes brasileiros", "Vitamina de frutas com aveia", "Omelete de queijo com tomate", "Salada mista com azeite".',
     'Retorne SOMENTE JSON válido sem markdown, no formato:',
-    '{"meal_plan":[{"day":1,"meals":[{"name":"Café da Manhã","time":"07:00","recipe_name":"","ingredients":[""],"preparation":"","items":[""],"kcal":0}]}],"shopping_list":[{"item":"","qty":""}],"tips":[""],"notes":""}',
-    'A lista de compras deve conter itens consolidados para todo o período e quantidades aproximadas.'
+    '{"meal_plan":[{"day":1,"meals":[{"name":"Café da Manhã","time":"07:00","recipe_name":"Tapioca com queijo","ingredients":["2 colheres de tapioca","100g de queijo minas","1 colher de manteiga"],"preparation":"Hidrate a tapioca, amasse e misture com queijo. Leve à frigideira até dourar.","items":["Tapioca com queijo minas"],"kcal":280}]}],"shopping_list":[{"item":"Tapioca","qty":"200g"},{"item":"Queijo minas","qty":"500g"}],"tips":["Use queijo minas frescal para melhor sabor"],"notes":"Refeições balanceadas para objetivo"}',
+    'A lista de compras deve conter itens consolidados para todo o período com quantidades realistas.'
   ].join('\n');
 };
 window.normalizeMealSlotName=function(name='', goal='diaadia'){
@@ -646,6 +649,31 @@ window.normalizeMealSlotName=function(name='', goal='diaadia'){
   if(goal==='perda' && (n.includes('jantar')||n.includes('ceia')||n.includes('noite')||n.includes('lanche'))) return 'Lanche leve noturno';
   if(n.includes('jantar')||n.includes('ceia')||n.includes('noite')) return 'Jantar leve';
   return '';
+};
+window.validateMealProgression=function(meals, goal='diaadia'){
+  if(!Array.isArray(meals) || meals.length < 3) return meals;
+  
+  const cafeManha = meals.find(m => m.name === 'Café da Manhã') || {kcal: 400};
+  const almoco = meals.find(m => m.name === 'Almoço') || {kcal: 600};
+  const lancheTarde = meals.find(m => m.name === 'Lanche da Tarde') || {kcal: 250};
+  const jantar = meals.find(m => m.name === 'Jantar leve' || m.name === 'Lanche leve noturno') || {kcal: 200};
+  
+  // Regras de progressão: após o almoço, as refeições devem diminuir
+  const maxLancheTarde = Math.min(almoco.kcal * 0.6, 400); // Máximo 60% do almoço
+  const maxJantar = Math.min(lancheTarde.kcal * 0.8, 300); // Máximo 80% do lanche
+  
+  // Ajustar se necessário
+  if(lancheTarde.kcal > maxLancheTarde) {
+    lancheTarde.kcal = Math.round(maxLancheTarde);
+    lancheTarde.items.push('(Porção ajustada para progressão leve)');
+  }
+  
+  if(jantar.kcal > maxJantar) {
+    jantar.kcal = Math.round(maxJantar);
+    jantar.items.push('(Refeição leve noturna ajustada)');
+  }
+  
+  return meals;
 };
 window.normalizeMealPlanStructure=function(mealPlan, goal='diaadia'){
   const slots=goal==='perda' ? ['Café da Manhã','Almoço','Lanche da Tarde','Lanche leve noturno'] : ['Café da Manhã','Almoço','Lanche da Tarde','Jantar leve'];
@@ -662,7 +690,9 @@ window.normalizeMealPlanStructure=function(mealPlan, goal='diaadia'){
       const safeItems=items.length?items:ingredients.length?ingredients:['Receita não detalhada pela IA.'];
       return {name:slot,time:String(src.time||'').trim(),recipe_name:recipeName,ingredients,preparation:prep,items:safeItems,kcal:Number(src.kcal)||0};
     });
-    return {day:Number(d?.day)||idx+1, meals:normalizedMeals};
+    // Aplicar validação de progressão para refeições mais leves após o almoço
+    const validatedMeals = window.validateMealProgression(normalizedMeals, goal);
+    return {day:Number(d?.day)||idx+1, meals:validatedMeals};
   });
 };
 window.extractJsonObject=function(text=''){
