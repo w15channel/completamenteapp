@@ -83,6 +83,12 @@ window.logoutUser=function(){localStorage.removeItem('wr_remember');localStorage
 window.showSaudeSubTab=function(id){
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
     ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
+    
+    // Renderizar restrições alimentares quando abrir guia de nutrição
+    if(id === 'sd-nutricao') {
+        window.ensureHealthStructures();
+        window.renderBalancedMealRestrictions();
+    }
 }
 window.calcIMC=async function(){
     const w = parseFloat(document.getElementById('health-weight').value); const h = parseFloat(document.getElementById('health-height').value);
