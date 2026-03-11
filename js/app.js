@@ -694,7 +694,7 @@ window.generateBalancedMealPlan=async function(){
   const mealTypeLabel=(document.getElementById('balancedMealType')?.selectedOptions?.[0]?.textContent||mealType).trim();
   const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||planGoalDisplay).trim();
   out.classList.remove('hidden'); out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>A IA está elaborando o plano, aguarde...</div>`;
-  const promptIA=window.buildBalancedPlanPrompt({goal,goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
+  const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
   const aiResponse=await window.consultarIA(promptIA);
   const aiText=aiResponse?.text||'';
   const providerName=aiResponse?.provider||'Provedor IA';
