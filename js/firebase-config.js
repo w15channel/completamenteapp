@@ -158,3 +158,216 @@ window.forceSaveUserData = async function() {
     return false;
   }
 };
+
+// Função completa para recuperar todos os dados do Firebase
+window.recoverAllFirebaseData = async function() {
+  if (!window.db) {
+    console.error("❌ Firebase não disponível para recuperação de dados");
+    return false;
+  }
+  
+  try {
+    console.log("🔄 Iniciando recuperação completa de dados do Firebase...");
+    
+    const recoveredData = {
+      users: {},
+      mural: [],
+      chats: {},
+      admin_auth: null,
+      ai_status: {},
+      timestamp: new Date().toISOString()
+    };
+    
+    // 1. Recuperar todos os usuários
+    console.log("📥 Recuperando dados de usuários...");
+    const usersSnapshot = await window.db.ref('users').once('value');
+    recoveredData.users = usersSnapshot.val() || {};
+    console.log(`✅ ${Object.keys(recoveredData.users).length} usuários recuperados`);
+    
+    // 2. Recuperar mural
+    console.log("📥 Recuperando dados do mural...");
+    const muralSnapshot = await window.db.ref('mural').once('value');
+    const muralData = muralSnapshot.val();
+    if (muralData) {
+      recoveredData.mural = Object.keys(muralData).map(key => ({
+        id: key,
+        ...muralData[key]
+      }));
+      console.log(`✅ ${recoveredData.mural.length} posts do mural recuperados`);
+    }
+    
+    // 3. Recuperar todos os chats
+    console.log("📥 Recuperando históricos de chat...");
+    const chatsSnapshot = await window.db.ref('chats').once('value');
+    const chatsData = chatsSnapshot.val();
+    if (chatsData) {
+      recoveredData.chats = chatsData;
+      console.log(`✅ ${Object.keys(chatsData).length} chats recuperados`);
+    }
+    
+    // 4. Recuperar configurações de admin
+    console.log("📥 Recuperando configurações de admin...");
+    const adminSnapshot = await window.db.ref('admin_auth').once('value');
+    recoveredData.admin_auth = adminSnapshot.val();
+    
+    // 5. Recuperar status da IA
+    console.log("📥 Recuperando status da IA...");
+    const aiStatusSnapshot = await window.db.ref('ai_status').once('value');
+    recoveredData.ai_status = aiStatusSnapshot.val() || {};
+    
+    // 6. Salvar dados recuperados em localStorage para backup
+    console.log("💾 Salvando backup local dos dados recuperados...");
+    localStorage.setItem('firebase_backup_' + Date.now(), JSON.stringify(recoveredData, null, 2));
+    
+    // 7. Restaurar dados do usuário atual se existir
+    if (window.clientId && recoveredData.users[window.clientId]) {
+      console.log("🔄 Restaurando dados do usuário atual:", window.clientId);
+      window.userDataCache = recoveredData.users[window.clientId];
+      
+      // Atualizar interface
+      if (window.userDataCache.saude) {
+        window.renderHydration();
+        window.renderCaloricNeed();
+      }
+      
+      console.log("✅ Dados do usuário restaurados com sucesso");
+    }
+    
+    console.log("🎉 Recuperação completa concluída!");
+    console.log("📊 Resumo dos dados recuperados:", {
+      usuarios: Object.keys(recoveredData.users).length,
+      mural: recoveredData.mural.length,
+      chats: Object.keys(recoveredData.chats).length,
+      admin_config: recoveredData.admin_auth ? 'disponível' : 'não encontrado',
+      ia_status: Object.keys(recoveredData.ai_status).length
+    });
+    
+    return recoveredData;
+    
+  } catch (error) {
+    console.error("❌ Erro na recuperação de dados:", error);
+    return false;
+  }
+};
+
+// Função para restaurar mural específico
+window.loadMuralFromFirebase = async function() {
+  if (!window.db) {
+    console.error("❌ Firebase não disponível para carregar mural");
+    return;
+  }
+  
+  try {
+    console.log("📥 Carregando mural do Firebase...");
+    const muralSnapshot = await window.db.ref('mural').once('value');
+    const muralData = muralSnapshot.val();
+    
+    if (muralData) {
+      // Converter para array de posts
+      window.muralPosts = Object.keys(muralData).map(key => ({
+        id: key,
+        ...muralData[key]
+      })).reverse(); // Posts mais recentes primeiro
+      
+      console.log(`✅ ${window.muralPosts.length} posts do mural carregados`);
+      
+      // Se existir função de renderizar mural, chamá-la
+      if (typeof window.loadMural === 'function') {
+        window.loadMural();
+      }
+    } else {
+      console.log("ℹ️ Nenhum post encontrado no mural");
+      window.muralPosts = [];
+    }
+  } catch (error) {
+    console.error("❌ Erro ao carregar mural:", error);
+  }
+};
+
+// Função para restaurar chats específicos
+window.loadChatsFromFirebase = async function() {
+  if (!window.db || !window.clientId) {
+    console.error("❌ Firebase ou clientId não disponível para carregar chats");
+    return;
+  }
+  
+  try {
+    console.log("📥 Carregando chats do usuário:", window.clientId);
+    const chatsSnapshot = await window.db.ref('chats').once('value');
+    const chatsData = chatsSnapshot.val();
+    
+    if (chatsData) {
+      // Filtrar chats do usuário atual
+      const userChats = {};
+      Object.keys(chatsData).forEach(chatId => {
+        if (chatId.startsWith(window.clientId + '_')) {
+          userChats[chatId] = chatsData[chatId];
+        }
+      });
+      
+      window.userChats = userChats;
+      console.log(`✅ ${Object.keys(userChats).length} chats do usuário carregados`);
+      
+      // Se existir terapeuta ativo, atualizar chat
+      if (window.activeTherapist && window.activeChatRef) {
+        const currentChatId = `${window.clientId}_${window.activeTherapist.id}`;
+        if (userChats[currentChatId]) {
+          window.refreshChatDisplay(userChats[currentChatId]);
+        }
+      }
+    } else {
+      console.log("ℹ️ Nenhum chat encontrado");
+      window.userChats = {};
+    }
+  } catch (error) {
+    console.error("❌ Erro ao carregar chats:", error);
+  }
+};
+
+// Funções utilitárias para acessar dados recuperados
+window.getRecoveredData = function() {
+  const backups = Object.keys(localStorage).filter(key => key.startsWith('firebase_backup_'));
+  if (backups.length === 0) {
+    console.log("ℹ️ Nenhum backup local encontrado");
+    return null;
+  }
+  
+  // Pegar o backup mais recente
+  const latestBackup = backups.sort().pop();
+  try {
+    const data = JSON.parse(localStorage.getItem(latestBackup));
+    console.log(`📦 Backup encontrado: ${latestBackup}`);
+    return data;
+  } catch (error) {
+    console.error("❌ Erro ao ler backup:", error);
+    return null;
+  }
+};
+
+window.exportRecoveredData = function() {
+  const data = window.getRecoveredData();
+  if (!data) {
+    alert("Nenhum dado recuperado disponível para exportar.");
+    return;
+  }
+  
+  // Criar blob e download
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `firebase_backup_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  console.log("📤 Dados exportados com sucesso");
+};
+
+window.clearLocalBackups = function() {
+  const backups = Object.keys(localStorage).filter(key => key.startsWith('firebase_backup_'));
+  backups.forEach(key => localStorage.removeItem(key));
+  console.log(`🗑️ ${backups.length} backups locais removidos`);
+  alert(`${backups.length} backups locais foram removidos.`);
+};

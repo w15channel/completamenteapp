@@ -136,27 +136,63 @@ window.manualSyncData=async function(){
   btn.disabled = true;
   
   try{
-    console.log("🔄 Iniciando sincronização manual...");
+    console.log("🔄 Iniciando sincronização manual completa...");
     
-    // Forçar diagnóstico primeiro
+    // 1. Forçar diagnóstico primeiro
     await window.diagnoseFirebaseConnection();
     
-    // Sincronizar dados do usuário
-    const synced = await window.syncUserData(window.clientId);
+    // 2. Recuperar TODOS os dados do Firebase
+    console.log("📥 Recuperando dados completos do Firebase...");
+    const recoveredData = await window.recoverAllFirebaseData();
     
-    if(synced){
-      // Forçar salvamento dos dados atuais
+    if(recoveredData){
+      console.log("✅ Dados recuperados com sucesso!");
+      
+      // 3. Carregar dados específicos
+      await window.loadMuralFromFirebase();
+      await window.loadChatsFromFirebase();
+      
+      // 4. Forçar salvamento dos dados atuais
       await window.forceSaveUserData();
       
-      alert("✅ Dados sincronizados com sucesso! Verifique o console para detalhes.");
+      // 5. Exibir resumo detalhado
+      const summary = `
+🎉 SINCRONIZAÇÃO COMPLETA REALIZADA!
+
+📊 Dados Recuperados:
+• 👥 Usuários: ${Object.keys(recoveredData.users).length}
+• 🖼️ Mural: ${recoveredData.mural.length} posts
+• 💬 Chats: ${Object.keys(recoveredData.chats).length}
+• ⚙️ Config Admin: ${recoveredData.admin_auth ? 'Disponível' : 'Não encontrado'}
+• 🤖 Status IA: ${Object.keys(recoveredData.ai_status).length}
+
+💾 Backup salvo em localStorage com timestamp: ${recoveredData.timestamp}
+
+✅ Seus dados pessoais foram restaurados!
+✅ Mural e históricos de chat foram carregados!
+✅ Interface atualizada com os dados recuperados!
+
+Verifique o console (F12) para logs detalhados de todos os dados.`;
       
-      // Atualizar interface se necessário
+      alert(summary);
+      
+      // 6. Atualizar interface se necessário
       if(window.userDataCache.saude){
         window.renderHydration();
         window.renderCaloricNeed();
       }
+      
+      // 7. Se estiver na aba de relaxamento, atualizar mural
+      const currentTab = document.querySelector('.tab-content.active');
+      if(currentTab && currentTab.id === 'relaxation'){
+        const muralTab = document.getElementById('rx-mural');
+        if(muralTab && !muralTab.classList.contains('hidden')){
+          window.loadMural();
+        }
+      }
+      
     } else {
-      alert("⚠️ Não foi possível sincronizar. Verifique sua conexão e tente novamente.");
+      alert("⚠️ Não foi possível recuperar dados. Verifique sua conexão e tente novamente.");
     }
   } catch(error){
     console.error("❌ Erro na sincronização manual:", error);
