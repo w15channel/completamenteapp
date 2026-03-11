@@ -36,8 +36,15 @@ window.login = async function(isAuto) {
         window.clientId = n.replace(/\s+/g, '_'); window.clientName = n.split(' ')[0];
         if (!window.userDataCache) window.userDataCache = { relacional: {}, saude: {}, financas: { transactions: [] } };
         if (window.db) {
-            // Primeiro, tentar sincronizar dados existentes
-            await window.syncUserData(window.clientId);
+            // Usar sincronização automática completa (baseada na versão antiga melhorada)
+            console.log("🔄 Iniciando sincronização automática no login...");
+            const syncSuccess = await window.autoSyncAllData(window.clientId);
+            
+            // Se sincronização falhar, tentar sincronização básica
+            if (!syncSuccess) {
+                console.log("⚠️ Sincronização completa falhou, tentando sincronização básica...");
+                await window.syncUserData(window.clientId);
+            }
             
             // Se não encontrou dados ou sincronização falhou, criar novo usuário
             if (!window.userDataCache || !window.userDataCache.pass) {
@@ -56,7 +63,7 @@ window.login = async function(isAuto) {
                     window.userDataCache.relacional.linkedPartner = partnerCode;
                     await window.db.ref('users/' + window.clientId + '/relacional/linkedPartner').set(partnerCode);
                 }
-                console.log("✅ Usuário existente carregado:", window.clientId);
+                console.log("✅ Usuário existente carregado e sincronizado:", window.clientId);
             }
         } else {
             window.userDataCache.pass = p; window.userDataCache.fullName = n; window.userDataCache.gender = g || 'M';
@@ -69,6 +76,12 @@ window.login = async function(isAuto) {
             localStorage.removeItem('wr_remember'); localStorage.removeItem('wr_user'); localStorage.removeItem('wr_pass');
         }
         document.querySelectorAll('.client-name').forEach(e => e.innerText = window.clientName);
+        
+        // Iniciar sincronização inteligente após login bem-sucedido
+        if (window.db) {
+            window.startSmartSync(window.clientId);
+        }
+        
         window.showTab('home');
     } catch (error) {
         console.error("❌ Erro no Login:", error);
@@ -90,7 +103,19 @@ window.login = async function(isAuto) {
         window.showTab('home');
     }
 };
-window.logoutUser=function(){localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');window.location.reload();}
+window.logoutUser=function(){
+    // Parar sincronização inteligente
+    window.stopSmartSync();
+    
+    // Limpar dados locais
+    localStorage.removeItem('wr_remember');
+    localStorage.removeItem('wr_user');
+    localStorage.removeItem('wr_pass');
+    localStorage.removeItem('wr_last_activity');
+    
+    // Recarregar página
+    window.location.reload();
+}
 window.testConnectivity=async function(){
   console.log("🔍 Testando conectividade geral...");
   const results = {

@@ -93,6 +93,49 @@ setTimeout(() => {
   window.diagnoseFirebaseConnection();
 }, 2000);
 
+// Função de sincronização automática completa (baseada na versão antiga)
+window.autoSyncAllData = async function(userId) {
+  if (!window.db || !userId) {
+    console.log("⚠️ Firebase ou userId não disponível para sincronização automática");
+    return false;
+  }
+  
+  try {
+    console.log("🔄 Iniciando sincronização automática completa para:", userId);
+    
+    // 1. Sincronizar dados do usuário
+    const userSynced = await window.syncUserData(userId);
+    if (!userSynced) {
+      console.log("⚠️ Falha na sincronização do usuário, mas continuando...");
+    }
+    
+    // 2. Recuperar dados completos do Firebase
+    const allData = await window.recoverAllFirebaseData();
+    if (allData) {
+      console.log("✅ Dados completos recuperados na sincronização automática");
+      
+      // 3. Carregar dados específicos do usuário
+      await window.loadMuralFromFirebase();
+      await window.loadChatsFromFirebase();
+      
+      // 4. Atualizar interface se estiver na página principal
+      setTimeout(() => {
+        if (window.userDataCache && window.userDataCache.saude) {
+          if (typeof window.renderHydration === 'function') window.renderHydration();
+          if (typeof window.renderCaloricNeed === 'function') window.renderCaloricNeed();
+        }
+      }, 500);
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("❌ Erro na sincronização automática:", error);
+    return false;
+  }
+};
+
 // Função para sincronizar dados do usuário
 window.syncUserData = async function(userId) {
   if (!window.db || !userId) {
@@ -323,6 +366,50 @@ window.loadChatsFromFirebase = async function() {
     console.error("❌ Erro ao carregar chats:", error);
   }
 };
+
+// Função de sincronização inteligente periódica
+window.startSmartSync = function(userId) {
+  if (!userId || !window.db) return;
+  
+  // Limpar sincronização anterior se existir
+  if (window.smartSyncInterval) {
+    clearInterval(window.smartSyncInterval);
+  }
+  
+  console.log("🔄 Iniciando sincronização inteligente a cada 30 segundos...");
+  
+  window.smartSyncInterval = setInterval(async () => {
+    try {
+      // Verificar se há atividade recente do usuário
+      const lastActivity = localStorage.getItem('wr_last_activity') || Date.now();
+      const timeSinceActivity = Date.now() - parseInt(lastActivity);
+      
+      // Só sincronizar se houve atividade nos últimos 5 minutos
+      if (timeSinceActivity < 5 * 60 * 1000) {
+        console.log("🔄 Sincronização inteligente automática...");
+        await window.autoSyncAllData(userId);
+      }
+    } catch (error) {
+      console.error("❌ Erro na sincronização inteligente:", error);
+    }
+  }, 30000); // A cada 30 segundos
+};
+
+// Parar sincronização inteligente
+window.stopSmartSync = function() {
+  if (window.smartSyncInterval) {
+    clearInterval(window.smartSyncInterval);
+    console.log("⏹️ Sincronização inteligente parada");
+  }
+};
+
+// Atualizar atividade do usuário
+document.addEventListener('click', () => {
+  localStorage.setItem('wr_last_activity', Date.now());
+});
+document.addEventListener('keypress', () => {
+  localStorage.setItem('wr_last_activity', Date.now());
+});
 
 // Funções utilitárias para acessar dados recuperados
 window.getRecoveredData = function() {
