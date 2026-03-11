@@ -1010,7 +1010,7 @@ window.generateBalancedMealPlan=async function(){
   setTimeout(() => {
     clearInterval(loadingInterval);
   }, 10000);
-  const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
+  const promptIA=window.buildBalancedPlanPrompt({goal,goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
   const aiResponse=await window.consultarIA(promptIA);
   const aiText=aiResponse?.text||'';
   const providerName=aiResponse?.provider||'Provedor IA';
@@ -1167,6 +1167,12 @@ window.renderTasks=function(){
   const todo=document.getElementById('tasks-todo'), done=document.getElementById('tasks-done'); if(!todo||!done) return;
   todo.innerHTML='<div class="text-xs text-slate-500">Cadastre tarefas para visualizar sua rotina diária.</div>'; done.innerHTML=''; document.getElementById('area-todo').classList.remove('hidden'); document.getElementById('area-done').classList.add('hidden');
 };
+window.renderFinances=function(){
+  const container=document.getElementById('finances-container'); if(!container) return;
+  if(!window.userDataCache.financas) window.userDataCache.financas={transactions:[]};
+  const transactions=window.userDataCache.financas.transactions||[];
+  container.innerHTML=transactions.length?transactions.map(t=>`<div class="p-2 border border-slate-700 rounded mb-2"><div class="flex justify-between"><span class="text-white">${t.description}</span><span class="text-${t.amount>=0?'emerald':'rose'}-400">R$ ${t.amount.toFixed(2)}</span></div></div>`).join(''):'<p class="text-slate-500">Nenhuma transação registrada.</p>';
+};
 window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');}; window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');}; window.saveNewTask=function(){alert('Em breve.'); window.closeTaskModal();};
 const WORKOUT_DB={cardio:[{n:'Polichinelos',d:'Ritmo constante.',type:'time',val:45},{n:'Corrida',d:'Eleve joelhos.',type:'time',val:60},{n:'Burpees',d:'Completo.',type:'unit',val:12}],forca:[{n:'Agachamento',d:'Coluna neutra.',type:'unit',val:20},{n:'Flexão',d:'A 45 graus.',type:'unit',val:15},{n:'Prancha',d:'Core.',type:'time',val:40}]};
 window.workoutState={active:false,mode:null,currentIdx:0,list:[],totalMins:0,prepIv:null,exIv:null,exStartAt:null,elapsedSec:0};
@@ -1254,6 +1260,9 @@ window.initHomeFitTool=function(){
 };
 window.initSaudeTab=function(){
   window.ensureHealthStructures();
+  // Inicializar variáveis críticas para o gerador de refeições
+  window.selectedMealRestrictionIds=window.selectedMealRestrictionIds||[];
+  window.currentBalancedPlan=null;
   window.renderHydration();
   window.renderCaloricNeed();
   window.renderExerciseProgress();
