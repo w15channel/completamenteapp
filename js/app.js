@@ -629,7 +629,7 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return { text:'Nenhum texto foi enviado para a IA.', provider:'Sem provedor' };
   try{
-    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'openai',messages:[{role:"user",content:prompt}], temperature:0.3, max_tokens:1500})});
     const data = await response.json();
     return { text:data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.', provider:data?.provider||'Provedor IA' };
   }catch(error){ console.error('Erro na IA:',error); return { text:'Falha na comunicação com a IA para montar o plano.', provider:'Indisponível' }; }
@@ -665,16 +665,17 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
     // Refeição específica - gera apenas aquele tipo
     return [
       'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
-      'IMPORTANTE: Gere APENAS receitas para o tipo de refeição solicitado. NÃO gere outras refeições.',
+      `IMPORTANTE: Gere APENAS ${days} receita(s) de ${mealTypeLabel}. EXATAMENTE ${days} dia(s).`,
+      `NÃO gere outros tipos de refeição. NÃO gere almoço se pedir café. NÃO gere jantar se pedir lanche.`,
       'Use APENAS RECEITAS BRASILEIRAS REAIS E COESAS. NUNCA sugira ingredientes soltos.',
       'Use PREPARAÇÕES COMUNS NO BRASIL: arroz, feijão, peixes, ovos, tapioca, pão de queijo, mandioca, batata doce, legumes, saladas, iogurte, frutas, sucos, sopas, vitaminas.',
       `Tipo de refeição solicitado: ${mealTypeLabel}.`,
       `Objetivo: ${goalLabel}.`,
       `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
       `Preferências extras: ${preferences||'nenhuma'}.`,
-      `Para ${days} dia(s), gere ${days} receita(s) diferentes de ${mealTypeLabel}.`,
+      `GERE EXATAMENTE ${days} RECEITA(S) - UMA PARA CADA DIA: Dia 1, Dia ${days > 1 ? '2' : ''}${days > 2 ? ', Dia 3' : ''}${days > 3 ? ', Dia 4' : ''}${days > 4 ? ', Dia 5' : ''}${days > 5 ? ', Dia 6' : ''}${days > 6 ? ', Dia 7' : ''}.`,
       'ATENÇÃO ÀS RESTRIÇÕES:',
-      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: Permitir APENAS peixes e frutos do mar. PROIBIDO: carnes bovinas, suínas, aves, embutidos. Nozes e castanhas são permitidas.' : '',
+      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: Permitir APENAS peixes e frutos do mar. PROIBIDO: carnes bovinas, suínas, aves, embutidos.' : '',
       restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO qualquer alimento de origem animal (carnes, laticínios, ovos, mel).' : '',
       restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: Permitir ovos e laticínios. PROIBIDO: carnes, frango, peixe.' : '',
       restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO glúten (trigo, centeio, cevida, aveia). Use farinha de arroz, mandioca, milho.' : '',
@@ -684,8 +685,9 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
       'EXEMPLOS para Almoço: "Feijão com arroz e bife", "Frango grelhado com salada", "Sopa de legumes"',
       'EXEMPLOS para Lanche: "Iogurte com granola", "Frutas frescas", "Tapioca simples"',
       'EXEMPLOS para Jantar: "Sopa leve", "Omelete simples", "Salada completa"',
-      'Retorne SOMENTE JSON válido sem markdown, no formato:',
-      `{"meal_plan":[{"day":1,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Nome da Receita","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}],"shopping_list":[{"item":"ingrediente","qty":"quantidade"}],"tips":["dica relevante"],"notes":"observações"}`,
+      'ESTRUTURA OBRIGATÓRIA: meal_plan deve conter exatamente ${days} objetos, cada um com "day": 1, 2, 3... até ${days}.',
+      'Retorne UM ÚNICO JSON válido sem markdown, no formato:',
+      `{"meal_plan":[${days > 1 ? '{"day":1,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 1","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 2 ? ',{"day":2,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 2","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 3 ? ',{"day":3,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 3","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 4 ? ',{"day":4,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 4","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 5 ? ',{"day":5,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 5","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 6 ? ',{"day":6,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 6","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}${days > 7 ? ',{"day":7,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Receita Dia 7","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}' : ''}],"shopping_list":[{"item":"ingrediente","qty":"quantidade"}],"tips":["dica relevante"],"notes":"observações"}`,
       'A lista de compras deve conter itens para todas as receitas geradas.'
     ].filter(line => line.trim() !== '').join('\n');
   }
