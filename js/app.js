@@ -599,7 +599,7 @@ window.renderBalancedMealRestrictions=function(){
   const selectedSet=new Set(window.selectedMealRestrictionIds||[]);
   container.innerHTML=window.balancedMealRestrictionOptions.map((opt)=>{
     const checked=selectedSet.has(opt.id);
-    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer"><input type="checkbox" ${checked?'checked':''} onclick="window.toggleBalancedRestriction('${opt.id}')" class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
+    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer hover:border-teal-400 transition-colors"><input type="checkbox" ${checked?'checked':''} class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer pointer-events-none" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
   }).join('');
 };
 window.getSelectedMealRestrictions=function(){
@@ -636,25 +636,53 @@ window.consultarIA=async function(prompt){
 };
 window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
   const jantarSlot=goal==='perda'?'Lanche leve noturno (substitui jantar tradicional)':'Jantar leve';
-  return [
-    'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
-    'IMPORTANTE: Monte um plano APENAS com RECEITAS BRASILEIRAS REAIS E COESAS.',
-    'NUNCA sugira ingredientes soltos (ex: "consumir amendoim"). Cada ingrediente deve fazer parte de uma receita completa.',
-    'Use PREPARAÇÕES COMUNS NO BRASIL: arroz (branco, integral, à grega), feijão (carioca, preto, lentilha), frango grelhado/assado/cozido, peixes (tilápia, sardinha, salmão), carne vermelha magra, ovos, tapioca, pão de queijo, mandioca, batata doce, abóbora, legumes refogados, saladas temperadas, iogurte natural, frutas, sucos naturais, sopas, canjas, vitaminas.',
-    'EVITE ingredientes que não são comuns na culinária brasileira diária.',
-    'Estrutura fixa por dia (NÃO criar lanche da manhã nem ceia): 1) Café da Manhã, 2) Almoço, 3) Lanche da Tarde, 4) '+jantarSlot+'.',
-    'REGRA DE PROGRESSÃO: Após o almoço, as refeições devem ficar PROGRESSIVAMENTE mais leves em volume e densidade calórica. Lanche da tarde deve ser moderado e '+jantarSlot+' muito leve.',
-    `Objetivo: ${goalLabel}.`,
-    `Período: ${days} dia(s).`,
-    `Tipo solicitado: ${mealTypeLabel}.`,
-    `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
-    `Preferências extras: ${preferences||'nenhuma'}.`,
-    'Cada refeição deve conter: nome da receita brasileira, ingredientes com quantidades, modo de preparo passo a passo, e kcal aproximadas.',
-    'EXEMPLOS DE RECEITAS: "Frango com mandioca cozida", "Arroz com feijão e bife grelhado", "Tapioca com queijo e frango desfiado", "Sopa de legumes brasileiros", "Vitamina de frutas com aveia", "Omelete de queijo com tomate", "Salada mista com azeite".',
-    'Retorne SOMENTE JSON válido sem markdown, no formato:',
-    '{"meal_plan":[{"day":1,"meals":[{"name":"Café da Manhã","time":"07:00","recipe_name":"Tapioca com queijo","ingredients":["2 colheres de tapioca","100g de queijo minas","1 colher de manteiga"],"preparation":"Hidrate a tapioca, amasse e misture com queijo. Leve à frigideira até dourar.","items":["Tapioca com queijo minas"],"kcal":280}]}],"shopping_list":[{"item":"Tapioca","qty":"200g"},{"item":"Queijo minas","qty":"500g"}],"tips":["Use queijo minas frescal para melhor sabor"],"notes":"Refeições balanceadas para objetivo"}',
-    'A lista de compras deve conter itens consolidados para todo o período com quantidades realistas.'
-  ].join('\n');
+  
+  // Verificar se é plano completo ou refeição específica
+  const isPlanoCompleto = mealTypeLabel.includes('Completo') || mealTypeLabel.includes('completo');
+  
+  if (isPlanoCompleto) {
+    // Plano completo - gera todas as refeições
+    return [
+      'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
+      'IMPORTANTE: Monte um plano APENAS com RECEITAS BRASILEIRAS REAIS E COESAS.',
+      'NUNCA sugira ingredientes soltos (ex: "consumir amendoim"). Cada ingrediente deve fazer parte de uma receita completa.',
+      'Use PREPARAÇÕES COMUNS NO BRASIL: arroz (branco, integral, à grega), feijão (carioca, preto, lentilha), frango grelhado/assado/cozido, peixes (tilápia, sardinha, salmão), carne vermelha magra, ovos, tapioca, pão de queijo, mandioca, batata doce, abóbora, legumes refogados, saladas temperadas, iogurte natural, frutas, sucos naturais, sopas, canjas, vitaminas.',
+      'EVITE ingredientes que não são comuns na culinária brasileira diária.',
+      'Estrutura fixa por dia (NÃO criar lanche da manhã nem ceia): 1) Café da Manhã, 2) Almoço, 3) Lanche da Tarde, 4) '+jantarSlot+'.',
+      'REGRA DE PROGRESSÃO: Após o almoço, as refeições devem ficar PROGRESSIVAMENTE mais leves em volume e densidade calórica. Lanche da tarde deve ser moderado e '+jantarSlot+' muito leve.',
+      `Objetivo: ${goalLabel}.`,
+      `Período: ${days} dia(s).`,
+      `Tipo solicitado: ${mealTypeLabel}.`,
+      `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
+      `Preferências extras: ${preferences||'nenhuma'}.`,
+      'Cada refeição deve conter: nome da receita brasileira, ingredientes com quantidades, modo de preparo passo a passo, e kcal aproximadas.',
+      'EXEMPLOS DE RECEITAS: "Frango com mandioca cozida", "Arroz com feijão e bife grelhado", "Tapioca com queijo e frango desfiado", "Sopa de legumes brasileiros", "Vitamina de frutas com aveia", "Omelete de queijo com tomate", "Salada mista com azeite".',
+      'Retorne SOMENTE JSON válido sem markdown, no formato:',
+      '{"meal_plan":[{"day":1,"meals":[{"name":"Café da Manhã","time":"07:00","recipe_name":"Tapioca com queijo","ingredients":["2 colheres de tapioca","100g de queijo minas","1 colher de manteiga"],"preparation":"Hidrate a tapioca, amasse e misture com queijo. Leve à frigideira até dourar.","items":["Tapioca com queijo minas"],"kcal":280}]}],"shopping_list":[{"item":"Tapioca","qty":"200g"},{"item":"Queijo minas","qty":"500g"}],"tips":["Use queijo minas frescal para melhor sabor"],"notes":"Refeições balanceadas para objetivo"}',
+      'A lista de compras deve conter itens consolidados para todo o período com quantidades realistas.'
+    ].join('\n');
+  } else {
+    // Refeição específica - gera apenas aquele tipo
+    return [
+      'Você é nutricionista e chef especializado em culinária brasileira. Responda em português do Brasil.',
+      'IMPORTANTE: Gere APENAS receitas para o tipo de refeição solicitado. NÃO gere outras refeições.',
+      'Use APENAS RECEITAS BRASILEIRAS REAIS E COESAS. NUNCA sugira ingredientes soltos.',
+      'Use PREPARAÇÕES COMUNS NO BRASIL: arroz, feijão, frango, peixes, ovos, tapioca, pão de queijo, mandioca, batata doce, legumes, saladas, iogurte, frutas, sucos, sopas, vitaminas.',
+      `Tipo de refeição solicitado: ${mealTypeLabel}.`,
+      `Objetivo: ${goalLabel}.`,
+      `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
+      `Preferências extras: ${preferences||'nenhuma'}.`,
+      `Para ${days} dia(s), gere ${days} receita(s) diferentes de ${mealTypeLabel}.`,
+      'Cada receita deve ter: nome brasileiro, ingredientes com quantidades, modo de preparo, e kcal.',
+      'EXEMPLOS para Café da Manhã: "Tapioca com queijo", "Pão de queijo com café", "Vitamina de frutas", "Omelete de queijo"',
+      'EXEMPLOS para Almoço: "Feijão com arroz e bife", "Frango grelhado com salada", "Sopa de legumes"',
+      'EXEMPLOS para Lanche: "Iogurte com granola", "Frutas frescas", "Tapioca simples"',
+      'EXEMPLOS para Jantar: "Sopa leve", "Omelete simples", "Salada completa"',
+      'Retorne SOMENTE JSON válido sem markdown, no formato:',
+      `{"meal_plan":[{"day":1,"meals":[{"name":"${mealTypeLabel}","time":"08:00","recipe_name":"Nome da Receita","ingredients":["ing1","ing2"],"preparation":"Modo de preparo","items":["Prato pronto"],"kcal":250}]}],"shopping_list":[{"item":"ingrediente","qty":"quantidade"}],"tips":["dica relevante"],"notes":"observações"}`,
+      'A lista de compras deve conter itens para todas as receitas geradas.'
+    ].join('\n');
+  }
 };
 window.normalizeMealSlotName=function(name='', goal='diaadia'){
   const n=String(name||'').toLowerCase();
