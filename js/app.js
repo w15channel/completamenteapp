@@ -573,12 +573,23 @@ window.balancedMealRestrictionOptions=[
   {id:'lactose',label:'Intolerante à Lactose',desc:'Exclui lactose devido à deficiência de lactase.',tags:['lactose']},
   {id:'alergico_nozes',label:'Alérgico Severo (Oleaginosas)',desc:'Exclusão rigorosa de castanhas, nozes e amendoim.',tags:['nozes']}
 ];
+window.selectedMealRestrictionIds=window.selectedMealRestrictionIds||[];
+window.toggleBalancedRestriction=function(id){
+  const set=new Set(window.selectedMealRestrictionIds||[]);
+  if(set.has(id)) set.delete(id); else set.add(id);
+  window.selectedMealRestrictionIds=[...set];
+  window.renderBalancedMealRestrictions();
+};
 window.renderBalancedMealRestrictions=function(){
   const container=document.getElementById('balancedMealRestrictionList'); if(!container) return;
-  container.innerHTML=window.balancedMealRestrictionOptions.map((opt)=>`<label class="flex items-start gap-2 bg-slate-950/40 border border-slate-700 rounded-lg p-2"><input type="checkbox" class="mt-0.5 accent-teal-500" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></label>`).join('');
+  const selectedSet=new Set(window.selectedMealRestrictionIds||[]);
+  container.innerHTML=window.balancedMealRestrictionOptions.map((opt)=>{
+    const checked=selectedSet.has(opt.id);
+    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer"><input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();window.toggleBalancedRestriction('${opt.id}')" class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
+  }).join('');
 };
 window.getSelectedMealRestrictions=function(){
-  const selectedIds=Array.from(document.querySelectorAll('#balancedMealRestrictionList input[type="checkbox"]:checked')).map((el)=>el.value);
+  const selectedIds=[...(window.selectedMealRestrictionIds||[])];
   const selected=window.balancedMealRestrictionOptions.filter((o)=>selectedIds.includes(o.id));
   return { selectedIds, labels:selected.map((o)=>o.label), tags:[...new Set(selected.flatMap((o)=>o.tags||[]))] };
 };
@@ -592,6 +603,7 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
     if(restrictionTags.includes('frango') && ingText.includes('frango')) return false;
     if(restrictionTags.includes('peixe') && (ingText.includes('peixe') || ingText.includes('tilapia') || ingText.includes('atum') || ingText.includes('salmao'))) return false;
     if(restrictionTags.includes('frutosmar') && (ingText.includes('camarao') || ingText.includes('mexilhao') || ingText.includes('lula') || ingText.includes('polvo'))) return false;
+    if(restrictionTags.includes('embutidos') && (ingText.includes('presunto') || ingText.includes('salame') || ingText.includes('salsicha') || ingText.includes('linguica'))) return false;
     if(restrictionTags.includes('ovo') && ingText.includes('ovo')) return false;
     if(restrictionTags.includes('mel') && ingText.includes('mel')) return false;
     if(restrictionTags.includes('nozes') && (ingText.includes('amendoim') || ingText.includes('castanha') || ingText.includes('noz'))) return false;
@@ -601,25 +613,58 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
   });
 };
 window.consultarIA=async function(prompt){
-  if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
+  if(!prompt||!prompt.trim()) return { text:'Nenhum texto foi enviado para a IA.', provider:'Sem provedor' };
   try{
-    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
-    const data = await response.json(); return data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.';
-  }catch(error){ console.error('Erro na IA:',error); return 'Falha na conexão com a IA.'; }
+    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'openai',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const data = await response.json();
+    return { text:data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.', provider:data?.provider||'Provedor IA' };
+  }catch(error){ console.error('Erro na IA:',error); return { text:'Falha na comunicação com a IA para montar o plano.', provider:'Indisponível' }; }
 };
-window.buildBalancedPlanPrompt=function({goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
+window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
+  const jantarSlot=goal==='perda'?'Lanche leve noturno (substitui jantar tradicional)':'Jantar leve';
   return [
-    'Você é nutricionista esportivo e deve responder em português do Brasil.',
-    'Crie um plano alimentar prático e seguro, respeitando as restrições fixas.',
+    'Você é nutricionista e chef focado em alimentação brasileira prática. Responda em português do Brasil.',
+    'Monte um plano APENAS com receitas reais/coerentes (nada de ingredientes soltos sem preparo).',
+    'Use majoritariamente preparações comuns no Brasil (ex: arroz, feijão, frango, peixes, legumes, tapioca, omelete, sopas, saladas, iogurte sem lactose quando aplicável).',
+    'Estrutura fixa por dia (não criar lanche da manhã nem ceia): 1) Café da Manhã, 2) Almoço, 3) Lanche da Tarde, 4) '+jantarSlot+'.',
+    'Após o almoço, as refeições devem ficar progressivamente mais leves em volume e densidade calórica.',
     `Objetivo: ${goalLabel}.`,
     `Período: ${days} dia(s).`,
-    `Tipo: ${mealTypeLabel}.`,
-    `Restrições: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
+    `Tipo solicitado: ${mealTypeLabel}.`,
+    `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
     `Preferências extras: ${preferences||'nenhuma'}.`,
+    'Cada refeição deve trazer receita com: nome da receita, ingredientes, modo de preparo curto e kcal.',
     'Retorne SOMENTE JSON válido sem markdown, no formato:',
-    '{"meal_plan":[{"day":1,"meals":[{"name":"","time":"","items":[""],"kcal":0}]}],"shopping_list":[{"item":"","qty":""}],"tips":[""],"notes":""}',
+    '{"meal_plan":[{"day":1,"meals":[{"name":"Café da Manhã","time":"07:00","recipe_name":"","ingredients":[""],"preparation":"","items":[""],"kcal":0}]}],"shopping_list":[{"item":"","qty":""}],"tips":[""],"notes":""}',
     'A lista de compras deve conter itens consolidados para todo o período e quantidades aproximadas.'
   ].join('\n');
+};
+window.normalizeMealSlotName=function(name='', goal='diaadia'){
+  const n=String(name||'').toLowerCase();
+  if(n.includes('café')||n.includes('cafe')) return 'Café da Manhã';
+  if(n.includes('almoço')||n.includes('almoco')) return 'Almoço';
+  if(n.includes('lanche') && (n.includes('tarde')||n.includes('pm'))) return 'Lanche da Tarde';
+  if(goal==='perda' && (n.includes('jantar')||n.includes('ceia')||n.includes('noite')||n.includes('lanche'))) return 'Lanche leve noturno';
+  if(n.includes('jantar')||n.includes('ceia')||n.includes('noite')) return 'Jantar leve';
+  return '';
+};
+window.normalizeMealPlanStructure=function(mealPlan, goal='diaadia'){
+  const slots=goal==='perda' ? ['Café da Manhã','Almoço','Lanche da Tarde','Lanche leve noturno'] : ['Café da Manhã','Almoço','Lanche da Tarde','Jantar leve'];
+  return (Array.isArray(mealPlan)?mealPlan:[]).map((d,idx)=>{
+    const meals=Array.isArray(d?.meals)?d.meals:[];
+    const mapped={};
+    meals.forEach((m)=>{ const slot=window.normalizeMealSlotName(m?.name||m?.meal||'', goal); if(slot && !mapped[slot]) mapped[slot]=m; });
+    const normalizedMeals=slots.map((slot)=>{
+      const src=mapped[slot]||{};
+      const recipeName=String(src.recipe_name||src.title||src.name||slot).trim();
+      const ingredients=Array.isArray(src.ingredients)?src.ingredients.filter(Boolean):[];
+      const items=Array.isArray(src.items)?src.items.filter(Boolean):[];
+      const prep=String(src.preparation||src.preparo||'Preparo simples com ingredientes frescos e porção adequada ao objetivo.').trim();
+      const safeItems=items.length?items:ingredients.length?ingredients:['Receita não detalhada pela IA.'];
+      return {name:slot,time:String(src.time||'').trim(),recipe_name:recipeName,ingredients,preparation:prep,items:safeItems,kcal:Number(src.kcal)||0};
+    });
+    return {day:Number(d?.day)||idx+1, meals:normalizedMeals};
+  });
 };
 window.extractJsonObject=function(text=''){
   const raw=String(text||'').trim();
@@ -649,11 +694,14 @@ window.generateBalancedMealPlan=async function(){
   const mealTypeLabel=(document.getElementById('balancedMealType')?.selectedOptions?.[0]?.textContent||mealType).trim();
   const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||planGoalDisplay).trim();
   out.classList.remove('hidden'); out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>A IA está elaborando o plano, aguarde...</div>`;
-  const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
-  const aiText=await window.consultarIA(promptIA);
+  const promptIA=window.buildBalancedPlanPrompt({goal,goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
+  const aiResponse=await window.consultarIA(promptIA);
+  const aiText=aiResponse?.text||'';
+  const providerName=aiResponse?.provider||'Provedor IA';
   const aiData=window.extractJsonObject(aiText)||{};
   const shoppingList=Array.isArray(aiData.shopping_list)?aiData.shopping_list.map((item)=>({item:String(item?.item||'').trim(),qty:String(item?.qty||'quantidade a gosto').trim()})).filter((entry)=>entry.item):[];
-  const mealPlan=Array.isArray(aiData.meal_plan)?aiData.meal_plan:[];
+  const rawMealPlan=Array.isArray(aiData.meal_plan)?aiData.meal_plan:[];
+  const mealPlan=window.normalizeMealPlanStructure(rawMealPlan, goal);
   const tips=Array.isArray(aiData.tips)?aiData.tips.filter(Boolean):[];
   const notes=String(aiData.notes||'').trim();
   window.currentBalancedPlan={goalDisplay:planGoalDisplay,days,shoppingList,aiText,mealPlan,tips,notes};
@@ -663,16 +711,18 @@ window.generateBalancedMealPlan=async function(){
       if(!meals.length) return `<div style="margin-bottom:10px;"><b>📅 Dia ${d?.day||idx+1}</b><br><span>Sem refeições detalhadas.</span></div>`;
       const items=meals.map((m)=>{
         const mealItems=Array.isArray(m?.items)?m.items.map((it)=>`<li>${it}</li>`).join(''):'<li>Sem itens.</li>';
-        return `<div style="margin-top:8px;padding:8px;border:1px solid #334155;border-radius:8px;"><b>${m?.time?`${m.time} • `:''}${m?.name||'Refeição'}</b>${m?.kcal?` <span style="color:#67e8f9;">(${m.kcal} kcal)</span>`:''}<ul style="margin-left:16px;">${mealItems}</ul></div>`;
+        const ingredients=Array.isArray(m?.ingredients)&&m.ingredients.length?`<div style="margin-top:4px;font-size:10px;color:#cbd5e1;"><b>Ingredientes:</b> ${m.ingredients.join(', ')}</div>`:'';
+        const prep=m?.preparation?`<div style="margin-top:4px;font-size:10px;color:#94a3b8;"><b>Preparo:</b> ${m.preparation}</div>`:'';
+        return `<div style="margin-top:8px;padding:8px;border:1px solid #334155;border-radius:8px;"><b>${m?.time?`${m.time} • `:''}${m?.name||'Refeição'} — ${m?.recipe_name||'Receita'}</b>${m?.kcal?` <span style="color:#67e8f9;">(${m.kcal} kcal)</span>`:''}<ul style="margin-left:16px;">${mealItems}</ul>${ingredients}${prep}</div>`;
       }).join('');
       return `<div style="margin-bottom:10px;"><b>📅 Dia ${d?.day||idx+1}</b>${items}</div>`;
     }).join(''):'';
     const shoppingHtml=shoppingList.length ? shoppingList.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>A IA não retornou itens de compra.</li>';
     const fallbackRaw=!mealPlan.length && aiText ? `<hr style="margin:10px 0;border-color:#334155;"/><div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>Saída textual da IA</b><br>${aiText}</div>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
-    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
+    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
     const notesHtml=notes?`<div style="margin-top:8px;font-size:10px;color:#94a3b8;"><b>Observação:</b> ${notes}</div>`:'';
-    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> Gemini (GEMINI_API_KEY)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
+    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> ${providerName} (fallback automático OpenAI/Gemini/Qwen/Groq)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - ${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
   }
   const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
 };
