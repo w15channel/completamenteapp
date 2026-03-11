@@ -1436,6 +1436,18 @@ window.getSelectedMealRestrictions=function(){
   };
 };
 
+};
+
+window.getSelectedMealRestrictions=function(){
+  const selectedIds=Array.from(document.querySelectorAll('#balancedMealRestrictionList input[type="checkbox"]:checked')).map((el)=>el.value);
+  const selected=window.balancedMealRestrictionOptions.filter((o)=>selectedIds.includes(o.id));
+  return {
+    selectedIds,
+    labels:selected.map((o)=>o.label),
+    tags:[...new Set(selected.flatMap((o)=>o.tags||[]))]
+  };
+};
+
 window.filtrarReceitasPlano=function(receitas, restrictionTags){
   if(!restrictionTags.length) return receitas;
   return receitas.filter((r)=>{
@@ -1455,6 +1467,33 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
   });
 };
 
+window.extractVisibleAIText=function(raw=''){
+  const txt=String(raw||'').trim();
+  if(!txt) return '';
+  try{
+    const parsed=JSON.parse(txt);
+    if(parsed && typeof parsed==='object'){
+      if(typeof parsed.content==='string') return parsed.content.trim();
+      if(typeof parsed.message==='string') return parsed.message.trim();
+      if(parsed.message && typeof parsed.message.content==='string') return parsed.message.content.trim();
+      if(Array.isArray(parsed.parts)) return parsed.parts.map((p)=>p?.text||'').join(' ').trim();
+    }
+  }catch(e){}
+  if(txt.includes('"reasoning_content"')){
+    return txt.replace(/"reasoning_content"\s*:\s*"[\s\S]*?"\s*,?/g,'').replace(/[{}\[\]"]+/g,' ').replace(/\s{2,}/g,' ').trim();
+  }
+  return txt;
+};
+
+window.consultarIA=async function(prompt){
+  if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
+  try{
+    const response=await fetch(window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider_hint:'gemini-only',messages:[{role:'user',content:prompt.trim()}],temperature:0.6,max_tokens:900})});
+    const data=await response.json();
+    if(!response.ok) throw new Error(data?.details||data?.error||`Falha de comunicação: Status ${response.status}`);
+    const raw=data?.choices?.[0]?.message?.content||'';
+    const clean=window.extractVisibleAIText(raw);
+    return clean||'Não foi possível gerar um texto válido para o plano.';
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
   try{
@@ -1471,6 +1510,7 @@ window.consultarIA=async function(prompt){
 window.buildBalancedPlanPrompt=function({goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
   return [
     'Você é nutricionista esportivo e chef.',
+    'Responda SOMENTE com conteúdo final para usuário. Não inclua JSON, role, tool_calls, nem reasoning_content.',
     'Crie um plano alimentar em português do Brasil, prático e seguro.',
     `Objetivo: ${goalLabel}.`,
     `Período: ${days} dia(s).`,
@@ -1572,12 +1612,14 @@ window.generateBalancedMealPlan=async function(){
       ? normalizedItems.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('')
       : '<li>Sem itens de compra para o filtro escolhido.</li>';
 
+  window.currentBalancedPlan={...plan,shoppingList:[],aiText};
+  if(out){
     out.classList.remove('hidden');
     const aiHtml=aiText?`<div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>🤖 Plano gerado por IA</b><br>${aiText}</div><hr style="margin:10px 0;border-color:#334155;"/>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
     out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${plan.goalDisplay}<br><b>🔥 Média diária:</b> ${avgCal} kcal<br><b>📅 Dias planejados:</b> ${plan.meals.length}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}</div><hr style="margin:10px 0;border-color:#334155;"/>${aiHtml}<div><b>📦 Sugestão local de apoio</b></div><div>${mealCards}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras Consolidada</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul></div>`;
   }
-  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !normalizedItems.length);
+  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.add('hidden');
 };
 
 window.downloadShoppingListPng=function(){
