@@ -633,6 +633,21 @@ window.balancedMealRestrictionOptions=[
   {id:'alergico_nozes',label:'Alérgico Severo (Oleaginosas)',desc:'Exclusão absoluta de oleaginosas e traços.',tags:['amendoim','castanha','nozes','amendoas','avelas','pistache','macadamia','oleos','tracos']}
 ];
 window.selectedMealRestrictionIds=window.selectedMealRestrictionIds||[];
+window.addRestriction=function(id){
+  if(!id) return;
+  const set=new Set(window.selectedMealRestrictionIds||[]);
+  if(!set.has(id)){
+    set.add(id);
+    window.selectedMealRestrictionIds=[...set];
+    window.renderBalancedMealRestrictions();
+  }
+};
+window.removeRestriction=function(id){
+  const set=new Set(window.selectedMealRestrictionIds||[]);
+  set.delete(id);
+  window.selectedMealRestrictionIds=[...set];
+  window.renderBalancedMealRestrictions();
+};
 window.toggleBalancedRestriction=function(id){
   const set=new Set(window.selectedMealRestrictionIds||[]);
   if(set.has(id)) set.delete(id); else set.add(id);
@@ -642,10 +657,35 @@ window.toggleBalancedRestriction=function(id){
 window.renderBalancedMealRestrictions=function(){
   const container=document.getElementById('balancedMealRestrictionList'); if(!container) return;
   const selectedSet=new Set(window.selectedMealRestrictionIds||[]);
-  container.innerHTML=window.balancedMealRestrictionOptions.map((opt)=>{
-    const checked=selectedSet.has(opt.id);
-    return `<button type="button" onclick="window.toggleBalancedRestriction('${opt.id}')" class="w-full text-left flex items-start gap-2 bg-slate-950/40 border ${checked?'border-teal-500':'border-slate-700'} rounded-lg p-2 cursor-pointer hover:border-teal-400 transition-colors"><input type="checkbox" ${checked?'checked':''} class="mt-0.5 accent-teal-500 w-4 h-4 cursor-pointer pointer-events-none" value="${opt.id}"><span><b class="text-teal-300">${opt.label}:</b> <span class="text-slate-300">${opt.desc}</span></span></button>`;
-  }).join('');
+  
+  container.innerHTML=`
+    <div class="space-y-2">
+      <select id="restrictionSelect" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-2 text-xs text-white outline-none cursor-pointer" onchange="window.addRestriction(this.value)">
+        <option value="">Selecione uma restrição alimentar...</option>
+        ${window.balancedMealRestrictionOptions.map((opt)=>`
+          <option value="${opt.id}" ${selectedSet.has(opt.id)?'disabled':''}>
+            ${opt.label} - ${opt.desc}
+          </option>
+        `).join('')}
+      </select>
+      <div id="selectedRestrictions" class="space-y-1">
+        ${selectedSet.size > 0 ? `
+          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Restrições selecionadas:</p>
+          ${Array.from(selectedSet).map(id => {
+            const opt = window.balancedMealRestrictionOptions.find(o => o.id === id);
+            return opt ? `
+              <div class="flex items-center justify-between bg-slate-950/40 border border-teal-500 rounded-lg p-2">
+                <span class="text-xs text-teal-300">${opt.label}</span>
+                <button type="button" onclick="window.removeRestriction('${id}')" class="text-rose-400 hover:text-rose-300 text-xs">
+                  <i class="fas fa-times"></i> Remover
+                </button>
+              </div>
+            ` : '';
+          }).join('')}
+        ` : '<p class="text-[9px] text-slate-500">Nenhuma restrição selecionada</p>'}
+      </div>
+    </div>
+  `;
 };
 window.getSelectedMealRestrictions=function(){
   const selectedIds=[...(window.selectedMealRestrictionIds||[])];
@@ -741,18 +781,19 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
       `Restrições obrigatórias: ${restrictionLabels.length?restrictionLabels.join(', '):'nenhuma'}.`,
       `Preferências extras: ${preferences||'nenhuma'}.`,
       `GERE EXATAMENTE ${days} RECEITA(S) - UMA PARA CADA DIA: Dia 1, Dia ${days > 1 ? '2' : ''}${days > 2 ? ', Dia 3' : ''}${days > 3 ? ', Dia 4' : ''}${days > 4 ? ', Dia 5' : ''}${days > 5 ? ', Dia 6' : ''}${days > 6 ? ', Dia 7' : ''}.`,
-      'ATENÇÃO ÀS RESTRIÇÕES:',
-      restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO TOTAL - carnes bovinas, suínas, aves, peixes, frutos do mar, embutidos, ovos, leite animal, queijos, manteiga, iogurtes, mel, gelatinas animais, corante carmim, aditivos de soro de leite ou gordura animal.' : '',
-      restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: PROIBIDO - carne bovina, vitela, carneiro, porco, aves (frango, peru, pato), peixes água doce/salgada, frutos do mar (camarão, lagosta, caranguejo), moluscos (lula, polvo), banha de porco.' : '',
-      restrictionLabels.includes('Lactovegetariano') ? '- LACTOVEGETARIANO: PROIBIDO - todas as carnes anteriores + OVOS (isolados ou em massas/molhos).' : '',
-      restrictionLabels.includes('Ovovegetariano') ? '- OVOVEGETARIANO: PROIBIDO - todas as carnes + LATICÍNIOS (leite, queijos, requeijão, creme de leite, manteiga, iogurtes, proteínas de soro do leite).' : '',
-      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: PROIBIDO - carnes bovinas, suínas, aves, embutidos. PERMITIDO: peixes, ovos, laticínios.' : '',
-      restrictionLabels.includes('Pescetariano (sem frutos do mar)') ? '- PESCETARIANO SEM FRUTOS DO MAR: PROIBIDO - carnes, aves, crustáceos, moluscos. PERMITIDO APENAS: peixes.' : '',
-      restrictionLabels.includes('Low Carb') ? '- LOW CARB: PROIBIDO - açúcares refinados, farinha de trigo, arroz branco, massas, pães, batata inglesa, mandioca, mel, doces.' : '',
-      restrictionLabels.includes('Dieta Líquida') ? '- DIETA LÍQUIDA: PROIBIDO - qualquer alimento sólido ou pastoso que exija mastigação (carnes, vegetais crus, grãos inteiros, pães).' : '',
-      restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO - trigo, centeio, cevada, malte, qualquer produto com traços de glúten por contaminação cruzada.' : '',
-      restrictionLabels.includes('Intolerante à Lactose') ? '- INTOLERANTE À LACTOSE: PROIBIDO - leite animal in natura, queijos frescos, creme de leite, leite condensado, ultraprocessados com leite em pó ou soro de leite.' : '',
-      restrictionLabels.includes('Alérgico Severo (Oleaginosas)') ? '- ALÉRGICO OLEAGINOSAS: PROIBIDO - amendoim, castanhas, nozes, amêndoas, avelãs, pistache, macadâmias, seus óleos e traços industriais.' : '',
+      'ATENÇÃO ABSOLUTA ÀS RESTRIÇÕES - VIOLAÇÃO RESULTARÁ EM PLANO INVÁLIDO:',
+      restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO TOTAL - NENHUM alimento de origem animal. ABSOLUTAMENTE NUNCA use: carnes (bovina, suína, aves), peixes, frutos do mar, embutidos, ovos, leite, queijos, manteiga, iogurtes, mel, gelatinas, corante carmim. Substitua com: tofu, legumes, grãos, frutas, leites vegetais.' : '',
+      restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: PROIBIDO - NENHUMA CARNE. NUNCA use: carne bovina, vitela, carneiro, porco, frango, peru, pato, peixes, camarão, lagosta, caranguejo, lula, polvo, banha de porco. PERMITIDO: ovos, leite, queijos, iogurtes.' : '',
+      restrictionLabels.includes('Lactovegetariano') ? '- LACTOVEGETARIANO: PROIBIDO - carnes E ovos. NUNCA use: qualquer carne + ovos (nem em bolos, massas, molhos). PERMITIDO: leite, queijos, iogurtes.' : '',
+      restrictionLabels.includes('Ovovegetariano') ? '- OVOVEGETARIANO: PROIBIDO - carnes E laticínios. NUNCA use: qualquer carne + leite, queijos, requeijão, creme de leite, manteiga, iogurtes, soro de leite. PERMITIDO: ovos.' : '',
+      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: PROIBIDO - carnes bovinas, suínas, aves. NUNCA use: bife, frango, peru, porco, embutidos. PERMITIDO: peixes, ovos, laticínios.' : '',
+      restrictionLabels.includes('Pescetariano (sem frutos do mar)') ? '- PESCETARIANO SEM FRUTOS DO MAR: PROIBIDO - carnes, aves, crustáceos, moluscos. NUNCA use: bife, frango, camarão, lagosta, ostras, lula. PERMITIDO APENAS: peixes (tilápia, sardinha, salmão).' : '',
+      restrictionLabels.includes('Low Carb') ? '- LOW CARB: PROIBIDO - carboidratos altos. NUNCA use: açúcar, farinha de trigo, arroz branco, massas, pães, batata inglesa, mandioca, mel, doces. Use: folhas, carnes, queijos, ovos.' : '',
+      restrictionLabels.includes('Dieta Líquida') ? '- DIETA LÍQUIDA: PROIBIDO - sólidos. NUNCA use: carnes sólidas, vegetais crus, grãos inteiros, pães. Use: sopas batidas, vitaminas, sucos, iogurtes líquidos.' : '',
+      restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO - glúten. NUNCA use: trigo, centeio, cevada, malte, pão, massa, cerveja. Use: arroz, milho, mandioca, quinoa.' : '',
+      restrictionLabels.includes('Intolerante à Lactose') ? '- INTOLERANTE À LACTOSE: PROIBIDO - lactose. NUNCA use: leite, queijos frescos, creme de leite, leite condensado. Use: leites vegetais, queijos maturados, iogurtes sem lactose.' : '',
+      restrictionLabels.includes('Alérgico Severo (Oleaginosas)') ? '- ALÉRGICO OLEAGINOSAS: PROIBIDO - oleaginosas. NUNCA use: amendoim, castanhas, nozes, amêndoas, avelãs, pistache, macadâmias, óleos de nuts. ATENÇÃO: risco de anafilaxia.' : '',
+      'VERIFICAÇÃO OBRIGATÓRIA: Antes de gerar cada receita, confirme que NENHUM ingrediente viola as restrições acima.',
       'Cada receita deve ter: nome brasileiro, ingredientes com quantidades, modo de preparo, e kcal.',
       'EXEMPLOS para Café da Manhã: "Tapioca com queijo", "Pão de queijo com café", "Vitamina de frutas", "Omelete de queijo"',
       'EXEMPLOS para Almoço: "Feijão com arroz e bife", "Frango grelhado com salada", "Sopa de legumes"',
