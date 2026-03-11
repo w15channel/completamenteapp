@@ -1,5 +1,5 @@
 // Firebase configurado via firebase-config.js
-window.AI_PROXY_URL=(location.origin&&location.origin.startsWith("http"))?`${location.origin}/api/chat`:"/api/chat";
+window.AI_PROXY_URL=(location.origin&&location.origin.startsWith("http"))?`${location.origin}/api/ai`:"/api/ai";
 window.CHAT_AI_PROXY_URL=(location.origin&&location.origin.startsWith("http"))?`${location.origin}/api/chat`:"/api/chat";
 window.clientId="";window.clientName="";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';
 window.userDataCache=null;window.activeTherapist=null;window.isWaiting=false;
@@ -104,7 +104,13 @@ window.calcIMC=async function(){
 window.getHydrationGoal=function(){
     const weight = parseFloat(window.userDataCache?.saude?.weight);
     if(!weight) return 2000; return Math.round(weight * 35);
-}
+};
+window.renderHydration=function(){
+  window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
+  const totalEl=document.getElementById('water-total'); const goalEl=document.getElementById('water-goal-text'); const bar=document.getElementById('water-progress-bar');
+  const goal=window.getHydrationGoal(); const total=w.total||0; const pct=Math.min(100, Math.round((total/goal)*100));
+  if(totalEl) totalEl.innerText=`${total} ml`; if(goalEl) goalEl.innerText=`Meta: ${goal} ml`; if(bar) bar.style.width=`${pct}%`;
+};
 window.getHydrationFactor=function(drinkType){
     if(drinkType==='juice') return 0.5; if(drinkType==='soda') return 0.25; if(drinkType==='tea') return 0.75; return 1;
 }
@@ -544,12 +550,12 @@ window.resetHealthProfileInfo=async function(){
   if(db){ await db.ref('users/'+window.clientId+'/saude/biotype').set(window.userDataCache.saude.biotype); await db.ref('users/'+window.clientId+'/saude/activityProfile').set(window.userDataCache.saude.activityProfile); }
 };
 window.getEnergyContext=function(){
-  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight)||0; const imc=parseFloat(s.imc)||0; const gender=(window.userDataCache?.gender||'M'); const pass=(window.userDataCache?.pass||'').trim(); let age=40;
+  const s=window.userDataCache?.saude||{}; const w=parseFloat(s.weight)||0; const imc=parseFloat(s.imc)||0; const gender=(window.userDataCache?.gender||'masculino'); const pass=(window.userDataCache?.pass||'').trim(); let age=40;
   if(/^\d{8}$/.test(pass)){
     const d=parseInt(pass.slice(0,2),10),m=parseInt(pass.slice(2,4),10)-1,y=parseInt(pass.slice(4),10); const born=new Date(y,m,d);
     if(!Number.isNaN(born.getTime())){ const now=new Date(); age=now.getFullYear()-born.getFullYear(); const md=now.getMonth()-born.getMonth(); if(md<0 || (md===0 && now.getDate()<born.getDate())) age--; }
   }
-  let gastoBasal=w?((gender==='H'?24:22)*w):1600;
+  let gastoBasal=w?((gender==='masculino'?24:22)*w):1600;
   if(age>30){ const decades=Math.floor((age-30)/10)+1; gastoBasal*=Math.max(0.7,1-(decades*0.1)); }
   if(imc>=30) gastoBasal*=0.92;
   const actFactor=parseFloat(s.activityProfile?.factor)||1.2; const gastoTotal=Math.round(gastoBasal*actFactor);
@@ -1172,6 +1178,37 @@ window.renderFinances=function(){
   if(!window.userDataCache.financas) window.userDataCache.financas={transactions:[]};
   const transactions=window.userDataCache.financas.transactions||[];
   container.innerHTML=transactions.length?transactions.map(t=>`<div class="p-2 border border-slate-700 rounded mb-2"><div class="flex justify-between"><span class="text-white">${t.description}</span><span class="text-${t.amount>=0?'emerald':'rose'}-400">R$ ${t.amount.toFixed(2)}</span></div></div>`).join(''):'<p class="text-slate-500">Nenhuma transação registrada.</p>';
+};
+window.renderNutriHistory=function(){
+  const container=document.getElementById('nutriHistory'); if(!container) return;
+  window.ensureHealthStructures(); const history=window.userDataCache.saude.nutriHistory||[];
+  const today=window.getTodayStr(); const todayItems=history.filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  const pane=document.getElementById('nutriResultPane'); if(pane && totalCal>0) pane.classList.remove('hidden');
+  const elCal=document.getElementById('nutriTotalCal'); if(elCal) elCal.innerText=Math.round(totalCal);
+  const elP=document.getElementById('nutriProt'); if(elP) elP.innerText=Math.round(totalP)+'g';
+  const elC=document.getElementById('nutriCarb'); if(elC) elC.innerText=Math.round(totalC)+'g';
+  const elF=document.getElementById('nutriGord'); if(elF) elF.innerText=Math.round(totalF)+'g';
+  container.innerHTML=history.slice(0,10).map((h,idx)=>`<div class="nutri-hist-item p-3 rounded-xl flex justify-between items-center animate-fade-in gap-2"><div class="flex flex-col min-w-0"><span class="text-[10px] text-white font-bold truncate uppercase">${h.meal}</span><span class="text-[8px] text-slate-500 font-bold">${h.qty||''}${h.unit||''} • ${h.date}</span></div><div class="flex items-center gap-2"><span class="text-xs font-black text-emerald-400 whitespace-nowrap">${h.cal} kcal</span><button onclick="window.deleteNutriEntry(${idx})" class="text-[10px] px-2 py-1 rounded bg-rose-900/40 border border-rose-500/40 text-rose-300">Excluir</button></div></div>`).join('')||'<p class="text-[9px] text-slate-600 text-center py-4">Nenhuma análise registrada.</p>';
+};
+window.deleteNutriEntry=async function(idx){
+  if(!window.userDataCache?.saude?.nutriHistory) return;
+  window.userDataCache.saude.nutriHistory.splice(idx,1);
+  if(db) await db.ref('users/'+window.clientId+'/saude/nutriHistory').set(window.userDataCache.saude.nutriHistory);
+  const today=window.getTodayStr();
+  const todayItems=(window.userDataCache.saude.nutriHistory||[]).filter((h)=>h.day===today);
+  const totalCal=todayItems.reduce((a,b)=>a+(Number(b.cal)||0),0);
+  const totalP=todayItems.reduce((a,b)=>a+(Number(b.p)||0),0);
+  const totalC=todayItems.reduce((a,b)=>a+(Number(b.c)||0),0);
+  const totalF=todayItems.reduce((a,b)=>a+(Number(b.f)||0),0);
+  document.getElementById('nutriTotalCal').innerText=Math.round(totalCal);
+  document.getElementById('nutriProt').innerText=Math.round(totalP)+'g';
+  document.getElementById('nutriCarb').innerText=Math.round(totalC)+'g';
+  document.getElementById('nutriGord').innerText=Math.round(totalF)+'g';
+  window.renderNutriHistory();
 };
 window.openTaskModal=function(){document.getElementById('task-modal')?.classList.remove('hidden');}; window.closeTaskModal=function(){document.getElementById('task-modal')?.classList.add('hidden');}; window.saveNewTask=function(){alert('Em breve.'); window.closeTaskModal();};
 const WORKOUT_DB={cardio:[{n:'Polichinelos',d:'Ritmo constante.',type:'time',val:45},{n:'Corrida',d:'Eleve joelhos.',type:'time',val:60},{n:'Burpees',d:'Completo.',type:'unit',val:12}],forca:[{n:'Agachamento',d:'Coluna neutra.',type:'unit',val:20},{n:'Flexão',d:'A 45 graus.',type:'unit',val:15},{n:'Prancha',d:'Core.',type:'time',val:40}]};
