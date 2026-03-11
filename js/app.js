@@ -582,16 +582,17 @@ window.cycleBurnSuggestion=function(){ window.currentBurnSuggestionIdx=(window.c
 window.balancedGoalDisplay={ diaadia:'Dia a Dia (Tradicional Brasileira) ☕', diadia:'Dia a Dia (Tradicional Brasileira) ☕', ganho:'Ganho de Massa Muscular 💪', perda:'Perda de Peso ⚖️', performance:'Performance Física 🏃', foco:'Foco Cognitivo 🧠', imunidade:'Imunidade Fortalecida 🛡️', intestinal:'Saúde Intestinal 🦠', longevidade:'Longevidade 🌿', posop:'Recuperação Pós-Operatória 🏥', sono:'Qualidade do Sono 😴' };
 window.balancedGoalCalorieStrategies={ diaadia:{mult:1.0,desc:'Necessidade diária equilibrada (2000 kcal).'}, diadia:{mult:1.0,desc:'Necessidade diária equilibrada (2000 kcal).'}, ganho:{mult:1.15,desc:'Superávit calórico para hipertrofia (+15%).'}, perda:{mult:0.8,desc:'Déficit calórico para perda de gordura (-20%).'}, performance:{mult:1.1,desc:'Energia extra para atividades físicas (+10%).'}, foco:{mult:1.0,desc:'Cérebro saudável (ômega-3 e antioxidantes).'}, imunidade:{mult:1.0,desc:'Imunidade fortalecida (vitaminas C, D e zinco).'}, intestinal:{mult:0.95,desc:'Digestão saudável (fibras e fermentados).'}, longevidade:{mult:0.85,desc:'Restrição calórica leve para longevidade (-15%).'}, posop:{mult:0.9,desc:'Recuperação com digestão facilitada (-10%).'}, sono:{mult:0.95,desc:'Triptofano e magnésio para sono de qualidade.'} };
 window.balancedMealRestrictionOptions=[
-  {id:'vegano',label:'Vegano',desc:'Exclui qualquer alimento de origem animal (carnes, laticínios, ovos e mel).',tags:['carne','frango','peixe','ovo','lactose','mel']},
-  {id:'ovolacto',label:'Ovolactovegetariano',desc:'Sem carnes; permite vegetais, ovos e laticínios.',tags:['carne','frango','peixe']},
-  {id:'lacto',label:'Lactovegetariano',desc:'Sem carnes e ovos; mantém laticínios.',tags:['carne','frango','peixe','ovo']},
-  {id:'ovo',label:'Ovovegetariano',desc:'Sem carnes e laticínios; mantém ovos.',tags:['carne','frango','peixe','lactose']},
-  {id:'pescetariano',label:'Pescetariano',desc:'Sem carnes bovinas/suínas/aves, crustáceos/moluscos e embutidos animais; permite peixes.',tags:['carne','frango','frutosmar','embutidos']},
-  {id:'lowcarb',label:'Low Carb',desc:'Reduz fortemente carboidratos; foco em proteínas e gorduras.',tags:['lowcarb']},
-  {id:'liquida',label:'Dieta Líquida',desc:'Permite somente fluidos ou alimentos líquidos.',tags:['liquida']},
-  {id:'celiaco',label:'Celíaco (Isenção de Glúten)',desc:'Exclusão total de glúten (trigo, centeio e cevada).',tags:['gluten']},
-  {id:'lactose',label:'Intolerante à Lactose',desc:'Exclui lactose devido à deficiência de lactase.',tags:['lactose']},
-  {id:'alergico_nozes',label:'Alérgico Severo (Oleaginosas)',desc:'Exclusão rigorosa de castanhas, nozes e amendoim.',tags:['nozes']}
+  {id:'vegano',label:'Vegano',desc:'Exclui totalmente qualquer alimento de origem animal.',tags:['carne','frango','peixe','frutosmar','embutidos','ovo','leite','queijo','manteiga','iogurte','mel','gelatina','carmim','soro']},
+  {id:'ovolacto',label:'Ovolactovegetariano',desc:'Permite ovos e laticínios; exclui carnes e frutos do mar.',tags:['carne','frango','peixe','frutosmar','crustaceos','moluscos','banha']},
+  {id:'lacto',label:'Lactovegetariano',desc:'Permite laticínios; exclui carnes e ovos.',tags:['carne','frango','peixe','frutosmar','ovo']},
+  {id:'ovo',label:'Ovovegetariano',desc:'Permite ovos; exclui carnes e laticínios.',tags:['carne','frango','peixe','leite','queijo','requeijao','cremeleite','manteiga','iogurte','soro']},
+  {id:'pescetariano',label:'Pescetariano',desc:'Permite peixes e ovos; exclui carnes e frutos do mar.',tags:['carne','frango','crustaceos','moluscos','embutidos']},
+  {id:'pescetariano_sem_frutos',label:'Pescetariano (sem frutos do mar)',desc:'Permite apenas peixes; exclui carnes, crustáceos e moluscos.',tags:['carne','frango','crustaceos','moluscos','camarao','lagosta','ostras','lula']},
+  {id:'lowcarb',label:'Low Carb',desc:'Reduz carboidratos e açúcares; foco em proteínas e gorduras.',tags:['acucar','farinha','arroz','massa','pao','batata','mandioca','mel','doces']},
+  {id:'liquida',label:'Dieta Líquida',desc:'Apenas alimentos líquidos; proíbe sólidos e pastosos.',tags:['solido','pastoso','carne','vegetais','graos','pao']},
+  {id:'celiaco',label:'Celíaco (Isenção de Glúten)',desc:'Exclusão rigorosa de glúten e traços.',tags:['trigo','centeio','cevada','malte','gluten','contaminacao']},
+  {id:'lactose',label:'Intolerante à Lactose',desc:'Exclui leite e derivados; permite sem lactose.',tags:['leite','queijofresco','cremeleite','leitecondensado','ultraprocessados','leitepo','soroleite']},
+  {id:'alergico_nozes',label:'Alérgico Severo (Oleaginosas)',desc:'Exclusão absoluta de oleaginosas e traços.',tags:['amendoim','castanha','nozes','amendoas','avelas','pistache','macadamia','oleos','tracos']}
 ];
 window.selectedMealRestrictionIds=window.selectedMealRestrictionIds||[];
 window.toggleBalancedRestriction=function(id){
@@ -681,11 +682,17 @@ window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restr
       `Preferências extras: ${preferences||'nenhuma'}.`,
       `GERE EXATAMENTE ${days} RECEITA(S) - UMA PARA CADA DIA: Dia 1, Dia ${days > 1 ? '2' : ''}${days > 2 ? ', Dia 3' : ''}${days > 3 ? ', Dia 4' : ''}${days > 4 ? ', Dia 5' : ''}${days > 5 ? ', Dia 6' : ''}${days > 6 ? ', Dia 7' : ''}.`,
       'ATENÇÃO ÀS RESTRIÇÕES:',
-      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: Permitir APENAS peixes e frutos do mar. PROIBIDO: carnes bovinas, suínas, aves, embutidos.' : '',
-      restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO qualquer alimento de origem animal (carnes, laticínios, ovos, mel).' : '',
-      restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: Permitir ovos e laticínios. PROIBIDO: carnes, frango, peixe.' : '',
-      restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO glúten (trigo, centeio, cevida, aveia). Use farinha de arroz, mandioca, milho.' : '',
-      restrictionLabels.includes('Lactose') ? '- INTOLERANTE À LACTOSE: PROIBIDO laticínios. Use leite vegetal, queijos sem lactose.' : '',
+      restrictionLabels.includes('Vegano') ? '- VEGANO: PROIBIDO TOTAL - carnes bovinas, suínas, aves, peixes, frutos do mar, embutidos, ovos, leite animal, queijos, manteiga, iogurtes, mel, gelatinas animais, corante carmim, aditivos de soro de leite ou gordura animal.' : '',
+      restrictionLabels.includes('Ovolactovegetariano') ? '- OVOLACTOVEGETARIANO: PROIBIDO - carne bovina, vitela, carneiro, porco, aves (frango, peru, pato), peixes água doce/salgada, frutos do mar (camarão, lagosta, caranguejo), moluscos (lula, polvo), banha de porco.' : '',
+      restrictionLabels.includes('Lactovegetariano') ? '- LACTOVEGETARIANO: PROIBIDO - todas as carnes anteriores + OVOS (isolados ou em massas/molhos).' : '',
+      restrictionLabels.includes('Ovovegetariano') ? '- OVOVEGETARIANO: PROIBIDO - todas as carnes + LATICÍNIOS (leite, queijos, requeijão, creme de leite, manteiga, iogurtes, proteínas de soro do leite).' : '',
+      restrictionLabels.includes('Pescetariano') ? '- PESCETARIANO: PROIBIDO - carnes bovinas, suínas, aves, embutidos. PERMITIDO: peixes, ovos, laticínios.' : '',
+      restrictionLabels.includes('Pescetariano (sem frutos do mar)') ? '- PESCETARIANO SEM FRUTOS DO MAR: PROIBIDO - carnes, aves, crustáceos, moluscos. PERMITIDO APENAS: peixes.' : '',
+      restrictionLabels.includes('Low Carb') ? '- LOW CARB: PROIBIDO - açúcares refinados, farinha de trigo, arroz branco, massas, pães, batata inglesa, mandioca, mel, doces.' : '',
+      restrictionLabels.includes('Dieta Líquida') ? '- DIETA LÍQUIDA: PROIBIDO - qualquer alimento sólido ou pastoso que exija mastigação (carnes, vegetais crus, grãos inteiros, pães).' : '',
+      restrictionLabels.includes('Celíaco') ? '- CELÍACO: PROIBIDO - trigo, centeio, cevada, malte, qualquer produto com traços de glúten por contaminação cruzada.' : '',
+      restrictionLabels.includes('Intolerante à Lactose') ? '- INTOLERANTE À LACTOSE: PROIBIDO - leite animal in natura, queijos frescos, creme de leite, leite condensado, ultraprocessados com leite em pó ou soro de leite.' : '',
+      restrictionLabels.includes('Alérgico Severo (Oleaginosas)') ? '- ALÉRGICO OLEAGINOSAS: PROIBIDO - amendoim, castanhas, nozes, amêndoas, avelãs, pistache, macadâmias, seus óleos e traços industriais.' : '',
       'Cada receita deve ter: nome brasileiro, ingredientes com quantidades, modo de preparo, e kcal.',
       'EXEMPLOS para Café da Manhã: "Tapioca com queijo", "Pão de queijo com café", "Vitamina de frutas", "Omelete de queijo"',
       'EXEMPLOS para Almoço: "Feijão com arroz e bife", "Frango grelhado com salada", "Sopa de legumes"',
