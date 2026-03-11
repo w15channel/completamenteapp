@@ -603,7 +603,7 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return 'Nenhum texto foi enviado para a IA.';
   try{
-    const response=await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
+    const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200})});
     const data = await response.json(); return data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.';
   }catch(error){ console.error('Erro na IA:',error); return 'Falha na conexão com a IA.'; }
 };
@@ -670,9 +670,9 @@ window.generateBalancedMealPlan=async function(){
     const shoppingHtml=shoppingList.length ? shoppingList.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>A IA não retornou itens de compra.</li>';
     const fallbackRaw=!mealPlan.length && aiText ? `<hr style="margin:10px 0;border-color:#334155;"/><div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>Saída textual da IA</b><br>${aiText}</div>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
-    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (OpenAI)</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
+    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
     const notesHtml=notes?`<div style="margin-top:8px;font-size:10px;color:#94a3b8;"><b>Observação:</b> ${notes}</div>`:'';
-    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> OpenAI (OPENAI_API_KEY)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - OpenAI)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
+    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> Gemini (GEMINI_API_KEY)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - Gemini)</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
   }
   const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
 };
