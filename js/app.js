@@ -65,13 +65,18 @@ window.login = async function(isAuto) {
         document.querySelectorAll('.client-name').forEach(e => e.innerText = window.clientName);
         window.showTab('home');
     } catch (error) {
-        console.error("Erro no Login:", error);
+        console.error("❌ Erro no Login:", error);
+        console.error("📍 Detalhes:", error.message, error.stack);
         
-        // Verificar se é erro de conexão Firebase
-        if (window.isFirebaseOnline && !window.isFirebaseOnline()) {
-            alert("Conexão com banco de dados instável. Modo offline ativado - suas alterações serão salvas localmente.");
+        // Verificar tipo específico de erro
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            alert("❌ Erro de conexão com servidor.\n\nVerifique sua internet e tente novamente.\n\nSe o problema persistir, recarregue a página (F5).");
+        } else if (error.message.includes('permission-denied') || error.message.includes('PERMISSION_DENIED')) {
+            alert("❌ Erro de permissão no Firebase.\n\nTente fazer login novamente ou contate o suporte.");
+        } else if (window.isFirebaseOnline && !window.isFirebaseOnline()) {
+            alert("⚠️ Conexão com banco de dados instável.\n\nModo offline ativado - suas alterações serão salvas localmente.");
         } else {
-            alert("Erro de conexão. Verifique sua internet e tente novamente.");
+            alert("❌ Erro inesperado.\n\nTente novamente. Se o problema persistir, recarregue a página.\n\nErro: " + error.message);
         }
         
         window.userDataCache = window.userDataCache || { relacional: {}, saude: {}, financas: { transactions: [] } };
@@ -80,6 +85,39 @@ window.login = async function(isAuto) {
     }
 };
 window.logoutUser=function(){localStorage.removeItem('wr_remember');localStorage.removeItem('wr_user');localStorage.removeItem('wr_pass');window.location.reload();}
+window.testConnectivity=async function(){
+  console.log("🔍 Testando conectividade geral...");
+  const results = {
+    internet: false,
+    api: false,
+    firebase: false
+  };
+  
+  // Testar conexão básica com a internet
+  try {
+    const response = await fetch('https://www.google.com', { method: 'HEAD', mode: 'no-cors' });
+    results.internet = true;
+    console.log("✅ Conexão com internet: OK");
+  } catch (error) {
+    console.error("❌ Conexão com internet: FALHOU", error);
+  }
+  
+  // Testar API do próprio site
+  try {
+    const response = await fetch('/api/ai', { method: 'HEAD' });
+    results.api = response.ok;
+    console.log(results.api ? "✅ API do site: OK" : "❌ API do site: FALHOU");
+  } catch (error) {
+    console.error("❌ API do site: FALHOU", error);
+  }
+  
+  // Testar Firebase
+  results.firebase = window.isFirebaseOnline ? window.isFirebaseOnline() : false;
+  console.log(results.firebase ? "✅ Firebase: OK" : "❌ Firebase: FALHOU");
+  
+  console.table(results);
+  return results;
+};
 window.showSaudeSubTab=function(id){
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
     ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
@@ -636,10 +674,32 @@ window.filtrarReceitasPlano=function(receitas, restrictionTags){
 window.consultarIA=async function(prompt){
   if(!prompt||!prompt.trim()) return { text:'Nenhum texto foi enviado para a IA.', provider:'Sem provedor' };
   try{
+    console.log("🔍 Enviando requisição para /api/ai...");
     const response=await fetch('/api/ai', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({provider_hint:'gemini',messages:[{role:"user",content:prompt}], temperature:0.3, max_tokens:1500})});
+    
+    if(!response.ok) {
+      console.error("❌ Resposta da API não OK:", response.status, response.statusText);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
+    console.log("✅ Resposta da API recebida:", data);
     return { text:data?.choices?.[0]?.message?.content||'Sem resposta textual da IA.', provider:data?.provider||'Provedor IA' };
-  }catch(error){ console.error('Erro na IA:',error); return { text:'Falha na comunicação com a IA para montar o plano.', provider:'Indisponível' }; }
+  }catch(error){ 
+    console.error('❌ Erro na IA:', error);
+    console.error('📍 Detalhes do erro:', error.message, error.stack);
+    
+    // Verificar tipo de erro
+    if(error.message.includes('Failed to fetch')) {
+      return { text:'Falha de conexão com o servidor. Verifique sua internet e recarregue a página.', provider:'Indisponível' };
+    } else if(error.message.includes('HTTP 404')) {
+      return { text:'Endpoint da IA não encontrado. Contate o suporte.', provider:'Indisponível' };
+    } else if(error.message.includes('HTTP 500')) {
+      return { text:'Erro interno do servidor. Tente novamente em alguns minutos.', provider:'Indisponível' };
+    } else {
+      return { text:`Falha na comunicação: ${error.message}`, provider:'Indisponível' };
+    }
+  }
 };
 window.buildBalancedPlanPrompt=function({goal,goalLabel,days,mealTypeLabel,restrictionLabels,preferences}){
   const jantarSlot=goal==='perda'?'Lanche leve noturno (substitui jantar tradicional)':'Jantar leve';
