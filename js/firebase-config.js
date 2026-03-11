@@ -1,12 +1,12 @@
-// Configuração do Firebase - Em produção, configure via variáveis de ambiente no backend
+// Configuração do Firebase - Usa variáveis de ambiente em produção
 const firebaseConfig = {
-  apiKey: "AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",
-  authDomain: "completamenteapp.firebaseapp.com",
-  databaseURL: "https://completamenteapp-default-rtdb.firebaseio.com",
-  projectId: "completamenteapp",
-  storageBucket: "completamenteapp.firebasestorage.app",
-  messagingSenderId: "343038230333",
-  appId: "1:343038230333:web:2338b20d2e706743b40f54"
+  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "completamenteapp.firebaseapp.com",
+  databaseURL: process.env.FIREBASE_DATABASE_URL || "https://completamenteapp-default-rtdb.firebaseio.com",
+  projectId: process.env.FIREBASE_PROJECT_ID || "completamenteapp",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "completamenteapp.firebasestorage.app",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "343038230333",
+  appId: process.env.FIREBASE_APP_ID || "1:343038230333:web:2338b20d2e706743b40f54"
 };
 
 let db = null;
@@ -46,3 +46,43 @@ window.safeFirebaseOperation = function(operation, fallback = null) {
     return fallback || null;
   }
 };
+
+// Função de diagnóstico da conexão
+window.diagnoseFirebaseConnection = async function() {
+  console.log("🔍 Diagnosticando conexão Firebase...");
+  console.log("📍 Database URL:", firebaseConfig.databaseURL);
+  
+  try {
+    // Testar conexão básica
+    const testRef = db.ref('.info/connected');
+    const snapshot = await new Promise((resolve) => {
+      testRef.once('value', resolve);
+    });
+    
+    const connected = snapshot.val();
+    console.log("🔗 Status de conexão:", connected ? "CONECTADO" : "DESCONECTADO");
+    
+    // Testar escrita/leitura
+    const testPath = `test/connection_${Date.now()}`;
+    await db.ref(testPath).set({ timestamp: Date.now(), status: "test" });
+    const readSnapshot = await db.ref(testPath).once('value');
+    const testData = readSnapshot.val();
+    
+    if (testData && testData.status === "test") {
+      console.log("✅ Teste de escrita/leitura: SUCESSO");
+      await db.ref(testPath).remove(); // Limpar teste
+    } else {
+      console.log("❌ Teste de escrita/leitura: FALHOU");
+    }
+    
+    return connected;
+  } catch (error) {
+    console.error("❌ Erro no diagnóstico:", error);
+    return false;
+  }
+};
+
+// Executar diagnóstico automaticamente
+setTimeout(() => {
+  window.diagnoseFirebaseConnection();
+}, 2000);

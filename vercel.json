@@ -9,7 +9,14 @@
       "OPENAI_MODEL": "gpt-4o-mini",
       "GEMINI_MODEL": "gemini-1.5-flash",
       "QWEN_MODEL": "qwen-plus",
-      "GROQ_MODEL": "llama-3.1-8b-instant"
+      "GROQ_MODEL": "llama-3.1-8b-instant",
+      "FIREBASE_API_KEY": "AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",
+      "FIREBASE_AUTH_DOMAIN": "completamenteapp.firebaseapp.com",
+      "FIREBASE_DATABASE_URL": "https://completamenteapp-default-rtdb.firebaseio.com",
+      "FIREBASE_PROJECT_ID": "completamenteapp",
+      "FIREBASE_STORAGE_BUCKET": "completamenteapp.firebasestorage.app",
+      "FIREBASE_MESSAGING_SENDER_ID": "343038230333",
+      "FIREBASE_APP_ID": "1:343038230333:web:2338b20d2e706743b40f54"
     }
   }
 }
