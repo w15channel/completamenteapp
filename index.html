@@ -409,7 +409,10 @@
                             <p class="text-[9px] text-slate-500 mt-1">As restrições são fixas por caixa de seleção. Use o campo acima apenas para preferências extras.</p>
                             <button onclick="window.generateBalancedMealPlan()" class="w-full mt-3 bg-teal-600 hover:bg-teal-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Gerar plano de refeições</button>
                             <div id="balancedMealResult" class="hidden mt-3 p-3 rounded-lg bg-slate-900/70 border border-slate-700 text-[11px] text-slate-200 whitespace-pre-line"></div>
-                            <button id="downloadShoppingBtn" onclick="window.downloadShoppingListPng()" class="hidden w-full mt-2 bg-sky-600 hover:bg-sky-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">Baixar/Compartilhar lista PNG</button>
+                            <div id="shoppingButtons" class="hidden mt-2 flex gap-2">
+                                <button id="downloadShoppingBtn" onclick="window.downloadShoppingListPng()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">📥 Baixar</button>
+                                <button id="shareShoppingBtn" onclick="window.shareShoppingList()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-wider">📤 Compartilhar</button>
+                            </div>
                         </div>
 
                         <div class="mt-2">

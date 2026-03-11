@@ -876,7 +876,21 @@ window.generateBalancedMealPlan=async function(){
   const goal=document.getElementById('balancedMealGoal')?.value||'diaadia'; const mealType=document.getElementById('balancedMealType')?.value||'completo'; const days=Math.max(1,Math.min(7,parseInt(document.getElementById('balancedMealDays')?.value||'1',10))); const preferences=(document.getElementById('balancedMealPreferences')?.value||'').trim(); const out=document.getElementById('balancedMealResult'); const planGoalDisplay=window.balancedGoalDisplay[goal]||window.balancedGoalDisplay.diaadia; const restrictionData=window.getSelectedMealRestrictions();
   const mealTypeLabel=(document.getElementById('balancedMealType')?.selectedOptions?.[0]?.textContent||mealType).trim();
   const goalLabel=(document.getElementById('balancedMealGoal')?.selectedOptions?.[0]?.textContent||planGoalDisplay).trim();
-  out.classList.remove('hidden'); out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>A IA está elaborando o plano, aguarde...</div>`;
+  out.classList.remove('hidden'); 
+  const loadingMessages = ['... Elaborando Refeições...', '... Preparando seus pratos...'];
+  let messageIndex = 0;
+  const loadingInterval = setInterval(() => {
+    messageIndex = (messageIndex + 1) % loadingMessages.length;
+    const loadingElement = out.querySelector('.loading-message');
+    if (loadingElement) {
+      loadingElement.textContent = loadingMessages[messageIndex];
+    }
+  }, 2000);
+  out.innerHTML = `<div class="text-xs text-sky-400 font-bold mb-4"><i class="fas fa-spinner fa-spin mr-2"></i><span class="loading-message">${loadingMessages[0]}</span></div>`;
+  
+  setTimeout(() => {
+    clearInterval(loadingInterval);
+  }, 10000);
   const promptIA=window.buildBalancedPlanPrompt({goalLabel,days,mealTypeLabel,restrictionLabels:restrictionData.labels,preferences});
   const aiResponse=await window.consultarIA(promptIA);
   const aiText=aiResponse?.text||'';
@@ -903,11 +917,16 @@ window.generateBalancedMealPlan=async function(){
     const shoppingHtml=shoppingList.length ? shoppingList.map((item)=>`<li><b>${item.item}</b>: ${item.qty}</li>`).join('') : '<li>A IA não retornou itens de compra.</li>';
     const fallbackRaw=!mealPlan.length && aiText ? `<hr style="margin:10px 0;border-color:#334155;"/><div style="font-size:11px;color:#cbd5e1;white-space:pre-line;"><b>Saída textual da IA</b><br>${aiText}</div>`:'';
     const fixedRestrictions=restrictionData.labels.length?restrictionData.labels.join(', '):'Nenhuma';
-    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da IA (${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
+    const tipsHtml=tips.length?`<hr style="margin:10px 0;border-color:#334155;"/><div><b>💡 Dicas da Cozinha</b><ul style="margin-top:6px;margin-left:16px;">${tips.map((tip)=>`<li>${tip}</li>`).join('')}</ul></div>`:'';
     const notesHtml=notes?`<div style="margin-top:8px;font-size:10px;color:#94a3b8;"><b>Observação:</b> ${notes}</div>`:'';
-    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}<br><b>🧠 Motor de geração:</b> ${providerName} (fallback automático OpenAI/Gemini/Qwen/Groq)</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Lista de Compras (Gerada por IA - ${providerName})</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
+    out.innerHTML=`<div style="font-size:12px;"><b>🎯 Objetivo:</b> ${planGoalDisplay}<br><b>🧩 Restrições fixas:</b> ${fixedRestrictions}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🍽️ Cardápio gerado por IA</b></div><div>${mealCards||'Sem cardápio estruturado retornado pela IA.'}</div><hr style="margin:10px 0;border-color:#334155;"/><div><b>🛒 Sua Lista de Compras</b><ul style="margin-top:6px;margin-left:16px;">${shoppingHtml}</ul>${notesHtml}</div>${tipsHtml}${fallbackRaw}`;
   }
-  const dBtn=document.getElementById('downloadShoppingBtn'); if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
+  const dBtn=document.getElementById('downloadShoppingBtn'); 
+  const sBtn=document.getElementById('shareShoppingBtn');
+  const buttonsContainer=document.getElementById('shoppingButtons');
+  if(buttonsContainer) buttonsContainer.classList.toggle('hidden', !shoppingList.length);
+  if(dBtn) dBtn.classList.toggle('hidden', !shoppingList.length);
+  if(sBtn) sBtn.classList.toggle('hidden', !shoppingList.length);
 };
 window.downloadShoppingListPng=function(){
   if(!window.currentBalancedPlan?.shoppingList?.length) return alert('Gere uma lista antes de baixar.');
@@ -920,6 +939,33 @@ window.downloadShoppingListPng=function(){
     ctx.fillStyle='#38bdf8'; ctx.font='bold 24px Arial'; ctx.fillText(entry.item,42,y); ctx.fillStyle='#94a3b8'; ctx.font='20px Arial'; ctx.fillText(entry.qty,42,y+24); y+=58;
   });
   const link=document.createElement('a'); link.download=`lista-compras-${Date.now()}.png`; link.href=canvas.toDataURL('image/png'); link.click();
+};
+window.shareShoppingList=function(){
+  if(!window.currentBalancedPlan?.shoppingList?.length) return alert('Gere uma lista antes de compartilhar.');
+  
+  const items=window.currentBalancedPlan.shoppingList;
+  const text=`🛒 Lista de Compras\n${window.currentBalancedPlan.days} dia(s) • ${window.currentBalancedPlan.goalDisplay}\n\n${items.map(item=>`• ${item.item}: ${item.qty}`).join('\n')}`;
+  
+  if(navigator.share) {
+    navigator.share({
+      title: 'Lista de Compras - Completamente',
+      text: text
+    }).catch(err => console.log('Erro ao compartilhar:', err));
+  } else {
+    // Fallback: copiar para área de transferência
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Lista copiada para a área de transferência!');
+    }).catch(() => {
+      // Fallback final: mostrar texto para copiar manualmente
+      const textarea=document.createElement('textarea');
+      textarea.value=text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('Lista copiada para a área de transferência!');
+    });
+  }
 };
 window.renderWaterHistory=function(){
   const el=document.getElementById('water-history'); if(!el) return; window.ensureHealthStructures(); const h=window.userDataCache.saude.water.history;
