@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "OPENAI_API_KEY": "@openai-api-key",
+    "GEMINI_API_KEY": "@gemini-api-key", 
+    "QWEN_API_KEY": "@qwen-api-key",
+    "GROQ_API_KEY": "@groq-api-key",
+    "OPENAI_MODEL": "gpt-4o-mini",
+    "GEMINI_MODEL": "gemini-1.5-flash",
+    "QWEN_MODEL": "qwen-plus",
+    "GROQ_MODEL": "llama-3.1-8b-instant"
+  },
+  "build": {
+    "env": {
+      "OPENAI_API_KEY": "@openai-api-key",
+      "GEMINI_API_KEY": "@gemini-api-key",
+      "QWEN_API_KEY": "@qwen-api-key", 
+      "GROQ_API_KEY": "@groq-api-key"
+    }
+  }
+}
