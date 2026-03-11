@@ -1252,3 +1252,15 @@ window.initHomeFitTool=function(){
   if('speechSynthesis' in window){ st.voicesSupported=true; }
   setSeg('hf-intensity','iniciante'); setSeg('hf-target-type','reps'); setSeg('hf-mode','texto'); refreshInfo(); updateDisplay(); renderHistory();
 };
+window.initSaudeTab=function(){
+  window.ensureHealthStructures();
+  window.renderHydration();
+  window.renderCaloricNeed();
+  window.renderExerciseProgress();
+  window.renderAnxietyDailyState();
+  window.renderHealthGoalsLog();
+  window.renderNutriHistory();
+  window.renderBiotypeOptions();
+  window.renderActivityProfileState();
+  window.renderBalancedMealRestrictions();
+};
