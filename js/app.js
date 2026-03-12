@@ -4,6 +4,18 @@ window.CHAT_AI_PROXY_URL=(location.origin&&location.origin.startsWith("http"))?`
 window.clientId="";window.clientName="";window.hasAcceptedTerms=sessionStorage.getItem('wr_terms_accepted')==='true';
 window.userDataCache=null;window.activeTherapist=null;window.isWaiting=false;
 window.activeChatRef=null; window.waterReminderInterval=null; window.cardioTimer=null; window.ansioMessages=[];
+
+// Evita quebra da aplicação por rejeições não tratadas vindas de scripts externos
+window.addEventListener('unhandledrejection', (event) => {
+    const reason = event?.reason;
+    const message = typeof reason === 'string' ? reason : reason?.message;
+
+    if (message && message.includes('The user is not authenticated')) {
+        console.warn('Aviso de autenticação externa ignorado para não afetar a interface.');
+        event.preventDefault();
+    }
+});
+
 document.addEventListener("DOMContentLoaded",()=>{
     if(localStorage.getItem('wr_remember')==='true'){
         const u=localStorage.getItem('wr_user'); const p=localStorage.getItem('wr_pass');
@@ -154,10 +166,16 @@ window.manualSyncData=async function(){
     return;
   }
   
-  const btn = event.target;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Sincronizando...';
-  btn.disabled = true;
+  const btn = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+  if(!btn) {
+    console.warn("Botão de sincronização não encontrado para atualizar estado visual.");
+  }
+  
+  const originalText = btn ? btn.innerHTML : '';
+  if(btn){
+    btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Sincronizando...';
+    btn.disabled = true;
+  }
   
   try{
     console.log("🔄 Iniciando sincronização manual robusta...");
@@ -220,8 +238,10 @@ Verifique o console (F12) para logs detalhados.`;
     console.error("❌ Erro na sincronização manual:", error);
     alert("❌ Erro ao sincronizar: " + error.message);
   } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
+    if(btn){
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
   }
 };
 window.ensureHealthStructures=function(){

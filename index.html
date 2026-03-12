@@ -14,6 +14,24 @@
 
     <title>Harmonia Diária - WR TERAPIA</title>
 
+    <script>
+      window.addEventListener('unhandledrejection', function(event){
+        var reason = event && event.reason;
+        var message = (typeof reason === 'string') ? reason : (reason && reason.message);
+        if (message && message.indexOf('The user is not authenticated') !== -1) {
+          console.warn('Aviso externo de autenticação ignorado.');
+          event.preventDefault();
+        }
+      });
+      window.onerror = function(message){
+        if (String(message).indexOf('The user is not authenticated') !== -1) {
+          console.warn('Erro externo de autenticação ignorado.');
+          return true;
+        }
+        return false;
+      };
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
