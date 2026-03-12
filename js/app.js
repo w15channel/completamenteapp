@@ -370,7 +370,7 @@ window.loadLinkedPartner=async function(){
 }
 window.showRelaxSubTab=function(id){
     document.querySelectorAll('#relaxation .rel-nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('btn-'+id).classList.add('active');
-    ['rx-video','rx-cinema','rx-arte','rx-mural','rx-biblioteca','rx-caixinha','rx-jogos'].forEach(t=>document.getElementById(t).classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
+    ['rx-video','rx-cinema','rx-arte','rx-mural','rx-biblioteca','rx-caixinha','rx-sonhos','rx-esperanca','rx-jogos'].forEach(t=>document.getElementById(t).classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
     if(id==='rx-mural') window.loadMural();
 }
 window.currentColor = '#ffffff'; window.currentArtIndex = 0;
@@ -1611,3 +1611,279 @@ window.initSaudeTab=function(){
   window.renderActivityProfileState();
   window.renderBalancedMealRestrictions();
 };
+
+// =================================================================
+// FUNCIONALIDADES PERDIDAS RECUPERADAS
+// =================================================================
+
+// 1. SISTEMA DE SONHOS
+console.log("📙 Inicializando Sistema de Sonhos...");
+
+if (!window.dreamHistory) {
+    window.dreamHistory = [];
+}
+
+window.saveDream = function() {
+    const input = document.getElementById('dream-input');
+    if (!input || !input.value.trim()) {
+        alert("Por favor, descreva seu sonho antes de salvar.");
+        return;
+    }
+    
+    const dream = { 
+        text: input.value.trim(), 
+        date: new Date().toLocaleString('pt-BR'),
+        timestamp: Date.now()
+    };
+    
+    window.dreamHistory.unshift(dream);
+    input.value = '';
+    window.renderDreams();
+    
+    if (window.db && window.clientId) {
+        try {
+            window.db.ref('users/' + window.clientId + '/dreams').set(window.dreamHistory);
+            console.log("💭 Sonho salvo no Firebase");
+        } catch (error) {
+            console.error("❌ Erro ao salvar sonho no Firebase:", error);
+        }
+    } else {
+        localStorage.setItem('wr_dreams', JSON.stringify(window.dreamHistory));
+        console.log("💭 Sonho salvo no localStorage");
+    }
+    
+    window.showNotification("Sonho guardado com sucesso! ✨");
+};
+
+window.renderDreams = function() {
+    const list = document.getElementById('dream-list');
+    if (!list) return;
+    
+    if (window.dreamHistory.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-center py-4">Nenhum sonho registrado ainda. Compartilhe seu primeiro sonho! 🌙</p>';
+        return;
+    }
+    
+    list.innerHTML = window.dreamHistory.map((dream, index) => `
+        <div class="nutri-hist-item p-4 rounded-xl flex justify-between items-start animate-fade-in gap-2 bg-white/5 backdrop-blur-sm border border-white/10">
+            <div class="flex-1 min-w-0">
+                <p class="text-white text-sm leading-relaxed">${dream.text}</p>
+                <p class="text-[8px] text-slate-500 font-bold mt-2">${dream.date}</p>
+            </div>
+            <button onclick="window.deleteDream(${index})" 
+                class="text-[10px] px-2 py-1 rounded bg-rose-900/40 border border-rose-500/40 text-rose-300 hover:bg-rose-800/60 transition-colors">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+};
+
+window.deleteDream = function(index) {
+    if (confirm("Tem certeza que deseja excluir este sonho?")) {
+        window.dreamHistory.splice(index, 1);
+        window.renderDreams();
+        
+        if (window.db && window.clientId) {
+            window.db.ref('users/' + window.clientId + '/dreams').set(window.dreamHistory);
+        } else {
+            localStorage.setItem('wr_dreams', JSON.stringify(window.dreamHistory));
+        }
+        
+        window.showNotification("Sonho excluído");
+    }
+};
+
+window.loadDreams = function() {
+    if (window.db && window.clientId) {
+        window.db.ref('users/' + window.clientId + '/dreams').once('value')
+            .then(snapshot => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    window.dreamHistory = data;
+                    window.renderDreams();
+                }
+            })
+            .catch(error => {
+                const saved = localStorage.getItem('wr_dreams');
+                if (saved) {
+                    try {
+                        window.dreamHistory = JSON.parse(saved);
+                        window.renderDreams();
+                    } catch (e) {
+                        console.error("Erro ao carregar sonhos:", e);
+                    }
+                }
+            });
+    } else {
+        const saved = localStorage.getItem('wr_dreams');
+        if (saved) {
+            try {
+                window.dreamHistory = JSON.parse(saved);
+                window.renderDreams();
+            } catch (e) {
+                console.error("Erro ao carregar sonhos:", e);
+            }
+        }
+    }
+};
+
+// 2. SISTEMA DE ESPERANÇA
+window.generateHope = async function() {
+    const loader = document.getElementById('hope-loader');
+    const content = document.getElementById('hope-content');
+    const btn = document.getElementById('hope-btn');
+    
+    if (!loader || !content || !btn) return;
+    
+    btn.disabled = true;
+    content.classList.add('hidden');
+    loader.classList.remove('hidden');
+    
+    const hopePhrases = [
+        "Tudo passa. Você é mais forte do que imagina. 💪",
+        "Respire fundo. Este momento também passará. 🌸",
+        "Amanhã será melhor. Cada dia é uma nova oportunidade. 🌅",
+        "Você é forte. Já superou tanto, vai superar isso também. ⭐",
+        "Sua paz é prioridade. Cuide de você primeiro. 🧘"
+    ];
+    
+    try {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const selectedPhrase = hopePhrases[Math.floor(Math.random() * hopePhrases.length)];
+        const textElement = document.getElementById('hope-text');
+        
+        if (textElement) {
+            textElement.innerText = selectedPhrase;
+        }
+        
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+        
+        content.style.opacity = '0';
+        content.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            content.style.transition = 'all 0.5s ease';
+            content.style.opacity = '1';
+            content.style.transform = 'scale(1)';
+        }, 100);
+        
+    } catch (e) {
+        const textElement = document.getElementById('hope-text');
+        if (textElement) {
+            textElement.innerText = "Respire. Você é luz. ✨";
+        }
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+    } finally { 
+        btn.disabled = false; 
+    }
+};
+
+// 3. RECONHECIMENTO DE VOZ
+window.initSpeechRecognition = function() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        console.log("❌ Reconhecimento de voz não suportado");
+        return false;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onresult = (e) => { 
+        const transcript = e.results[0][0].transcript;
+        
+        const input = document.getElementById('chat-input');
+        if (input) {
+            input.value = transcript;
+            input.focus();
+            const event = new Event('input', { bubbles: true });
+            input.dispatchEvent(event);
+        }
+        
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.classList.remove('mic-active');
+            micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        }
+        
+        recognition.stop();
+        window.showNotification(`🎤 "${transcript}"`);
+    };
+    
+    recognition.onerror = (e) => {
+        console.error('❌ Erro no reconhecimento de voz:', e.error);
+        window.showNotification("Erro no reconhecimento de voz", "error");
+        
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.classList.remove('mic-active');
+            micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        }
+    };
+    
+    window.speechRecognition = recognition;
+    return true;
+};
+
+window.toggleMic = function() {
+    if (!window.speechRecognition) {
+        const initialized = window.initSpeechRecognition();
+        if (!initialized) return;
+    }
+    
+    const btn = document.getElementById('mic-btn');
+    if (!btn) return;
+    
+    try {
+        if (btn.classList.contains('mic-active')) { 
+            window.speechRecognition.stop(); 
+            btn.classList.remove('mic-active'); 
+            btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        } else { 
+            window.speechRecognition.start(); 
+            btn.classList.add('mic-active'); 
+            btn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+        }
+    } catch (error) {
+        console.error("Erro ao controlar microfone:", error);
+        window.showNotification("Erro ao acessar microfone", "error");
+    }
+};
+
+// 4. SISTEMA DE NOTIFICAÇÕES
+window.showNotification = function(message, type = "success") {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-xl text-white font-medium text-sm animate-fade-in shadow-lg max-w-sm`;
+    
+    if (type === 'error') {
+        notification.classList.add('bg-rose-600');
+    } else if (type === 'warning') {
+        notification.classList.add('bg-amber-600');
+    } else {
+        notification.classList.add('bg-emerald-600');
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+};
+
+// 5. INICIALIZAÇÃO
+setTimeout(() => {
+    window.initSpeechRecognition();
+    window.loadDreams();
+    console.log("✅ Funcionalidades perdidas recuperadas!");
+}, 2000);

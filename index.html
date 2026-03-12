@@ -974,6 +974,10 @@
 
                 <button onclick="window.showRelaxSubTab('rx-caixinha')" id="btn-rx-caixinha" class="rel-nav-btn shrink-0 snap-start">Caixinha</button>
 
+                <button onclick="window.showRelaxSubTab('rx-sonhos')" id="btn-rx-sonhos" class="rel-nav-btn shrink-0 snap-start">🌙 Sonhos</button>
+
+                <button onclick="window.showRelaxSubTab('rx-esperanca')" id="btn-rx-esperanca" class="rel-nav-btn shrink-0 snap-start">✨ Esperança</button>
+
                 <button onclick="window.showRelaxSubTab('rx-jogos')" id="btn-rx-jogos" class="rel-nav-btn shrink-0 bg-rose-900/50 border-rose-500/50 text-rose-200 snap-start">Jogos</button>
 
             </div>
@@ -1071,6 +1075,126 @@
                 </div>
 
                 <button onclick="window.gerarCaixinha()" id="caixinha-btn" class="w-full border-2 border-[#c4a661] text-[#c4a661] uppercase tracking-[3px] font-bold py-4 rounded-full">Gerar Experiência</button>
+
+            </div>
+
+            
+
+            <div id="rx-sonhos" class="hidden flex-1 flex flex-col overflow-y-auto pb-10">
+
+                <div class="mb-6">
+
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+
+                        <i class="fas fa-moon text-blue-400"></i>
+
+                        Diário de Sonhos
+
+                    </h3>
+
+                    <div class="glass-card p-4">
+
+                        <textarea 
+
+                            id="dream-input" 
+
+                            placeholder="Descreva seu sonho... O que você lembra? Como se sentiu?" 
+
+                            class="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/50 backdrop-blur-sm resize-none h-24 focus:border-blue-400 focus:outline-none transition-colors"
+
+                        ></textarea>
+
+                        <button 
+
+                            onclick="window.saveDream()" 
+
+                            class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-2xl font-bold mt-4 shadow-md active:scale-95 transition-all hover:shadow-lg hover:from-blue-400 hover:to-purple-400"
+
+                        >
+
+                            <i class="fas fa-save mr-2"></i>
+
+                            Guardar Sonho
+
+                        </button>
+
+                        <div class="mt-4">
+
+                            <h4 class="text-sm font-bold text-slate-300 mb-3">Seus Sonhos Recentes</h4>
+
+                            <div id="dream-list" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+
+                                <p class="text-slate-500 text-center py-4">Nenhum sonho registrado ainda. Compartilhe seu primeiro sonho! 🌙</p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            
+
+            <div id="rx-esperanca" class="hidden flex-1 flex flex-col items-center justify-center pb-10">
+
+                <div class="mb-6 text-center">
+
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 justify-center">
+
+                        <i class="fas fa-sparkles text-purple-400"></i>
+
+                        Mensagem de Esperança
+
+                    </h3>
+
+                    <button 
+
+                        onclick="window.generateHope()" 
+
+                        id="hope-btn"
+
+                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-2xl font-bold shadow-md active:scale-95 transition-all hover:shadow-lg hover:from-purple-400 hover:to-pink-400"
+
+                    >
+
+                        <i class="fas fa-magic mr-2"></i>
+
+                        Gerar Mensagem de Esperança
+
+                    </button>
+
+                    
+
+                    <div id="hope-loader" class="hidden mt-4 text-center">
+
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+
+                        <p class="text-white mt-2 animate-pulse">Gerando mensagem de esperança...</p>
+
+                    </div>
+
+                    
+
+                    <div id="hope-content" class="hidden mt-4 w-full">
+
+                        <div class="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30">
+
+                            <div class="text-center">
+
+                                <i class="fas fa-sun text-3xl text-yellow-400 mb-3 animate-pulse"></i>
+
+                                <p id="hope-text" class="text-white text-center text-lg font-medium leading-relaxed"></p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -1181,6 +1305,10 @@
                     <form id="chat-form" class="flex items-center gap-2">
 
                         <input type="text" id="chat-input" placeholder="Escreva sua mensagem" class="flex-1 bg-slate-800 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-sky-500 transition-colors">
+
+                        <button type="button" id="mic-btn" onclick="window.toggleMic()" class="w-12 h-12 bg-slate-700 text-slate-400 rounded-xl shadow-lg hover:scale-105 flex items-center justify-center transition-transform hover:bg-slate-600 hover:text-white" title="Clique para falar">
+                            <i class="fas fa-microphone text-lg"></i>
+                        </button>
 
                         <button type="submit" id="submit-btn" class="w-12 h-12 bg-gradient-to-br from-sky-500 to-blue-600 text-white rounded-xl shadow-lg hover:scale-105 flex items-center justify-center transition-transform"><i class="fas fa-paper-plane text-lg"></i></button>
 
