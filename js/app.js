@@ -610,11 +610,29 @@ window.finishDescompressao=function(){
     document.getElementById('game-container').innerHTML=`<div class="text-center animate-bounce p-4"><i class="fas fa-trophy text-6xl text-yellow-400 mb-4"></i><h2 class="text-2xl font-black text-white">Sessão Finalizada!</h2><p class="text-xs text-slate-300 mt-2">Sua mente está reconfigurada.</p></div>`;
     document.getElementById('next-game-btn').classList.add('hidden'); document.getElementById('start-game-btn').innerText="Refazer Sessão"; document.getElementById('start-game-btn').parentElement.parentElement.classList.remove('hidden');
 }
-const therapists=[{id:'lia',name:'Dra. Lia',color:'#ec4899',icon:'heart',schedule:'Seg-Sex (08:00 - 22:00)'},{id:'yara',name:'Dra. Yara',color:'#8b5cf6',icon:'moon',schedule:'Dom-Sáb (22:00 - 08:00)'},{id:'marcos',name:'Dr. Marcos',color:'#10b981',icon:'user-md',schedule:'Sáb (08-12h / 14-22h)'},{id:'juliana',name:'Dra. Juliana',color:'#f59e0b',icon:'star-of-life',schedule:'Sáb 22:00 - Dom 22:00'}];
-window.checkChatAvailability=function(id){
-    const d=new Date();const h=d.getHours();const day=d.getDay();
-    if(id==='lia') return (day>=1 && day<=5 && h>=8 && h<22); if(id==='yara') return (h>=22 || h<8);
-    if(id==='marcos') return (day===6 && ((h>=8 && h<12) || (h>=14 && h<22))); if(id==='juliana') return ((day===6 && h>=22) || (day===0 && h<22)); return false;
+const therapists=[
+    {id:'lia',name:'Dra. Lia',color:'#ec4899',icon:'heart',schedule:'Seg-Sex (08:00 - 22:00)'},
+    {id:'yara',name:'Dra. Yara',color:'#8b5cf6',icon:'moon',schedule:'Dom-Sáb (22:00 - 08:00)'},
+    {id:'william',name:'William',color:'#0ea5e9',icon:'user-tie',schedule:'Seg-Sex (10-12h / 17-22h)'},
+    {id:'marcos',name:'Dr. Marcos',color:'#10b981',icon:'user-md',schedule:'Sáb (08-12h / 14-22h)'},
+    {id:'juliana',name:'Dra. Juliana',color:'#f59e0b',icon:'star-of-life',schedule:'Sáb 22:00 - Dom 22:00'}
+];
+
+window.checkAvailability=function(id){
+    const d=new Date();
+    const day=d.getDay();
+    const h=d.getHours();
+    const isWeekday=day>=1&&day<=5;
+    let isOnline=false;
+    
+    if(id==='lia'&&isWeekday&&h>=8&&h<22)isOnline=true;
+    else if(id==='yara'&&(h>=22||h<8))isOnline=true;
+    else if(id==='william'&&isWeekday&&((h>=10&&h<12)||(h>=17&&h<22)))return{s:'busy',t:'Ocupado (15 min)',c:'#f59e0b',allow:true};
+    else if(id==='marcos'&&day===6&&((h>=8&&h<12)||(h>=14&&h<22)))isOnline=true;
+    else if(id==='juliana'&&((day===6&&h>=22)||(day===0&&h<22)))isOnline=true;
+    
+    if(isOnline)return{s:'online',t:'Online',c:'#10b981',allow:true};
+    return{s:'offline',t:'Fora do Horário',c:'#94a3b8',allow:false};
 }
 window.triggerChatSelection=function(){if(!window.hasAcceptedTerms)document.getElementById('consent-modal').classList.remove('hidden');else window.renderTherapistList();}
 window.acceptTerms=function(){window.hasAcceptedTerms=true;sessionStorage.setItem('wr_terms_accepted','true');document.getElementById('consent-modal').classList.add('hidden');window.renderTherapistList();}
@@ -622,7 +640,7 @@ window.declineTerms=function(){document.getElementById('consent-modal').classLis
 window.renderTherapistList=function(){
     const l=document.getElementById('therapist-list');l.innerHTML='';
     therapists.forEach(t=>{
-        const isOnline = window.checkChatAvailability(t.id); const dotColor = isOnline ? 'bg-emerald-500' : 'bg-slate-600';
+        const isOnline = window.checkAvailability(t.id); const dotColor = isOnline ? 'bg-emerald-500' : 'bg-slate-600';
         const c=document.createElement('div');
         c.className=`flex items-center gap-4 p-4 rounded-xl border shadow-sm transition-all mb-3 bg-slate-800 border-slate-700 ${isOnline?'cursor-pointer hover:bg-slate-700':'opacity-60 cursor-not-allowed'}`;
         if(isOnline) c.onclick=()=>window.startChat(t.id);
@@ -636,9 +654,14 @@ window.clearChatHistoryInside=async function(){
     if(db) await db.ref(`chats/${chatId}`).remove(); window.refreshChatDisplay([]);
 }
 window.startChat=async function(id){
+    const st=window.checkAvailability(id);
+    if(!st.allow)return;
     window.activeTherapist=therapists.find(t=>t.id===id);
-    document.getElementById('active-name').innerText=window.activeTherapist.name; document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color; document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;
-    document.getElementById('active-status-dot').className = "status-dot bg-emerald-500"; document.getElementById('active-status-text').innerText = "Online";
+    document.getElementById('active-name').innerText=window.activeTherapist.name;
+    document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color;
+    document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;
+    document.getElementById('active-status-dot').style.background=st.c;
+    document.getElementById('active-status-text').innerText=st.t;
     const chatId=`${window.clientId}_${id}`;
     if(db){
         window.activeChatRef=db.ref(`chats/${chatId}`);
