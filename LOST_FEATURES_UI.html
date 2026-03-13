@@ -1,0 +1,262 @@
+<!-- ELEMENTOS HTML PARA FUNCIONALIDADES PERDIDAS -->
+<!-- Adicione estes elementos ao index.html nas seções indicadas -->
+
+<!-- ================================================================= -->
+<!-- 1. ADICIONAR À ABA DE RELAXAMENTEAMENTO (dentro da section id="relaxation") -->
+<!-- ================================================================= -->
+
+<!-- Seção de Sonhos -->
+<div class="mb-6">
+    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-moon text-blue-400"></i>
+        Diário de Sonhos
+    </h3>
+    <div class="glass-card p-4">
+        <textarea 
+            id="dream-input" 
+            placeholder="Descreva seu sonho... O que você lembra? Como se sentiu?" 
+            class="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/50 backdrop-blur-sm resize-none h-24 focus:border-blue-400 focus:outline-none transition-colors"
+        ></textarea>
+        <button 
+            onclick="window.saveDream()" 
+            class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-2xl font-bold mt-4 shadow-md active:scale-95 transition-all hover:shadow-lg hover:from-blue-400 hover:to-purple-400"
+        >
+            <i class="fas fa-save mr-2"></i>
+            Guardar Sonho
+        </button>
+        <div class="mt-4">
+            <h4 class="text-sm font-bold text-slate-300 mb-3">Seus Sonhos Recentes</h4>
+            <div id="dream-list" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                <p class="text-slate-500 text-center py-4">Nenhum sonho registrado ainda. Compartilhe seu primeiro sonho! 🌙</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Esperança -->
+<div class="mb-6">
+    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-sparkles text-purple-400"></i>
+        Mensagem de Esperança
+    </h3>
+    <div class="glass-card p-4">
+        <button 
+            onclick="window.generateHope()" 
+            id="hope-btn"
+            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-2xl font-bold shadow-md active:scale-95 transition-all hover:shadow-lg hover:from-purple-400 hover:to-pink-400"
+        >
+            <i class="fas fa-magic mr-2"></i>
+            Gerar Mensagem de Esperança
+        </button>
+        
+        <div id="hope-loader" class="hidden mt-4 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <p class="text-white mt-2 animate-pulse">Gerando mensagem de esperança...</p>
+        </div>
+        
+        <div id="hope-content" class="hidden mt-4">
+            <div class="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30">
+                <div class="text-center">
+                    <i class="fas fa-sun text-3xl text-yellow-400 mb-3 animate-pulse"></i>
+                    <p id="hope-text" class="text-white text-center text-lg font-medium leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- 2. ADICIONAR BOTÃO DE MICROFONE NO CHAT -->
+<!-- ================================================================= -->
+
+<!-- Encontrar o formulário de chat (geralmente em chat-form) e adicionar o botão -->
+<!-- Exemplo de onde adicionar: -->
+
+<!--
+<form id="chat-form" class="flex gap-2">
+    <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1...">
+    <button type="submit" class="bg-sky-600 text-white px-4 py-2 rounded-xl">
+        <i class="fas fa-paper-plane"></i>
+    </button>
+    
+    <!-- ADICIONAR ESTE BOTÃO -->
+    <button 
+        type="button"
+        id="mic-btn" 
+        onclick="window.toggleMic()" 
+        class="p-3 rounded-xl bg-slate-700 text-slate-400 hover:bg-slate-600 transition-all hover:text-white"
+        title="Clique para falar"
+    >
+        <i class="fas fa-microphone"></i>
+    </button>
+</form>
+-->
+
+<!-- ================================================================= -->
+<!-- 3. MELHORAR SEÇÃO DE BOAS-VINDAS -->
+<!-- ================================================================= -->
+
+<!-- Adicionar à seção home para acesso rápido -->
+<div class="glass-card p-4 mb-4">
+    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-heart text-pink-400"></i>
+        Bem-Estar Diário
+    </h3>
+    <div class="grid grid-cols-2 gap-3">
+        <button 
+            onclick="window.showTab('relaxation'); setTimeout(() => document.getElementById('dream-input')?.focus(), 500)" 
+            class="p-3 bg-gradient-to-r from-blue-600/50 to-purple-600/50 rounded-xl border border-blue-500/30 flex flex-col items-center gap-2 hover:from-blue-500/60 hover:to-purple-500/60 transition-all"
+        >
+            <i class="fas fa-moon text-2xl text-blue-300"></i>
+            <span class="text-[10px] font-bold text-blue-200">Registrar Sonho</span>
+        </button>
+        
+        <button 
+            onclick="window.showTab('relaxation'); setTimeout(() => window.generateHope(), 500)" 
+            class="p-3 bg-gradient-to-r from-purple-600/50 to-pink-600/50 rounded-xl border border-purple-500/30 flex flex-col items-center gap-2 hover:from-purple-500/60 hover:to-pink-500/60 transition-all"
+        >
+            <i class="fas fa-sparkles text-2xl text-purple-300"></i>
+            <span class="text-[10px] font-bold text-purple-200">Mensagem de Esperança</span>
+        </button>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- 4. ADICIONAR ESTILOS CSS (se ainda não existirem) -->
+<!-- ================================================================= -->
+
+<style>
+/* Animações para funcionalidades recuperadas */
+.dream-entry {
+    animation: slideInUp 0.5s ease-out;
+}
+
+.hope-message {
+    animation: fadeInScale 0.6s ease-out;
+}
+
+.mic-active {
+    background: linear-gradient(45deg, #ef4444, #dc2626) !important;
+    animation: pulse 1s infinite;
+    transform: scale(1.05);
+}
+
+.mic-active:hover {
+    background: linear-gradient(45deg, #dc2626, #b91c1c) !important;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% { 
+        opacity: 0.8; 
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+}
+
+/* Estilos para notificações */
+.notification {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Melhorias para dream-input */
+#dream-input:focus {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Estilos para hope-content */
+#hope-content {
+    transition: all 0.3s ease;
+}
+
+/* Loading spinner personalizado */
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 3px solid white;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<!-- ================================================================= -->
+<!-- 5. INSTRUÇÕES DE INTEGRAÇÃO -->
+<!-- ================================================================= -->
+
+<!--
+COMO INTEGRAR ESTAS FUNCIONALIDADES:
+
+1. PASSO - Adicionar o JavaScript:
+   - Inclua o arquivo recover-lost-features.js no index.html
+   - Ou adicione o conteúdo diretamente antes de </body>
+
+2. PASSO - Adicionar os elementos HTML:
+   - Copie as seções acima para os locais indicados
+   - Principalmente a seção de relaxamento
+
+3. PASSO - Adicionar o botão de microfone:
+   - Encontre o formulário de chat existente
+   - Adicione o botão de microfone conforme exemplo
+
+4. PASSO - Personalizar:
+   - Ajuste cores e estilos conforme seu design
+   - Modifique textos se necessário
+
+5. PASSO - Testar:
+   - Teste cada funcionalidade individualmente
+   - Verifique o reconhecimento de voz em diferentes navegadores
+
+FUNCIONALIDADES RECUPERADAS:
+✅ Sistema de Diário de Sonhos
+✅ Sistema de Mensagens de Esperança  
+✅ Reconhecimento de Voz para Chat
+✅ Sistema de Notificações
+✅ Integração com Firebase/LocalStorage
+
+BENEFÍCIOS:
+🎯 Maior engajamento dos usuários
+🎤 Acessibilidade aprimorada
+💭 Funcionalidade terapêutica completa
+✨ Experiência mais rica e acolhedora
+-->

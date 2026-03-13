@@ -1907,3 +1907,34 @@ setTimeout(() => {
     window.loadDreams();
     console.log("✅ Funcionalidades perdidas recuperadas!");
 }, 2000);
+
+// MÚSICA DE FUNDO
+window.musicPlaying = false;
+window.bgMusic = null;
+
+window.toggleMusic = function() {
+    const icon = document.getElementById('music-icon');
+    const player = document.getElementById('bg-music-player');
+    
+    if (!window.musicPlaying) {
+        // Iniciar música
+        if (!window.bgMusic) {
+            window.bgMusic = document.createElement('iframe');
+            window.bgMusic.style.display = 'none';
+            window.bgMusic.src = 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&loop=1&playlist=jfKfPfyJRdk&controls=0&showinfo=0&autohide=1&volume=30';
+            player.appendChild(window.bgMusic);
+        }
+        icon.className = 'fas fa-volume-up';
+        window.musicPlaying = true;
+        console.log("🎵 Música iniciada");
+    } else {
+        // Parar música
+        if (window.bgMusic) {
+            player.innerHTML = '';
+            window.bgMusic = null;
+        }
+        icon.className = 'fas fa-volume-mute';
+        window.musicPlaying = false;
+        console.log("🔇 Música pausada");
+    }
+};
