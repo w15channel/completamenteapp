@@ -24,20 +24,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Inicializar dados do localStorage
+  // Initialize localStorage data
   useEffect(() => {
     const initializeApp = () => {
       try {
         const storage = window.localStorage;
         const session = window.sessionStorage;
         
-        // Carregar dados do localStorage
+        // Load data from localStorage
         const rememberedUser = storage.getItem('wr_remember') === 'true';
         const savedUser = storage.getItem('wr_user');
         const savedPass = storage.getItem('wr_pass');
         const acceptedTerms = session.getItem('wr_terms_accepted') === 'true';
 
-        // Configurar URLs da API
+        // Configure API URLs
         if (typeof window !== 'undefined') {
           window.AI_PROXY_URL = (window.location.origin && window.location.origin.startsWith("http"))
             ? `${window.location.origin}/api/ai`
@@ -47,52 +47,52 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             : "/api/chat";
         }
 
-        // Auto-login se lembrado
+        // Auto-login if remembered
         if (rememberedUser && savedUser && savedPass) {
           const loginData: Partial<UserData> = {
             fullName: savedUser,
             pass: savedPass,
-            gender: 'M', // padrão, será atualizado no login real
+            gender: 'M',
             created: Date.now()
           };
-          // Login será feito após a declaração da função
+          // Login will be done after function declaration
           setTimeout(() => login(loginData, true), 0);
         } else {
           setIsLoading(false);
         }
 
-        // Configurar variáveis globais
+        // Configure global variables
         if (typeof window !== 'undefined') {
           window.hasAcceptedTerms = acceptedTerms;
         }
 
       } catch (err) {
-        console.error('Erro ao inicializar aplicação:', err);
-        setError('Falha ao inicializar aplicação');
+        console.error('Error initializing application:', err);
+        setError('Failed to initialize application');
         setIsLoading(false);
       }
     };
 
     initializeApp();
-  }, []);
+  }, [login]);
 
-  // Login do usuário
+  // User login
   const login = useCallback(async (loginData: Partial<UserData>, isAuto = false) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Validar dados
+      // Validate data
       if (!isAuto) {
         if (!loginData.fullName || loginData.fullName.split(' ').length < 2) {
-          throw new Error('Digite Nome e Sobrenome');
+          throw new Error('Enter First and Last Name');
         }
         if (!loginData.pass || !/^[0-9]{8}$/.test(loginData.pass)) {
-          throw new Error('Senha deve ter exatamente 8 números');
+          throw new Error('Password must have exactly 8 numbers');
         }
       }
 
-      // Criar objeto usuário
+      // Create user object
       const userId = loginData.fullName?.replace(/\s+/g, '_') || '';
       const userName = loginData.fullName?.split(' ')[0] || '';
       
@@ -105,7 +105,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         createdAt: Date.now()
       };
 
-      // Inicializar dados completos do usuário
+      // Initialize complete user data
       const completeUserData: UserData = {
         pass: loginData.pass || '',
         fullName: loginData.fullName || '',
@@ -116,14 +116,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         financas: { transactions: [] }
       };
 
-      // Salvar em variáveis globais (compatibilidade)
+      // Save in global variables (compatibility)
       if (typeof window !== 'undefined') {
         window.clientId = userId;
         window.clientName = userName;
         window.userDataCache = completeUserData;
       }
 
-      // Salvar no localStorage se não for auto-login
+      // Save to localStorage if not auto-login
       if (!isAuto) {
         const storage = window.localStorage;
         storage.setItem('wr_user', loginData.fullName || '');
@@ -133,19 +133,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         }
       }
 
-      // Sincronizar com Firebase se disponível
+      // Sync with Firebase if available
       const firebase = FirebaseService.getInstance();
       if (firebase.isFirebaseOnline()) {
         await firebase.smartSync(userId);
       }
 
-      // Atualizar estado
+      // Update state
       setUser(newUser);
       setUserData(completeUserData);
       setActiveTherapist(null);
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro no login';
+      const errorMessage = err instanceof Error ? err.message : 'Login error';
       setError(errorMessage);
       throw err;
     } finally {
@@ -153,10 +153,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Logout do usuário
+  // User logout
   const logout = useCallback(() => {
     try {
-      // Limpar variáveis globais
+      // Clear global variables
       if (typeof window !== 'undefined') {
         window.clientId = '';
         window.clientName = '';
@@ -165,24 +165,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         window.activeChatRef = null;
       }
 
-      // Limpar estado
+      // Clear state
       setUser(null);
       setUserData(null);
       setActiveTherapist(null);
       setError(null);
 
-      // Limpar localStorage (opcional, manter "remember me")
-      // const storage = window.localStorage;
-      // storage.removeItem('wr_user');
-      // storage.removeItem('wr_pass');
-      // storage.removeItem('wr_remember');
-
     } catch (err) {
-      console.error('Erro no logout:', err);
+      console.error('Logout error:', err);
     }
   }, []);
 
-  // Atualizar dados do usuário
+  // Update user data
   const updateUserData = useCallback(async (updates: Partial<UserData>) => {
     if (!user || !userData) return;
 
@@ -191,33 +185,33 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       
       const updatedUserData = { ...userData, ...updates };
       
-      // Atualizar variáveis globais
+      // Update global variables
       if (typeof window !== 'undefined') {
         window.userDataCache = updatedUserData;
       }
 
-      // Salvar no Firebase
+      // Save to Firebase
       const firebase = FirebaseService.getInstance();
       if (firebase.isFirebaseOnline()) {
         await firebase.saveUserData(user.id, updatedUserData);
       }
 
-      // Atualizar estado
+      // Update state
       setUserData(updatedUserData);
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar dados';
+      const errorMessage = err instanceof Error ? err.message : 'Error updating data';
       setError(errorMessage);
       throw err;
     }
   }, [user, userData]);
 
-  // Limpar erro
+  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Sincronização manual
+  // Manual sync
   const manualSync = useCallback(async () => {
     if (!user) return;
 
@@ -226,18 +220,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       const firebase = FirebaseService.getInstance();
       
       if (!firebase.isFirebaseOnline()) {
-        throw new Error('Firebase não disponível');
+        throw new Error('Firebase not available');
       }
 
       const success = await firebase.robustSync(user.id);
       
       if (success) {
-        // Recarregar dados do cache global
+        // Reload data from global cache
         if (typeof window !== 'undefined' && window.userDataCache) {
           setUserData(window.userDataCache);
         }
         
-        // Atualizar interfaces específicas
+        // Update specific interfaces
         if (typeof window !== 'undefined' && window.userDataCache?.saude) {
           if (typeof window.renderHydration === 'function') {
             window.renderHydration();
@@ -247,17 +241,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           }
         }
       } else {
-        throw new Error('Não foi possível sincronizar os dados');
+        throw new Error('Could not sync data');
       }
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro na sincronização';
+      const errorMessage = err instanceof Error ? err.message : 'Sync error';
       setError(errorMessage);
       throw err;
     }
   }, [user]);
 
-  // Exportar dados
+  // Export data
   const exportData = useCallback(() => {
     if (!userData) return;
 
@@ -268,12 +262,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         version: '1.0'
       };
 
-      // Salvar no localStorage
+      // Save to localStorage
       const backupKey = `wr_backup_${Date.now()}`;
       const storage = window.localStorage;
       storage.setItem(backupKey, JSON.stringify(exportData));
 
-      // Criar download
+      // Create download
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
@@ -286,33 +280,33 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Manter apenas últimos 5 backups
+      // Keep only last 5 backups
       const keys = Object.keys(storage).filter(k => k.startsWith('wr_backup_'));
       if (keys.length > 5) {
         keys.sort().slice(0, -5).forEach(k => storage.removeItem(k));
       }
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao exportar dados';
+      const errorMessage = err instanceof Error ? err.message : 'Export error';
       setError(errorMessage);
       throw err;
     }
   }, [userData]);
 
-  // Limpar backups
+  // Clear backups
   const clearBackups = useCallback(() => {
     try {
       const storage = window.localStorage;
       const keys = Object.keys(storage).filter(k => k.startsWith('wr_backup_'));
       keys.forEach(k => storage.removeItem(k));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao limpar backups';
+      const errorMessage = err instanceof Error ? err.message : 'Clear backups error';
       setError(errorMessage);
       throw err;
     }
   }, []);
 
-  // Valor do contexto
+  // Context value
   const value: AppContextType = {
     user,
     userData,
