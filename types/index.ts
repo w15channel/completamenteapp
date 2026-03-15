@@ -214,6 +214,10 @@ export interface AppContextType {
   login: (userData: Partial<UserData>, isAuto?: boolean) => Promise<void>;
   logout: () => void;
   updateUserData: (updates: Partial<UserData>) => Promise<void>;
+  clearError: () => void;
+  manualSync: () => Promise<void>;
+  exportData: () => void;
+  clearBackups: () => void;
 }
 
 export interface HealthContextType {

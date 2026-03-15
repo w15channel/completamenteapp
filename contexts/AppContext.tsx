@@ -28,11 +28,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeApp = () => {
       try {
+        const storage = window.localStorage;
+        const session = window.sessionStorage;
+        
         // Carregar dados do localStorage
-        const rememberedUser = localStorage.getItem('wr_remember') === 'true';
-        const savedUser = localStorage.getItem('wr_user');
-        const savedPass = localStorage.getItem('wr_pass');
-        const acceptedTerms = sessionStorage.getItem('wr_terms_accepted') === 'true';
+        const rememberedUser = storage.getItem('wr_remember') === 'true';
+        const savedUser = storage.getItem('wr_user');
+        const savedPass = storage.getItem('wr_pass');
+        const acceptedTerms = session.getItem('wr_terms_accepted') === 'true';
 
         // Configurar URLs da API
         if (typeof window !== 'undefined') {
@@ -46,13 +49,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
         // Auto-login se lembrado
         if (rememberedUser && savedUser && savedPass) {
-          const userData: Partial<UserData> = {
+          const loginData: Partial<UserData> = {
             fullName: savedUser,
             pass: savedPass,
             gender: 'M', // padrão, será atualizado no login real
             created: Date.now()
           };
-          login(userData, true);
+          // Login será feito após a declaração da função
+          setTimeout(() => login(loginData, true), 0);
         } else {
           setIsLoading(false);
         }
@@ -60,7 +64,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         // Configurar variáveis globais
         if (typeof window !== 'undefined') {
           window.hasAcceptedTerms = acceptedTerms;
-          window.userDataCache = userData;
         }
 
       } catch (err) {
@@ -122,10 +125,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
       // Salvar no localStorage se não for auto-login
       if (!isAuto) {
-        localStorage.setItem('wr_user', loginData.fullName || '');
-        localStorage.setItem('wr_pass', loginData.pass || '');
+        const storage = window.localStorage;
+        storage.setItem('wr_user', loginData.fullName || '');
+        storage.setItem('wr_pass', loginData.pass || '');
         if (document.getElementById('remember-me') as HTMLInputElement)?.checked) {
-          localStorage.setItem('wr_remember', 'true');
+          storage.setItem('wr_remember', 'true');
         }
       }
 
@@ -168,9 +172,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setError(null);
 
       // Limpar localStorage (opcional, manter "remember me")
-      // localStorage.removeItem('wr_user');
-      // localStorage.removeItem('wr_pass');
-      // localStorage.removeItem('wr_remember');
+      // const storage = window.localStorage;
+      // storage.removeItem('wr_user');
+      // storage.removeItem('wr_pass');
+      // storage.removeItem('wr_remember');
 
     } catch (err) {
       console.error('Erro no logout:', err);
@@ -265,7 +270,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
       // Salvar no localStorage
       const backupKey = `wr_backup_${Date.now()}`;
-      localStorage.setItem(backupKey, JSON.stringify(exportData));
+      const storage = window.localStorage;
+      storage.setItem(backupKey, JSON.stringify(exportData));
 
       // Criar download
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -281,9 +287,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       URL.revokeObjectURL(url);
 
       // Manter apenas últimos 5 backups
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('wr_backup_'));
+      const keys = Object.keys(storage).filter(k => k.startsWith('wr_backup_'));
       if (keys.length > 5) {
-        keys.sort().slice(0, -5).forEach(k => localStorage.removeItem(k));
+        keys.sort().slice(0, -5).forEach(k => storage.removeItem(k));
       }
 
     } catch (err) {
@@ -296,8 +302,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Limpar backups
   const clearBackups = useCallback(() => {
     try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('wr_backup_'));
-      keys.forEach(k => localStorage.removeItem(k));
+      const storage = window.localStorage;
+      const keys = Object.keys(storage).filter(k => k.startsWith('wr_backup_'));
+      keys.forEach(k => storage.removeItem(k));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao limpar backups';
       setError(errorMessage);
