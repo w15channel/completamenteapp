@@ -32,7 +32,7 @@ export const useHealth = (userId: string) => {
             total: 0,
             history: [],
             day: DateUtils.getTodayStr(),
-            goalReachedAt: null
+            goalReachedAt: undefined
           },
           exercise: {
             day: DateUtils.getTodayStr(),
@@ -210,7 +210,7 @@ export const useHealth = (userId: string) => {
         total: 0,
         history: [],
         day: today,
-        goalReachedAt: null
+        goalReachedAt: undefined
       };
       needsUpdate = true;
     }
@@ -282,6 +282,7 @@ export const useHealth = (userId: string) => {
     healthData,
     loading,
     error,
+    saveHealthData,
     calculateIMC,
     calculateCalorieNeed,
     addWaterEntry,
