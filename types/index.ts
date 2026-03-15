@@ -305,14 +305,4 @@ export interface NotificationAction {
   title: string;
 }
 
-// Exportações padrão
-export type { 
-  User, 
-  UserData, 
-  SaudeData, 
-  Therapist, 
-  ChatMessage, 
-  GameDefinition,
-  MuralMessage,
-  DreamEntry
-};
+// End of types file

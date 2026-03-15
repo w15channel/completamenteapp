@@ -29,7 +29,7 @@ export class DateUtils {
       return 'Data inválida';
     }
 
-    const options: Intl.DateTimeFormatOptions = {
+    const formatOptions: Record<string, Intl.DateTimeFormatOptions> = {
       short: { day: '2-digit', month: '2-digit', year: 'numeric' },
       long: { day: '2-digit', month: 'long', year: 'numeric' },
       time: { hour: '2-digit', minute: '2-digit' },
@@ -42,7 +42,7 @@ export class DateUtils {
       }
     };
 
-    return d.toLocaleDateString('pt-BR', options[format]);
+    return d.toLocaleDateString('pt-BR', formatOptions[format]);
   }
 
   /**

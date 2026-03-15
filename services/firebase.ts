@@ -2,8 +2,8 @@ import { UserData, ChatMessage, MuralMessage, DreamEntry } from '../types';
 
 declare global {
   interface Window {
-    db: any;
-    firebase: any;
+    db?: any;
+    firebase?: any;
   }
 }
 
@@ -295,7 +295,10 @@ export class FirebaseService {
           }
           return false;
         }),
-        () => this.saveUserData(userId, window.userDataCache).then(() => true)
+        () => {
+          if (!window.userDataCache) return Promise.resolve(false);
+          return this.saveUserData(userId, window.userDataCache).then(() => true);
+        }
       ];
 
       for (const method of methods) {
