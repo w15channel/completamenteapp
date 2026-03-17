@@ -1,158 +1,17 @@
 <!DOCTYPE html>
-
 <html lang="pt-br">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <meta name="theme-color" content="#0f172a">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Harmonia Diária - WR TERAPIA</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
-    <link rel="stylesheet" href="css/style.css">
-
 </head>
-
 <body>
-
-<header class="flex-none p-4 text-center bg-slate-900/95 backdrop-blur-md border-b border-slate-800 z-20 relative">
-
-    <h1 class="text-lg uppercase tracking-widest font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 font-sans">ESPAÇO | WR TERAPIA®</h1>
-
-</header>
-
-
-
-<main id="main-area">
-
-    <div id="consent-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
-
-        <div class="glass-card p-6 w-full max-w-sm animate-fade-in border border-sky-500/30">
-
-            <div class="w-16 h-16 bg-sky-900/50 rounded-full flex items-center justify-center mb-4 mx-auto text-sky-400"><i class="fas fa-hand-holding-heart text-3xl animate-pulse"></i></div>
-
-            <h3 class="text-xl font-bold text-center text-white mb-4 heading-font">Seu acolhimento em primeiro lugar</h3>
-
-            <div class="text-xs text-slate-300 space-y-3 mb-6 text-justify leading-relaxed"><p>"Para garantir que você nunca fique sem amparo, utilizamos um sistema de <b>Atendimento Híbrido</b>. Sempre que nossos profissionais estiverem ocupados, acionamos nossa IA de suporte. Ela oferece escuta e conforto imediatos, sempre supervisionada."</p></div>
-
-            <div class="flex flex-col gap-3">
-
-                <button onclick="window.acceptTerms()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition-all">Aceito os termos</button>
-
-                <button onclick="window.declineTerms()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 py-3 rounded-xl font-bold transition-all">Não aceito (Voltar)</button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <section id="onboarding" class="tab-content active">
-
-        <div class="h-full flex flex-col items-center justify-center p-4 relative">
-
-            <div class="glass-card p-8 text-center w-full shadow-[0_0_40px_rgba(14,165,233,0.1)]">
-
-                <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-6 mx-auto ring-2 ring-sky-500/50 shadow-[0_0_25px_rgba(14,165,233,0.4)]"><i class="fas fa-fingerprint text-sky-400 text-4xl"></i></div>
-
-                <h2 class="text-2xl font-black text-white mb-2 heading-font tracking-tight">Acesso Seguro</h2>
-
-                <p class="text-[10px] text-emerald-400 font-bold mb-8 uppercase tracking-widest"><i class="fas fa-shield-alt mr-1"></i>Ambiente Criptografado</p>
-
-                <div class="w-full mb-6 space-y-4">
-
-                    <select id="user-gender" class="w-full p-4 rounded-xl outline-none text-sm font-bold tracking-wide">
-
-                        <option value="" disabled selected>SELECIONE SEU GÊNERO</option>
-
-                        <option value="M">Mulher</option>
-
-                        <option value="H">Homem</option>
-
-                    </select>
-
-                    <input type="text" id="user-name-input" oninput="this.value=this.value.toUpperCase()" placeholder="PRIMEIRO E SEGUNDO NOME" class="w-full p-4 rounded-xl text-center uppercase font-bold outline-none text-sm tracking-wide">
-
-                    <input type="password" id="user-pass-input" placeholder="SENHA (DDMMAAAA)" maxlength="8" class="w-full p-4 rounded-xl text-center font-bold outline-none tracking-widest text-sm">
-
-                    <input type="text" id="partner-code-input" placeholder="CÓDIGO DA PARCERIA (OPCIONAL)" class="w-full p-4 rounded-xl text-center font-bold outline-none tracking-widest text-sm border border-rose-500/50 focus:border-rose-500 uppercase bg-rose-900/10 text-rose-300 placeholder-rose-300/50">
-
-                    <label class="flex items-center justify-center gap-2 text-xs text-slate-400 mt-2 cursor-pointer font-medium">
-
-                        <input type="checkbox" id="remember-me" class="w-4 h-4 rounded bg-slate-700 accent-sky-500"> Mantenha-me conectado
-
-                    </label>
-
-                </div>
-
-                <button onclick="window.login(false)" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:from-sky-500 hover:to-blue-500 transition-all text-sm uppercase tracking-wider">Entrar / Cadastrar</button>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-
-    <section id="home" class="tab-content relative">
-
-        <div class="glass-card p-6 mb-4 relative">
-
-            <p class="text-xs text-slate-400 font-medium tracking-wide">Muito bom te ver aqui,</p>
-
-            <h2 class="text-2xl font-black text-white heading-font mb-6 client-name tracking-tight">Aguardando</h2>
-
-            <div class="grid grid-cols-2 gap-3">
-
-                <button onclick="window.triggerChatSelection()" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-comment-medical text-3xl text-sky-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Conversar</span></button>
-
-                <button onclick="window.showTab('saude')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heartbeat text-3xl text-rose-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Saúde & Corpo</span></button>
-
-                <button onclick="window.showTab('routines')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-check-circle text-3xl text-emerald-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Minha Rotina</span></button>
-
-                <button onclick="window.showTab('relacional')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heart text-3xl text-rose-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Relacional</span></button>
-
-                <button onclick="window.showTab('financas')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-wallet text-3xl text-emerald-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Finanças</span></button>
-
-                <button onclick="window.showTab('relaxation')" class="col-span-2 p-4 bg-gradient-to-r from-purple-900/50 to-indigo-900/50 rounded-2xl border border-purple-700/50 flex flex-col items-center gap-3 hover:from-purple-800/60 hover:to-indigo-800/60 transition-all shadow-md"><i class="fas fa-spa text-3xl text-purple-400 drop-shadow-lg"></i><span class="text-[11px] font-black uppercase tracking-widest text-purple-200">Central de Relaxamento & Foco</span></button>
-
-            </div>
-
-        </div>
-
-        <div class="mt-auto pt-4 pb-4 text-center flex flex-col items-center justify-center gap-2 relative">
-
-            <p class="text-[9px] text-slate-600 uppercase font-black tracking-[0.2em]">Desenvolvido por WR-TECNOLOGIA</p>
-
-            <div class="flex gap-4 relative">
-
-                <button onclick="window.logoutUser()" class="text-xs text-red-500 font-bold hover:text-red-400"><i class="fas fa-sign-out-alt"></i> Sair</button>
-
-                <i class="fas fa-lock text-[10px] text-white/10 absolute -right-6 top-1 cursor-pointer hover:text-white/30" title="Acesso ADM"></i>
-
-            </div>
-
-        </div>
-
-    </section>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+</body>
+</html>
 
 
 
