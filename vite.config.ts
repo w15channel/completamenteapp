@@ -34,7 +34,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          firebase: ['firebase'],
         },
       },
     },
@@ -43,6 +42,6 @@ export default defineConfig({
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'firebase'],
+    include: ['react', 'react-dom'],
   },
 })
