@@ -23,8 +23,7 @@ export const useFinance = (userId: string) => {
         // Initialize empty finance data
         setFinanceData({
           transactions: [],
-          balance: 0,
-          monthlyBudget: 0
+          balance: 0
         });
       }
     } catch (err) {
@@ -138,7 +137,7 @@ export const useFinance = (userId: string) => {
 
     const updatedData: FinancasData = {
       ...financeData,
-      monthlyBudget: budget
+      monthlyGoal: budget
     };
 
     saveFinanceData(updatedData);

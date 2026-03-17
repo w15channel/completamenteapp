@@ -4,6 +4,7 @@ export interface User {
   id: string;
   name: string;
   fullName: string;
+  email: string;
   gender: 'M' | 'F';
   pass: string; // DDMMYYYY
   createdAt: number;
@@ -47,7 +48,7 @@ export interface WaterData {
   total: number;
   history: WaterEntry[];
   day: string;
-  goalReachedAt?: number;
+  goalReachedAt?: number | null;
   lastEntry?: WaterEntry;
 }
 
@@ -71,8 +72,8 @@ export interface HealthGoalEntry {
 }
 
 export interface ExerciseData {
-  day: string;
-  goal: number;
+  day?: string;
+  goal?: number;
   total: number;
   logs: ExerciseLog[];
 }
@@ -128,6 +129,7 @@ export interface FinancasData {
   transactions: Transaction[];
   balance?: number;
   monthlyGoal?: number;
+  monthlyBudget?: number;
 }
 
 export interface Transaction {
@@ -146,6 +148,11 @@ export interface Therapist {
   color: string;
   icon: string;
   schedule: string;
+  specialty?: string;
+  availability?: AvailabilityStatus;
+  approach?: string;
+  description?: string;
+  tags?: string[];
 }
 
 export interface AvailabilityStatus {
@@ -306,3 +313,6 @@ export interface NotificationAction {
 }
 
 // End of types file
+
+// Alias para compatibilidade
+export type HealthData = SaudeData;

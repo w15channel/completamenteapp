@@ -7,7 +7,7 @@ import { DateUtils } from './utils/dateUtils';
 import Chat from './components/Chat';
 import TherapistList from './components/TherapistList';
 import HealthProfile from './components/HealthProfile';
-import iOSLayout from './components/iOSLayout';
+import { iOSLayout } from './components';
 import './css/ios-style.css';
 
 // App wrapper com provider

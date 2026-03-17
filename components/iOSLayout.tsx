@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useChat } from '../hooks/useChat';
 import { useHealth } from '../hooks/useHealth';
-import iOSChat from './iOSChat';
-import iOSTherapistList from './iOSTherapistList';
-import iOSHealthProfile from './iOSHealthProfile';
+import { iOSChat, iOSTherapistList, iOSHealthProfile } from './index';
 import '../css/ios-style.css';
 import '../css/ios-animations.css';
 
@@ -210,7 +208,7 @@ const iOSLayout: React.FC = () => {
           onSendMessage={chat.sendMessage}
           onEndChat={chat.endChat}
           onClearHistory={chat.clearChatHistory}
-          isWaiting={chat.isWaiting}
+          isWaiting={chat.isLoading}
           isTyping={chat.isTyping}
           availability={chat.checkAvailability(chat.activeTherapist.id)}
           error={chat.error}

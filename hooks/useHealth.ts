@@ -98,7 +98,9 @@ export const useHealth = (userId: string) => {
       ...healthData.water,
       total: (healthData.water?.total || 0) + validAmount,
       history: [...(healthData.water?.history || []), entry],
-      lastEntry: entry
+      lastEntry: entry,
+      day: DateUtils.getTodayStr(),
+      goalReachedAt: (healthData.water?.total || 0) + validAmount >= 2000 ? Date.now() : healthData.water?.goalReachedAt
     };
 
     await saveHealthData({ water: updatedWater });
@@ -112,7 +114,8 @@ export const useHealth = (userId: string) => {
       total: 0,
       history: [],
       day: DateUtils.getTodayStr(),
-      goalReachedAt: null
+      goalReachedAt: null,
+      lastEntry: undefined
     };
 
     await saveHealthData({ water: updatedWater });
@@ -145,7 +148,8 @@ export const useHealth = (userId: string) => {
     const updatedExercise = {
       ...healthData.exercise,
       total: (healthData.exercise?.total || 0) + log.duration,
-      logs: [...(healthData.exercise?.logs || []), exerciseLog]
+      logs: [...(healthData.exercise?.logs || []), exerciseLog],
+      day: DateUtils.getTodayStr()
     };
 
     await saveHealthData({ exercise: updatedExercise });

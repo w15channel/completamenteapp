@@ -45,7 +45,8 @@ export const FinanceManager: React.FC<FinanceManagerProps> = ({
       type: newTransaction.type,
       amount: parseFloat(newTransaction.amount),
       description: newTransaction.description,
-      category: newTransaction.category
+      category: newTransaction.category,
+      month: new Date().toISOString().slice(0, 7) // YYYY-MM format
     });
 
     setNewTransaction({
