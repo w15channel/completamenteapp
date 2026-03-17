@@ -42,6 +42,9 @@ export interface SaudeData {
   nutriHistory?: NutriHistory[];
   cardio?: CardioData[];
   anxietyScore?: number;
+  waterIntake?: number;
+  exerciseMinutes?: number;
+  bloodType?: string;
 }
 
 export interface WaterData {

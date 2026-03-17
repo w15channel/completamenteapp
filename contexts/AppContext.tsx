@@ -34,6 +34,7 @@ export function AppProvider({ children }: AppProviderProps) {
         id: userId,
         name: userName,
         fullName: loginData.fullName || '',
+        email: `${userName.toLowerCase()}@example.com`,
         gender: loginData.gender || 'M',
         pass: loginData.pass || '',
         createdAt: Date.now()

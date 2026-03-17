@@ -208,7 +208,7 @@ const iOSLayout: React.FC = () => {
           onSendMessage={chat.sendMessage}
           onEndChat={chat.endChat}
           onClearHistory={chat.clearChatHistory}
-          isWaiting={chat.isLoading}
+          isWaiting={chat.isWaiting}
           isTyping={chat.isTyping}
           availability={chat.checkAvailability(chat.activeTherapist.id)}
           error={chat.error}
