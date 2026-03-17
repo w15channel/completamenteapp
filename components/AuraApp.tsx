@@ -17,7 +17,7 @@ interface AuraCard {
 
 const AuraApp: React.FC = () => {
   const { user, userData, isLoading } = useApp();
-  const { therapists, startChat, activeChat } = useChat();
+  const { therapists, startChat, activeChat } = useChat(user?.id || '');
   const [activeSection, setActiveSection] = useState<'sanctuary' | 'journey' | 'vitality' | 'connections'>('sanctuary');
   const [breathingActive, setBreathingActive] = useState(false);
   const [affirmation, setAffirmation] = useState('');
@@ -145,7 +145,7 @@ const AuraApp: React.FC = () => {
         </div>
         
         <div className="therapists-orbit">
-          {therapists.map((therapist, index) => (
+          {therapists.map((therapist: Therapist, index: number) => (
             <div
               key={therapist.id}
               className="therapist-planet"
