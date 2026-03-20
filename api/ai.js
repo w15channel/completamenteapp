@@ -1,88 +1,49 @@
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const GROQ_OPENAI_COMPAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const QWEN_OPENAI_COMPAT_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+const XAI_OPENAI_COMPAT_URL = 'https://api.x.ai/v1/chat/completions';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-function providerCandidates(hint) {
+function providerConfig(hint) {
   const normalizedHint = String(hint || '').toLowerCase();
-  const wantsGemini = normalizedHint.includes('gemini') || normalizedHint.includes('google');
-  const wantsOpenAI = normalizedHint.includes('openai') || normalizedHint.includes('gpt');
-  const wantsQwen = normalizedHint.includes('qwen') || normalizedHint.includes('qween');
-  const wantsGroq = normalizedHint.includes('groq');
+  const wantsGemini = normalizedHint.includes('gemini');
+  const wantsGrok = normalizedHint.includes('grok') || normalizedHint.includes('xai');
 
-  const configured = [
-    {
-      id: 'openai',
-      enabled: Boolean(process.env.OPENAI_API_KEY),
-      config: {
-        name: 'OpenAI',
-        url: OPENAI_API_URL,
-        apiKey: process.env.OPENAI_API_KEY,
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        type: 'openai-compatible'
-      }
-    },
-    {
-      id: 'gemini',
-      enabled: Boolean(process.env.GEMINI_API_KEY),
-      config: {
-        name: 'Google Gemini',
-        url: GEMINI_API_URL,
-        apiKey: process.env.GEMINI_API_KEY,
-        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-        type: 'gemini'
-      }
-    },
-    {
-      id: 'qwen',
-      enabled: Boolean(process.env.QWEEN_API_KEY || process.env.QWEN_API_KEY),
-      config: {
-        name: 'Qwen',
-        url: QWEN_OPENAI_COMPAT_URL,
-        apiKey: process.env.QWEEN_API_KEY || process.env.QWEN_API_KEY,
-        model: process.env.QWEEN_MODEL || process.env.QWEN_MODEL || 'qwen-plus',
-        type: 'openai-compatible'
-      }
-    },
-    {
-      id: 'groq',
-      enabled: Boolean(process.env.GROQ_API_KEY),
-      config: {
-        name: 'Groq',
-        url: GROQ_OPENAI_COMPAT_URL,
-        apiKey: process.env.GROQ_API_KEY,
-        model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
-        type: 'openai-compatible'
-      }
-    }
-  ];
-
-  const preferredOrder = wantsOpenAI
-    ? ['openai', 'gemini', 'qwen', 'groq']
-    : wantsGemini
-      ? ['gemini', 'openai', 'qwen', 'groq']
-      : wantsQwen
-        ? ['qwen', 'openai', 'gemini', 'groq']
-        : wantsGroq
-          ? ['groq', 'openai', 'gemini', 'qwen']
-          : ['openai', 'gemini', 'qwen', 'groq'];
-
-  const enabledByOrder = preferredOrder
-    .map((id) => configured.find((entry) => entry.id === id))
-    .filter((entry) => entry?.enabled)
-    .map((entry) => entry.config);
-
-  if (enabledByOrder.length) return enabledByOrder;
-
-  return [
-    {
+  if (wantsGemini || (process.env.GEMINI_API_KEY && !process.env.XAI_API_KEY && !process.env.GROQ_API_KEY)) {
+    return {
       name: 'Google Gemini',
       url: GEMINI_API_URL,
       apiKey: process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
       type: 'gemini'
-    }
-  ];
+    };
+  }
+
+  if ((wantsGrok && process.env.XAI_API_KEY) || (process.env.XAI_API_KEY && !process.env.GROQ_API_KEY)) {
+    return {
+      name: 'xAI Grok',
+      url: XAI_OPENAI_COMPAT_URL,
+      apiKey: process.env.XAI_API_KEY,
+      model: process.env.XAI_MODEL || 'grok-2-latest',
+      type: 'openai-compatible'
+    };
+  }
+
+  if (process.env.GROQ_API_KEY) {
+    return {
+      name: 'Groq',
+      url: GROQ_OPENAI_COMPAT_URL,
+      apiKey: process.env.GROQ_API_KEY,
+      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+      type: 'openai-compatible'
+    };
+  }
+
+  return {
+    name: 'Google Gemini',
+    url: GEMINI_API_URL,
+    apiKey: process.env.GEMINI_API_KEY,
+    model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    type: 'gemini'
+  };
 }
 
 
@@ -116,24 +77,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido. Use POST.' });
 
   const body = req.body || {};
-  
-  // Se provider_hint especificar openai explicitamente, usar APENAS OpenAI sem fallback
-  const normalizedHint = String(body.provider_hint || '').toLowerCase();
-  const forceOpenAI = normalizedHint === 'openai' || normalizedHint.includes('gpt');
-  
-  const providers = providerCandidates(body.provider_hint);
-  
-  // Filtrar para usar apenas OpenAI se forçado
-  const filteredProviders = forceOpenAI 
-    ? providers.filter(p => p.name === 'OpenAI')
-    : providers;
-  
-  if (!filteredProviders.some((provider) => provider.apiKey)) {
+  const provider = providerConfig(body.provider_hint);
+  if (!provider.apiKey) {
     return res.status(500).json({
       error: 'Chave da IA não configurada.',
-      details: forceOpenAI 
-        ? 'OPENAI_API_KEY não está configurada no ambiente da Vercel.'
-        : 'Defina OPENAI_API_KEY, GEMINI_API_KEY, QWEEN_API_KEY (ou QWEN_API_KEY) ou GROQ_API_KEY no ambiente da Vercel.'
+      details: 'Defina GEMINI_API_KEY (preferencial), XAI_API_KEY (Grok) ou GROQ_API_KEY no ambiente da Vercel.'
     });
   }
 
@@ -143,12 +91,8 @@ export default async function handler(req, res) {
 
   if (!messages.length) return res.status(400).json({ error: 'Envie `messages` (array) ou `mensagem` (string) no corpo da requisição.' });
 
-  const providerErrors = [];
-
-  for (const provider of filteredProviders) {
-    if (!provider.apiKey) continue;
-    try {
-      if (provider.type === 'gemini') {
+  try {
+    if (provider.type === 'gemini') {
       const response = await fetch(`${provider.url}/${provider.model}:generateContent?key=${provider.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,40 +106,38 @@ export default async function handler(req, res) {
       });
 
       const data = await response.json();
-        if (!response.ok) {
-          providerErrors.push(`${provider.name}: ${data?.error?.message || `HTTP ${response.status}`}`);
-          continue;
-        }
-        const normalized = fromGeminiToOpenAI(data);
-        normalized.provider = provider.name;
-        return res.status(200).json(normalized);
-      }
-
-      const response = await fetch(provider.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${provider.apiKey}`
-        },
-        body: JSON.stringify({
-          model: provider.model,
-          messages,
-          temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
-          max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
-        })
-      });
-
-      const data = await response.json();
       if (!response.ok) {
-        providerErrors.push(`${provider.name}: ${data?.error?.message || `HTTP ${response.status}`}`);
-        continue;
+        return res.status(response.status).json({
+          error: `Erro ao consultar ${provider.name}.`,
+          details: data?.error?.message || 'Sem detalhes.'
+        });
       }
-      data.provider = provider.name;
-      return res.status(200).json(data);
-    } catch (error) {
-      providerErrors.push(`${provider.name}: erro de conexão`);
+      return res.status(200).json(fromGeminiToOpenAI(data));
     }
-  }
 
-  return res.status(502).json({ error: 'Falha ao conectar com a inteligência artificial.', details: providerErrors.join(' | ') || 'Sem detalhes.' });
+    const response = await fetch(provider.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        messages,
+        temperature: typeof body.temperature === 'number' ? body.temperature : 0.8,
+        max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 280
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: `Erro ao consultar ${provider.name}.`,
+        details: data?.error?.message || 'Sem detalhes.'
+      });
+    }
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ error: 'Falha ao conectar com a inteligência artificial.' });
+  }
 }
