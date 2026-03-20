@@ -1,13 +1,26 @@
 const GROQ_OPENAI_COMPAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const XAI_OPENAI_COMPAT_URL = 'https://api.x.ai/v1/chat/completions';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const HUGGINGFACE_API_URL = 'https://router.huggingface.co/v1/chat/completions';
 
 function providerConfig(hint) {
   const normalizedHint = String(hint || '').toLowerCase();
   const wantsGemini = normalizedHint.includes('gemini');
   const wantsGrok = normalizedHint.includes('grok') || normalizedHint.includes('xai');
+  const wantsHuggingFace = normalizedHint.includes('huggingface') || normalizedHint.includes('hf');
 
-  // PRIORIDADE 1: Grok (xAI) - Padrão para todas as funcionalidades
+  // PRIORIDADE 1: Hugging Face - Padrão para todas as funcionalidades de IA
+  if (wantsHuggingFace || process.env.HUGGFACE_KEY) {
+    return {
+      name: 'Hugging Face',
+      url: HUGGINGFACE_API_URL,
+      apiKey: process.env.HUGGFACE_KEY,
+      model: process.env.HF_MODEL || 'NousResearch/Hermes-3-Llama-3.1-8B:fastest',
+      type: 'openai-compatible'
+    };
+  }
+
+  // PRIORIDADE 2: Grok (xAI) - Backup
   if (wantsGrok || process.env.XAI_API_KEY) {
     return {
       name: 'xAI Grok',
@@ -18,7 +31,7 @@ function providerConfig(hint) {
     };
   }
 
-  // PRIORIDADE 2: Groq (backup)
+  // PRIORIDADE 3: Groq - Backup rápido
   if (process.env.GROQ_API_KEY) {
     return {
       name: 'Groq',
@@ -29,7 +42,7 @@ function providerConfig(hint) {
     };
   }
 
-  // PRIORIDADE 3: Gemini (fallback)
+  // PRIORIDADE 4: Gemini - Fallback final
   if (wantsGemini || process.env.GEMINI_API_KEY) {
     return {
       name: 'Google Gemini',
