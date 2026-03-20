@@ -15,12 +15,28 @@ window.checkAdminAccess = function() {
   const password = prompt("Digite a senha administrativa:");
   if (password === window.adminPassword) {
     window.isAdmin = true;
+    sessionStorage.setItem('admin_logged_in', 'true');
     document.getElementById('admin-access').classList.remove('hidden');
     window.showTab('admin');
     window.loadAdminData();
     alert("Acesso administrativo concedido!");
   } else if (password !== null) {
-    alert("Senha incorreta!");
+    alert("Senha incorreta! Acesso negado.");
+  }
+};
+
+// Verificar automaticamente se já está logado como admin
+window.verifyAdminAccess = function() {
+  const isLoggedIn = sessionStorage.getItem('admin_logged_in') === 'true';
+  if (isLoggedIn) {
+    window.isAdmin = true;
+    document.getElementById('admin-access').classList.remove('hidden');
+  }
+  
+  // Mostrar botão admin se estiver logado
+  const adminButton = document.getElementById('admin-access');
+  if (adminButton) {
+    adminButton.style.display = isLoggedIn ? 'block' : 'none';
   }
 };
 
@@ -144,44 +160,115 @@ window.saveTrainingHistory = function() {
   localStorage.setItem('admin_training_history', JSON.stringify(window.trainingHistory));
 };
 
+// Salvar conteúdo do banco de dados
+window.saveDatabaseContent = async function() {
+  const content = document.getElementById('database-content').value;
+  
+  try {
+    // Enviar para serviço Drive Editor
+    const response = await fetch('/api/drive-editor', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Admin-Key': window.adminPassword
+      },
+      body: JSON.stringify({
+        content: content,
+        operation: 'update',
+        timestamp: new Date().toISOString()
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Drive Editor Result:', result);
+      
+      // Salvar backup local
+      localStorage.setItem('admin_database_content', content);
+      alert("Conteúdo salvo no Google Drive com sucesso!");
+    } else {
+      throw new Error("Falha na API do Drive Editor");
+    }
+  } catch (error) {
+    console.error("Erro ao salvar no Drive:", error);
+    
+    // Fallback: salvar apenas localmente
+    localStorage.setItem('admin_database_content', content);
+    alert("Conteúdo salvo localmente. Drive: " + error.message);
+  }
+};
+
 // Carregar conteúdo do banco de dados
 window.loadDatabaseContent = async function() {
   const textarea = document.getElementById('database-content');
   textarea.value = "Carregando...";
   
   try {
-    // Simulação de carregamento do Google Drive
-    // Na implementação real, usaria Google Drive API
-    setTimeout(() => {
-      const saved = localStorage.getItem('admin_database_content');
-      textarea.value = saved || '';
-    }, 1000);
+    // Tentar carregar do backup local primeiro
+    const saved = localStorage.getItem('admin_database_content');
+    if (saved) {
+      textarea.value = saved;
+    }
+    
+    // Na implementação real, carregaria do Google Drive
+    /*
+    const response = await fetch('/api/drive-editor', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Admin-Key': window.adminPassword
+      },
+      body: JSON.stringify({
+        operation: 'read',
+        timestamp: new Date().toISOString()
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      textarea.value = result.content || '';
+    }
+    */
+    
   } catch (error) {
     console.error("Erro ao carregar banco de dados:", error);
-    textarea.value = "Erro ao carregar conteúdo";
-  }
-};
-
-// Salvar conteúdo do banco de dados
-window.saveDatabaseContent = async function() {
-  const content = document.getElementById('database-content').value;
-  
-  try {
-    // Simulação de salvamento no Google Drive
-    localStorage.setItem('admin_database_content', content);
-    alert("Conteúdo salvo com sucesso!");
-  } catch (error) {
-    console.error("Erro ao salvar banco de dados:", error);
-    alert("Erro ao salvar conteúdo");
+    textarea.value = saved || "Erro ao carregar conteúdo";
   }
 };
 
 // Limpar conteúdo do banco de dados
-window.clearDatabaseContent = function() {
+window.clearDatabaseContent = async function() {
   if (confirm("Tem certeza que deseja limpar todo o conteúdo do banco de dados?")) {
-    document.getElementById('database-content').value = '';
-    localStorage.removeItem('admin_database_content');
-    alert("Conteúdo limpo!");
+    try {
+      // Enviar limpeza para o Drive
+      const response = await fetch('/api/drive-editor', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Admin-Key': window.adminPassword
+        },
+        body: JSON.stringify({
+          content: '',
+          operation: 'clear',
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        document.getElementById('database-content').value = '';
+        localStorage.removeItem('admin_database_content');
+        alert("Conteúdo limpo do Google Drive!");
+      } else {
+        throw new Error("Falha na limpeza do Drive");
+      }
+    } catch (error) {
+      console.error("Erro ao limpar Drive:", error);
+      
+      // Fallback: limpar apenas localmente
+      document.getElementById('database-content').value = '';
+      localStorage.removeItem('admin_database_content');
+      alert("Conteúdo limpo localmente. Drive: " + error.message);
+    }
   }
 };
 
@@ -277,10 +364,7 @@ window.clearLogs = function() {
 // Inicialização administrativa
 document.addEventListener('DOMContentLoaded', function() {
   // Verificar se já está logado como admin
-  if (sessionStorage.getItem('admin_logged_in') === 'true') {
-    window.isAdmin = true;
-    document.getElementById('admin-access').classList.remove('hidden');
-  }
+  window.verifyAdminAccess();
   
   // Atualizar métricas a cada 30 segundos
   setInterval(() => {
@@ -288,4 +372,11 @@ document.addEventListener('DOMContentLoaded', function() {
       window.updateMetricsDisplay();
     }
   }, 30000);
+});
+
+// Também verificar quando a página carregar
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    window.verifyAdminAccess();
+  }, 1000);
 });
