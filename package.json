@@ -1,9 +1,13 @@
 {
   "name": "completamenteapp",
   "version": "1.0.0",
-  "description": "Clínica Virtual com Terapeutas IA",
+  "description": "Espaço WR Terapia - Aplicativo de Terapia e Bem-Estar",
   "main": "index.html",
-  "type": "module",
-  "scripts": {},
-  "dependencies": {}
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": ["terapia", "bem-estar", "saude-mental"],
+  "author": "WR Terapia",
+  "license": "MIT"
 }
