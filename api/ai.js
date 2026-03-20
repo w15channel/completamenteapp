@@ -7,17 +7,8 @@ function providerConfig(hint) {
   const wantsGemini = normalizedHint.includes('gemini');
   const wantsGrok = normalizedHint.includes('grok') || normalizedHint.includes('xai');
 
-  if (wantsGemini || (process.env.GEMINI_API_KEY && !process.env.XAI_API_KEY && !process.env.GROQ_API_KEY)) {
-    return {
-      name: 'Google Gemini',
-      url: GEMINI_API_URL,
-      apiKey: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-      type: 'gemini'
-    };
-  }
-
-  if ((wantsGrok && process.env.XAI_API_KEY) || (process.env.XAI_API_KEY && !process.env.GROQ_API_KEY)) {
+  // PRIORIDADE 1: Grok (xAI) - Padrão para todas as funcionalidades
+  if (wantsGrok || process.env.XAI_API_KEY) {
     return {
       name: 'xAI Grok',
       url: XAI_OPENAI_COMPAT_URL,
@@ -27,6 +18,7 @@ function providerConfig(hint) {
     };
   }
 
+  // PRIORIDADE 2: Groq (backup)
   if (process.env.GROQ_API_KEY) {
     return {
       name: 'Groq',
@@ -37,6 +29,18 @@ function providerConfig(hint) {
     };
   }
 
+  // PRIORIDADE 3: Gemini (fallback)
+  if (wantsGemini || process.env.GEMINI_API_KEY) {
+    return {
+      name: 'Google Gemini',
+      url: GEMINI_API_URL,
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+      type: 'gemini'
+    };
+  }
+
+  // Fallback final para Gemini
   return {
     name: 'Google Gemini',
     url: GEMINI_API_URL,
