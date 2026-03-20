@@ -1,55 +1,9 @@
 {
   "name": "completamenteapp",
   "version": "1.0.0",
-  "description": "Aplicativo de bem-estar mental e saúde completa",
+  "description": "Clínica Virtual com Terapeutas IA",
   "main": "index.html",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "firebase": "^10.7.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "@typescript-eslint/parser": "^6.15.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.10"
-  },
-  "keywords": [
-    "saúde",
-    "bem-estar",
-    "terapia",
-    "meditação",
-    "saúde mental",
-    "fitness",
-    "nutrição"
-  ],
-  "author": "Completamente Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/w15channel/completamenteapp.git"
-  },
-  "bugs": {
-    "url": "https://github.com/w15channel/completamenteapp/issues"
-  },
-  "homepage": "https://completamente.app",
-  "engines": {
-    "node": "20.x",
-    "npm": "10.x"
-  }
+  "scripts": {},
+  "dependencies": {}
 }
