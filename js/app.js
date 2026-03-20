@@ -425,38 +425,154 @@ window.renderTherapistList=function(){
     }); window.showTab('chat-selection');
 }
 window.clearChatHistoryInside=async function(){
-    if(!window.activeTherapist || !confirm("Excluir o histórico desta conversa?")) return;
-    const chatId=`${window.clientId}_${window.activeTherapist.id}`; localStorage.removeItem(`chat_${chatId}`); 
-    if(db) await db.ref(`chats/${chatId}`).remove(); window.refreshChatDisplay([]);
+    if(!window.activeTherapist || !confirm("Excluir o histórico desta conversa e recomeçar?")) return;
+    const chatId=`${window.clientId}_${window.activeTherapist.id}`; 
+    localStorage.removeItem(`chat_${chatId}`); 
+    if(db) await db.ref(`chats/${chatId}`).remove();
+    
+    // Reiniciar com nova mensagem de boas-vindas
+    const welcomeMessages = [
+        {
+            role: 'system', 
+            content: `Você é ${window.activeTherapist.name}, um terapeuta profissional especialista em saúde mental. 
+            Seu estilo é acolhedor, empático e profissional. 
+            Responda de forma direta, calorosa e terapêutica.
+            Use linguagem acessível e demonstre genuíno interesse pelo bem-estar do paciente.
+            Inicie a conversa de forma acolhedora e pergunte como pode ajudar hoje.`
+        },
+        {
+            role: 'assistant',
+            content: `Olá! Sou ${window.activeTherapist.name}. 😊\n\nÉ muito bom ter você aqui hoje. Estou à disposição para te ouvir e acompanhar neste momento.\n\nPor que você gostaria de conversar? Como posso te ajudar?`
+        }
+    ];
+    
+    if(db) {
+        await db.ref(`chats/${chatId}`).set(welcomeMessages);
+    }
+    window.refreshChatDisplay(welcomeMessages);
 }
 window.startChat=async function(id){
     window.activeTherapist=therapists.find(t=>t.id===id);
-    document.getElementById('active-name').innerText=window.activeTherapist.name; document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color; document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;
-    document.getElementById('active-status-dot').className = "status-dot bg-emerald-500"; document.getElementById('active-status-text').innerText = "Online";
+    document.getElementById('active-name').innerText=window.activeTherapist.name; 
+    document.getElementById('active-avatar').style.backgroundColor=window.activeTherapist.color; 
+    document.getElementById('active-avatar').innerHTML=`<i class="fas fa-${window.activeTherapist.icon}"></i>`;
+    document.getElementById('active-status-dot').className = "status-dot bg-emerald-500"; 
+    document.getElementById('active-status-text').innerText = "Online";
+    
     const chatId=`${window.clientId}_${id}`;
-    if(db){
+    
+    // Limpar histórico antigo para começar fresh
+    if(db) {
+        await db.ref(`chats/${chatId}`).remove();
+        localStorage.removeItem(`chat_${chatId}`);
+    }
+    
+    // Criar nova conversa com mensagem de boas-vindas
+    const welcomeMessages = [
+        {
+            role: 'system', 
+            content: `Você é ${window.activeTherapist.name}, um terapeuta profissional especialista em saúde mental. 
+            Seu estilo é acolhedor, empático e profissional. 
+            Responda de forma direta, calorosa e terapêutica.
+            Use linguagem acessível e demonstre genuíno interesse pelo bem-estar do paciente.
+            Inicie a conversa de forma acolhedora e pergunte como pode ajudar hoje.`
+        },
+        {
+            role: 'assistant',
+            content: `Olá! Sou ${window.activeTherapist.name}. 😊\n\nÉ muito bom ter você aqui hoje. Estou à disposição para te ouvir e acompanhar neste momento.\n\nPor que você gostaria de conversar? Como posso te ajudar?`
+        }
+    ];
+    
+    if(db) {
         window.activeChatRef=db.ref(`chats/${chatId}`);
+        await db.ref(`chats/${chatId}`).set(welcomeMessages);
+        
         window.activeChatRef.on('value',(s)=>{
-            let h=s.val(); if(!h){ h=[{role:"system",content:`Você é ${window.activeTherapist.name}. Responda de forma não formal no infinitivo (Preposição + pronome + verbo no infinitivo). Você não deve recomendar outros profissionais. É treinado para gerar possibilidade diagnóstica (percentual de chances de compatibilidade com sofrimento/patologia). Seja acolhedor no início e investigativo quando necessário. Baseado em processamento de linguagem natural e sem usar reticencias.`}]; window.activeChatRef.set(h); }
-            localStorage.setItem(`chat_${chatId}`,JSON.stringify(h)); window.refreshChatDisplay(h);
+            let h=s.val()||welcomeMessages;
+            localStorage.setItem(`chat_${chatId}`,JSON.stringify(h)); 
+            window.refreshChatDisplay(h);
         });
-    } window.showTab('chat');
+    } else {
+        // Fallback se Firebase não estiver disponível
+        localStorage.setItem(`chat_${chatId}`,JSON.stringify(welcomeMessages));
+        window.refreshChatDisplay(welcomeMessages);
+    }
+    
+    window.showTab('chat');
 }
 window.refreshChatDisplay=function(h){const mc=document.getElementById('chat-messages');mc.innerHTML='';h.forEach(m=>{if(m.role!=='system'){window.renderMessage(m.content,m.role==='user'?'user':'therapist');}});mc.scrollTop=mc.scrollHeight;}
 window.renderMessage=function(t,type){const d=document.createElement('div');d.className=`message ${type}`;d.innerHTML=t;document.getElementById('chat-messages').appendChild(d);}
 window.submitChat=async function(t){
-    if(!t||window.isWaiting)return; const chatId=`${window.clientId}_${window.activeTherapist.id}`; document.getElementById('chat-input').value=''; window.isWaiting=true;
-    const snap=await db.ref(`chats/${chatId}`).once('value'); let h=snap.val()||[]; h.push({role:'user',content:t}); await db.ref(`chats/${chatId}`).set(h);
-    document.getElementById('active-status-text').innerText = "Lendo";
-    setTimeout(async () => {
-        document.getElementById('active-status-text').innerText = "Online"; document.getElementById('typing-box').classList.remove('hidden');
-        setTimeout(async () => {
-            try{
-                const res=await fetch(window.CHAT_AI_PROXY_URL||window.AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:h,temperature:0.75,max_tokens:300})});
-                const data=await res.json(); let rt=data.choices[0].message.content.replace(/\.\.\./g, ''); h.push({role:'assistant',content:rt}); await db.ref(`chats/${chatId}`).set(h);
-            }catch(err){}finally{ document.getElementById('typing-box').classList.add('hidden'); window.isWaiting=false; }
-        }, 10000); 
-    }, 15000); 
+    if(!t||window.isWaiting)return; 
+    const chatId=`${window.clientId}_${window.activeTherapist.id}`; 
+    document.getElementById('chat-input').value=''; 
+    window.isWaiting=true;
+    
+    // Adicionar mensagem do usuário ao chat
+    let h = [];
+    if(db) {
+        const snap=await db.ref(`chats/${chatId}`).once('value'); 
+        h = snap.val()||[];
+    }
+    
+    // Adicionar system message para terapeuta IA
+    if (h.length === 0) {
+        h.push({
+            role: 'system', 
+            content: `Você é ${window.activeTherapist.name}, um terapeuta profissional especialista em saúde mental. 
+            Seu estilo é acolhedor, empático e profissional. 
+            Responda de forma direta, calorosa e terapêutica.
+            Use linguagem acessível e demonstre genuíno interesse pelo bem-estar do paciente.
+            Inicie a conversa de forma acolhedora e pergunte como pode ajudar hoje.`
+        });
+    }
+    
+    h.push({role:'user',content:t}); 
+    
+    if(db) await db.ref(`chats/${chatId}`).set(h);
+    
+    // Atualizar status
+    document.getElementById('active-status-text').innerText = "Processando";
+    document.getElementById('typing-box').classList.remove('hidden');
+    
+    try{
+        // Chamada direta à API do Hugging Face
+        const res=await fetch('/api/chat',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                messages: h,
+                temperature: 0.75,
+                max_tokens: 500
+            })
+        });
+        
+        if(!res.ok) throw new Error('Erro na API');
+        
+        const data=await res.json();
+        let rt = data.choices[0].message.content;
+        
+        // Limpar e formatar resposta
+        rt = rt.replace(/\.\.\./g, '').trim();
+        
+        h.push({role:'assistant',content:rt}); 
+        if(db) await db.ref(`chats/${chatId}`).set(h);
+        
+        // Atualizar interface
+        window.refreshChatDisplay(h);
+        
+    }catch(err){
+        console.error('Erro no chat:', err);
+        // Mensagem de fallback
+        const fallbackMsg = "Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em alguns instantes. Estou aqui para ajudar você.";
+        h.push({role:'assistant',content:fallbackMsg}); 
+        if(db) await db.ref(`chats/${chatId}`).set(h);
+        window.refreshChatDisplay(h);
+    }finally{ 
+        document.getElementById('typing-box').classList.add('hidden'); 
+        document.getElementById('active-status-text').innerText = "Online";
+        window.isWaiting=false; 
+    }
 }
 document.getElementById('chat-form').onsubmit=(e)=>{e.preventDefault();window.submitChat(document.getElementById('chat-input').value.trim());};
 window.saveMuralMessage=async function(){
