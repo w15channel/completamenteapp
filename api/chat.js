@@ -5,10 +5,10 @@ export default async function handler(req, res) {
   }
 
   // 2. Chave Segura: Puxa a chave do Hugging Face armazenada nas variáveis da Vercel
-  const apiKey = process.env.HUGGFACE_KEY;
+  const apiKey = process.env.HUGGFACE_API_KEY;
 
   if (!apiKey) {
-    console.error("Chave HUGGFACE_KEY não encontrada nas configurações da Vercel.");
+    console.error("Chave HUGGFACE_API_KEY não encontrada nas configurações da Vercel.");
     return res.status(500).json({ error: 'Chave de API Hugging Face não configurada no servidor.' });
   }
 

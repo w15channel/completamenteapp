@@ -38,7 +38,7 @@ No painel da Vercel:
 
 ```bash
 # OBRIGATÓRIO - Principal provedor de IA
-HUGGFACE_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+HUGGFACE_API_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # OPCIONAL - Modelo específico
 HF_MODEL=NousResearch/Hermes-3-Llama-3.1-8B:fastest
@@ -78,7 +78,7 @@ curl -X POST https://seu-app.vercel.app/api/chat \
 ### Logs de Erro
 Se ocorrerem erros, verifique os logs na Vercel:
 
-- **"Chave HUGGFACE_KEY não encontrada"** → Configure a variável de ambiente
+- **"Chave HUGGFACE_API_KEY não encontrada"** → Configure a variável de ambiente
 - **"Erro da API Hugging Face"** → Verifique se a chave é válida
 - **"Falha na resposta"** → Verifique limites de rate limiting
 
@@ -145,7 +145,7 @@ profissionalismo para: [mensagem do usuário]."
 #### ❌ "Chave não configurada"
 ```bash
 # Verifique se a variável foi configurada corretamente
-echo $HUGGFACE_KEY
+echo $HUGGFACE_API_KEY
 ```
 
 #### ❌ "Resposta vazia"
@@ -208,7 +208,7 @@ async function query(data) {
     "https://router.huggingface.co/v1/chat/completions",
     {
       headers: {
-        Authorization: `Bearer ${process.env.HUGGFACE_KEY}`,
+        Authorization: `Bearer ${process.env.HUGGFACE_API_KEY}`,
         "Content-Type": "application/json",
       },
       method: "POST",

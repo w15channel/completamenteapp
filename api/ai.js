@@ -10,11 +10,11 @@ function providerConfig(hint) {
   const wantsHuggingFace = normalizedHint.includes('huggingface') || normalizedHint.includes('hf');
 
   // PRIORIDADE 1: Hugging Face - Padrão para todas as funcionalidades de IA
-  if (wantsHuggingFace || process.env.HUGGFACE_KEY) {
+  if (wantsHuggingFace || process.env.HUGGFACE_API_KEY) {
     return {
       name: 'Hugging Face',
       url: HUGGINGFACE_API_URL,
-      apiKey: process.env.HUGGFACE_KEY,
+      apiKey: process.env.HUGGFACE_API_KEY,
       model: process.env.HF_MODEL || 'NousResearch/Hermes-3-Llama-3.1-8B:fastest',
       type: 'openai-compatible'
     };
