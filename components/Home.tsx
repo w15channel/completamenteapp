@@ -31,6 +31,13 @@ export function renderHome() {
             <span class="text-[11px] font-black uppercase tracking-widest text-purple-200">Central de Relaxamento & Foco</span>
           </button>
         </div>
+        
+        <!-- Botão de Acesso Administrativo (escondido, visível apenas com permissão) -->
+        <div id="admin-access" class="hidden mt-4">
+          <button onclick="window.showTab('admin')" class="w-full p-3 bg-amber-900/50 border border-amber-500/50 text-amber-300 rounded-xl font-bold text-xs hover:bg-amber-800/60 transition-colors">
+            <i class="fas fa-shield-alt mr-2"></i>Acesso Administrativo
+          </button>
+        </div>
       </div>
       <div class="mt-auto pt-4 pb-4 text-center flex flex-col items-center justify-center gap-2 relative">
         <p class="text-[9px] text-slate-600 uppercase font-black tracking-[0.2em]">Desenvolvido por WR-TECNOLOGIA</p>
@@ -38,7 +45,7 @@ export function renderHome() {
           <button onclick="window.logoutUser()" class="text-xs text-red-500 font-bold hover:text-red-400">
             <i class="fas fa-sign-out-alt"></i> Sair
           </button>
-          <i class="fas fa-lock text-[10px] text-white/10 absolute -right-6 top-1 cursor-pointer hover:text-white/30" title="Acesso ADM"></i>
+          <i class="fas fa-lock text-[10px] text-white/10 absolute -right-6 top-1 cursor-pointer hover:text-white/30" title="Acesso ADM" onclick="window.checkAdminAccess()"></i>
         </div>
       </div>
     </section>

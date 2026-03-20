@@ -10,6 +10,7 @@ import { renderFinancas } from './Financas.js';
 import { renderRelaxation } from './Relaxation.js';
 import { renderChatSelection } from './ChatSelection.js';
 import { renderChat } from './Chat.js';
+import { renderAdmin } from './Admin.js';
 
 // Exportação de todos os componentes
 export {
@@ -23,7 +24,8 @@ export {
   renderFinancas,
   renderRelaxation,
   renderChatSelection,
-  renderChat
+  renderChat,
+  renderAdmin
 };
 
 // Função para renderizar todos os componentes
@@ -40,5 +42,6 @@ export function renderAllComponents() {
     ${renderRelaxation()}
     ${renderChatSelection()}
     ${renderChat()}
+    ${renderAdmin()}
   `;
 }
