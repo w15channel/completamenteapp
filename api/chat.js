@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.HF_MODEL || 'NousResearch/Hermes-3-Llama-3.1-8B:fastest',
+        model: process.env.HF_MODEL || 'meta-llama/Llama-3.1-8B-Instruct',
         messages: req.body.messages,
         temperature: req.body.temperature || 0.7,
         max_tokens: req.body.max_tokens || 500

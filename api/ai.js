@@ -15,7 +15,7 @@ function providerConfig(hint) {
       name: 'Hugging Face',
       url: HUGGINGFACE_API_URL,
       apiKey: process.env.HUGGFACE_API_KEY,
-      model: process.env.HF_MODEL || 'NousResearch/Hermes-3-Llama-3.1-8B:fastest',
+      model: process.env.HF_MODEL || 'meta-llama/Llama-3.1-8B-Instruct',
       type: 'openai-compatible'
     };
   }

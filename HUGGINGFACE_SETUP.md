@@ -41,7 +41,7 @@ No painel da Vercel:
 HUGGFACE_API_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # OPCIONAL - Modelo específico
-HF_MODEL=NousResearch/Hermes-3-Llama-3.1-8B:fastest
+HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
 
 # BACKUP - Providers alternativos (opcional)
 XAI_API_KEY=xai_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -85,21 +85,18 @@ Se ocorrerem erros, verifique os logs na Vercel:
 ## 📊 Modelos Disponíveis
 
 ### Hugging Face
-- `NousResearch/Hermes-3-Llama-3.1-8B:fastest` - Mais rápido (padrão)
+- `meta-llama/Llama-3.1-8B-Instruct` - Mais compatível (padrão)
 - `meta-llama/Llama-3.1-70B-Instruct` - Mais potente
 - `mistralai/Mixtral-8x7B-Instruct-v0.1` - Balanceado
 - `microsoft/DialoGPT-medium` - Especializado em chat
 
 ### Configuração por Modelo
 ```bash
-# Para usar modelo mais potente
-HF_MODEL=meta-llama/Llama-3.1-70B-Instruct
+# Para máxima compatibilidade
+HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
 
 # Para uso especializado em chat
 HF_MODEL=microsoft/DialoGPT-medium
-
-# Para máxima velocidade
-HF_MODEL=NousResearch/Hermes-3-Llama-3.1-8B:fastest
 ```
 
 ## 🎛️ Personalização
@@ -227,7 +224,7 @@ query({
       content: "Qual a capital do Brasil?",
     },
   ],
-  model: "NousResearch/Hermes-3-Llama-3.1-8B:fastest",
+  model: "meta-llama/Llama-3.1-8B-Instruct",
 }).then((response) => {
   console.log(JSON.stringify(response));
 });
