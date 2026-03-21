@@ -15,13 +15,6 @@
         .message.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:.2rem;margin-left:auto;box-shadow:0 4px 15px rgba(14,165,233,0.3)}
         .message.therapist{align-self:flex-start;background:#334155;color:#e2e8f0;border-bottom-left-radius:.2rem;margin-right:auto}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
-        .rel-nav-btn, .admin-nav-btn{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border:1px solid transparent;transition:all 0.2s;cursor:pointer}
-        .rel-nav-btn{background:#334155;color:#94a3b8;border-color:#475569}
-        .rel-nav-btn:hover{background:#475569;color:#cbd5e1}
-        .rel-nav-btn.active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
-        .admin-nav-btn{background:#451a03;color:#f59e0b;border-color:#92400e}
-        .admin-nav-btn:hover{background:#78350f;color:#fbbf24}
-        .admin-nav-btn.active{background:#d97706;color:#fff;border-color:#d97706}
         .book-page{background-color:#fdf6e3;color:#2c1810;font-family:'Merriweather',serif;padding:2rem;border-radius:8px;box-shadow:inset 20px 0 50px rgba(0,0,0,0.05),5px 5px 25px rgba(0,0,0,0.4);border-left:8px solid #d4c5b0;line-height:1.8;position:relative;overflow:hidden;min-height:400px}
         .slide-frame{position:relative;width:100%;aspect-ratio:1;border-radius:0;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);border:1px solid rgba(196,166,97,0.2)}
         .slide-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0.65}
