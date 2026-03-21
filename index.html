@@ -124,7 +124,9 @@
 
                 <button onclick="window.triggerChatSelection()" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-comment-medical text-3xl text-sky-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Conversar</span></button>
 
-                <button onclick="window.showTab('saude')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heartbeat text-3xl text-rose-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Saúde & Corpo</span></button>
+                <button onclick="window.showTab('saude')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heartbeat text-3xl text-rose-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Saúde</span></button>
+
+                <button onclick="window.showTab('corpo')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-dumbbell text-3xl text-amber-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Corpo</span></button>
 
                 <button onclick="window.showTab('routines')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-check-circle text-3xl text-emerald-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Minha Rotina</span></button>
 
@@ -170,7 +172,7 @@
 
                 <button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
 
-                <div><h2 class="font-bold text-rose-400">Saúde & Corpo</h2></div>
+                <div><h2 class="font-bold text-rose-400">Saúde</h2></div>
 
             </div>
 
@@ -181,12 +183,6 @@
                 <button onclick="window.showSaudeSubTab('sd-agua')" id="btn-sd-agua" class="rel-nav-btn">Água</button>
 
                 <button onclick="window.showSaudeSubTab('sd-nutricao')" id="btn-sd-nutricao" class="rel-nav-btn">Nutr.</button>
-
-                <button onclick="window.showSaudeSubTab('sd-exercicio')" id="btn-sd-exercicio" class="rel-nav-btn">Exerc.</button>
-
-                <button onclick="window.showSaudeSubTab('sd-cardio')" id="btn-sd-cardio" class="rel-nav-btn">Cardio</button>
-
-                <button onclick="window.showSaudeSubTab('sd-ansiedade')" id="btn-sd-ansiedade" class="rel-nav-btn">Ansied.</button>
 
             </div>
 
@@ -358,7 +354,35 @@
 
             
 
-            <div id="sd-exercicio" class="hidden flex-1 overflow-y-auto pb-20">
+        </div>
+
+    </section>
+
+
+
+    <section id="corpo" class="tab-content">
+
+        <div class="glass-card p-4 h-full flex flex-col">
+
+            <div class="flex items-center gap-3 mb-4 flex-none">
+
+                <button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+
+                <div><h2 class="font-bold text-amber-400">Corpo</h2></div>
+
+            </div>
+
+            <div class="flex gap-2 mb-4 flex-none flex-wrap">
+
+                <button onclick="window.showCorpoSubTab('sd-exercicio')" id="btn-sd-exercicio" class="rel-nav-btn active">Exerc.</button>
+
+                <button onclick="window.showCorpoSubTab('sd-cardio')" id="btn-sd-cardio" class="rel-nav-btn">Cardio</button>
+
+                <button onclick="window.showCorpoSubTab('sd-ansiedade')" id="btn-sd-ansiedade" class="rel-nav-btn">Ansied.</button>
+
+            </div>
+
+            <div id="sd-exercicio" class="flex-1 overflow-y-auto pb-20">
 
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
 

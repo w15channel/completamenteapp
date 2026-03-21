@@ -56,6 +56,8 @@ window.showTab=function(id){
 
     if(id==='saude')window.initSaudeTab();
 
+    if(id==='corpo')window.initCorpoTab();
+
     if(id==='relaxation')window.showRelaxSubTab('rx-video');
 
     if(id==='admin'&&window.isAdmin&&window.loadAdminData)window.loadAdminData();
@@ -222,7 +224,15 @@ window.showSaudeSubTab=function(id){
 
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
 
-    ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
+    ['sd-perfil','sd-agua','sd-nutricao'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
+
+}
+
+window.showCorpoSubTab=function(id){
+
+    document.querySelectorAll('#corpo .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
+
+    ['sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
 
 }
 
@@ -1376,9 +1386,15 @@ window.initSaudeTab=async function(){
 
   window.renderBiotypeOptions();
   window.renderCaloricNeed();
+  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
+};
+
+window.initCorpoTab=async function(){
+
+  window.showCorpoSubTab('sd-exercicio'); window.ensureHealthStructures(); await window.resetWaterIfNewDay();
+
   window.renderExerciseProgress();
   window.renderAnxietyDailyState();
-  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
   window.initHomeFitTool?.();
 };
 
