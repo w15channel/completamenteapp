@@ -1,382 +1,266 @@
-// admin.js - Funcionalidades Administrativas
-
-// Variáveis globais administrativas
 window.isAdmin = false;
-window.adminPassword = "wr@2026";
-window.trainingHistory = [];
-window.metricsConfig = {
-  temperature: 0.7,
-  maxTokens: 500,
-  personality: "empathetic"
+window.adminPassword = 'wr@2026';
+window.adminData = {
+  users: {},
+  chats: {},
+  overrides: {},
+  selectedUserId: null,
+  selectedChatId: null
 };
 
-// Verificar acesso administrativo
-window.checkAdminAccess = function() {
-  const password = prompt("Digite a senha administrativa:");
-  if (password === window.adminPassword) {
-    window.isAdmin = true;
-    sessionStorage.setItem('admin_logged_in', 'true');
-    document.getElementById('admin-access').classList.remove('hidden');
-    window.showTab('admin');
-    window.loadAdminData();
-    alert("Acesso administrativo concedido!");
-  } else if (password !== null) {
-    alert("Senha incorreta! Acesso negado.");
+window.escapeAdminHtml = function (value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+window.checkAdminAccess = function () {
+  const password = prompt('Digite a senha administrativa:');
+  if (password === null) return;
+  if (password !== window.adminPassword) {
+    alert('Senha incorreta! Acesso negado.');
+    return;
   }
+
+  window.isAdmin = true;
+  sessionStorage.setItem('admin_logged_in', 'true');
+  const box = document.getElementById('admin-access');
+  if (box) box.classList.remove('hidden');
+  window.showTab('admin');
+  window.loadAdminData();
+  alert('Acesso administrativo concedido!');
 };
 
-// Verificar automaticamente se já está logado como admin
-window.verifyAdminAccess = function() {
+window.verifyAdminAccess = function () {
   const isLoggedIn = sessionStorage.getItem('admin_logged_in') === 'true';
-  if (isLoggedIn) {
-    window.isAdmin = true;
-    document.getElementById('admin-access').classList.remove('hidden');
-  }
-  
-  // Mostrar botão admin se estiver logado
-  const adminButton = document.getElementById('admin-access');
-  if (adminButton) {
-    adminButton.style.display = isLoggedIn ? 'block' : 'none';
-  }
+  window.isAdmin = isLoggedIn;
+  const box = document.getElementById('admin-access');
+  if (box) box.classList.toggle('hidden', !isLoggedIn);
 };
 
-// Mostrar sub-abas administrativas
-window.showAdminSubTab = function(tabId) {
-  document.querySelectorAll('[id^="admin-"]').forEach(el => {
-    if (el.id.startsWith('admin-') && el.id.includes('-') && !el.id.includes('btn')) {
-      el.classList.add('hidden');
-    }
+window.showAdminSubTab = function (tabId) {
+  ['admin-overview', 'admin-users', 'admin-chats'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
   });
-  document.getElementById(tabId).classList.remove('hidden');
-  
-  document.querySelectorAll('[id^="btn-admin-"]').forEach(btn => {
-    btn.classList.remove('active');
+  ['btn-admin-overview', 'btn-admin-users', 'btn-admin-chats'].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.remove('active');
   });
-  document.getElementById('btn-' + tabId).classList.add('active');
+  document.getElementById(tabId)?.classList.remove('hidden');
+  document.getElementById(`btn-${tabId}`)?.classList.add('active');
 };
 
-// Carregar dados administrativos
-window.loadAdminData = function() {
-  window.loadTrainingHistory();
-  window.loadMetricsConfig();
-  window.refreshLogs();
-  window.updateMetricsDisplay();
+window.loadAdminData = async function () {
+  if (!window.isAdmin || !window.db && typeof db === 'undefined') return;
+  const database = typeof db !== 'undefined' ? db : window.db;
+  if (!database) return;
+
+  const [usersSnap, chatsSnap, overridesSnap] = await Promise.all([
+    database.ref('users').once('value'),
+    database.ref('chats').once('value'),
+    database.ref('adminOverrides').once('value')
+  ]);
+
+  window.adminData.users = usersSnap.val() || {};
+  window.adminData.chats = chatsSnap.val() || {};
+  window.adminData.overrides = overridesSnap.val() || {};
+
+  document.getElementById('admin-total-users').innerText = Object.keys(window.adminData.users).length;
+  document.getElementById('admin-total-chats').innerText = Object.keys(window.adminData.chats).length;
+
+  window.renderAssumedChats();
+  window.renderAdminUsers();
+  window.renderAdminChats();
+
+  if (window.adminData.selectedUserId) window.previewAdminUser(window.adminData.selectedUserId);
+  if (window.adminData.selectedChatId) window.openAdminChat(window.adminData.selectedChatId, false);
 };
 
-// Enviar treinamento para IA
-window.sendTrainingToAI = async function() {
-  const trainingType = document.getElementById('training-type').value;
-  const instruction = document.getElementById('training-input').value;
-  const exampleUser = document.getElementById('example-user').value;
-  const exampleIA = document.getElementById('example-ia').value;
-  
-  if (!instruction.trim()) {
-    alert("Por favor, preencha a instrução de treinamento!");
+window.renderAssumedChats = function () {
+  const container = document.getElementById('admin-assumed-list');
+  if (!container) return;
+  const entries = Object.entries(window.adminData.overrides || {}).filter(([, value]) => value?.assumed);
+  if (!entries.length) {
+    container.innerHTML = '<div class="text-[10px] text-slate-500">Nenhuma conversa assumida no momento.</div>';
     return;
   }
-  
-  const trainingData = {
-    type: trainingType,
-    instruction: instruction,
-    exampleUser: exampleUser,
-    exampleIA: exampleIA,
-    timestamp: new Date().toISOString(),
-    status: "pending"
-  };
-  
-  try {
-    // Enviar para API de treinamento
-    const response = await fetch('/api/train', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-Admin-Key': window.adminPassword
-      },
-      body: JSON.stringify(trainingData)
-    });
-    
-    if (response.ok) {
-      trainingData.status = "success";
-      window.trainingHistory.unshift(trainingData);
-      window.saveTrainingHistory();
-      window.loadTrainingHistory();
-      
-      // Limpar formulário
-      document.getElementById('training-input').value = '';
-      document.getElementById('example-user').value = '';
-      document.getElementById('example-ia').value = '';
-      
-      alert("Treinamento enviado com sucesso!");
-    } else {
-      throw new Error("Falha no envio");
-    }
-  } catch (error) {
-    console.error("Erro no treinamento:", error);
-    trainingData.status = "error";
-    window.trainingHistory.unshift(trainingData);
-    window.saveTrainingHistory();
-    window.loadTrainingHistory();
-    alert("Erro ao enviar treinamento. Tente novamente.");
-  }
-};
 
-// Carregar histórico de treinamento
-window.loadTrainingHistory = function() {
-  const container = document.getElementById('training-history');
-  const saved = localStorage.getItem('admin_training_history');
-  
-  if (saved) {
-    window.trainingHistory = JSON.parse(saved);
-  }
-  
-  if (window.trainingHistory.length === 0) {
-    container.innerHTML = '<div class="text-[9px] text-slate-500 text-center py-4">Nenhum treinamento realizado ainda</div>';
-    return;
-  }
-  
-  container.innerHTML = window.trainingHistory.map(item => `
-    <div class="bg-slate-900 p-3 rounded-lg border border-slate-600">
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-[9px] font-bold ${item.status === 'success' ? 'text-emerald-400' : item.status === 'error' ? 'text-rose-400' : 'text-amber-400'}">
-          ${item.type.toUpperCase()}
-        </span>
-        <span class="text-[8px] text-slate-500">
-          ${new Date(item.timestamp).toLocaleString('pt-BR')}
-        </span>
-      </div>
-      <div class="text-[10px] text-slate-300 mb-2">${item.instruction}</div>
-      ${item.exampleUser ? `
-        <div class="text-[9px] text-slate-400">
-          <div class="text-amber-400">Usuário:</div> ${item.exampleUser}
-          <div class="text-emerald-400">IA:</div> ${item.exampleIA}
-        </div>
-      ` : ''}
-    </div>
+  container.innerHTML = entries.map(([chatId, value]) => `
+    <button onclick="window.openAdminChat('${window.escapeAdminHtml(chatId)}')" class="w-full text-left p-3 rounded-xl bg-amber-950/40 border border-amber-700/40 hover:bg-amber-900/50 transition">
+      <div class="font-bold text-amber-300">${window.escapeAdminHtml(chatId)}</div>
+      <div class="text-[10px] text-slate-400">Assumido em ${new Date(value.updatedAt || Date.now()).toLocaleString('pt-BR')}</div>
+    </button>
   `).join('');
 };
 
-// Salvar histórico de treinamento
-window.saveTrainingHistory = function() {
-  localStorage.setItem('admin_training_history', JSON.stringify(window.trainingHistory));
-};
+window.renderAdminUsers = function () {
+  const container = document.getElementById('admin-users-list');
+  const search = (document.getElementById('admin-user-search')?.value || '').trim().toLowerCase();
+  if (!container) return;
 
-// Salvar conteúdo do banco de dados
-window.saveDatabaseContent = async function() {
-  const content = document.getElementById('database-content').value;
-  
-  try {
-    // Enviar para serviço Drive Editor
-    const response = await fetch('/api/drive-editor', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-Admin-Key': window.adminPassword
-      },
-      body: JSON.stringify({
-        content: content,
-        operation: 'update',
-        timestamp: new Date().toISOString()
-      })
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      console.log('Drive Editor Result:', result);
-      
-      // Salvar backup local
-      localStorage.setItem('admin_database_content', content);
-      alert("Conteúdo salvo no Google Drive com sucesso!");
-    } else {
-      throw new Error("Falha na API do Drive Editor");
-    }
-  } catch (error) {
-    console.error("Erro ao salvar no Drive:", error);
-    
-    // Fallback: salvar apenas localmente
-    localStorage.setItem('admin_database_content', content);
-    alert("Conteúdo salvo localmente. Drive: " + error.message);
-  }
-};
+  const users = Object.entries(window.adminData.users || {}).filter(([id, user]) => {
+    const haystack = `${id} ${user?.fullName || ''}`.toLowerCase();
+    return !search || haystack.includes(search);
+  });
 
-// Carregar conteúdo do banco de dados
-window.loadDatabaseContent = async function() {
-  const textarea = document.getElementById('database-content');
-  textarea.value = "Carregando...";
-  
-  try {
-    // Tentar carregar do backup local primeiro
-    const saved = localStorage.getItem('admin_database_content');
-    if (saved) {
-      textarea.value = saved;
-    }
-    
-    // Na implementação real, carregaria do Google Drive
-    /*
-    const response = await fetch('/api/drive-editor', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-Admin-Key': window.adminPassword
-      },
-      body: JSON.stringify({
-        operation: 'read',
-        timestamp: new Date().toISOString()
-      })
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      textarea.value = result.content || '';
-    }
-    */
-    
-  } catch (error) {
-    console.error("Erro ao carregar banco de dados:", error);
-    textarea.value = saved || "Erro ao carregar conteúdo";
-  }
-};
-
-// Limpar conteúdo do banco de dados
-window.clearDatabaseContent = async function() {
-  if (confirm("Tem certeza que deseja limpar todo o conteúdo do banco de dados?")) {
-    try {
-      // Enviar limpeza para o Drive
-      const response = await fetch('/api/drive-editor', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Admin-Key': window.adminPassword
-        },
-        body: JSON.stringify({
-          content: '',
-          operation: 'clear',
-          timestamp: new Date().toISOString()
-        })
-      });
-      
-      if (response.ok) {
-        document.getElementById('database-content').value = '';
-        localStorage.removeItem('admin_database_content');
-        alert("Conteúdo limpo do Google Drive!");
-      } else {
-        throw new Error("Falha na limpeza do Drive");
-      }
-    } catch (error) {
-      console.error("Erro ao limpar Drive:", error);
-      
-      // Fallback: limpar apenas localmente
-      document.getElementById('database-content').value = '';
-      localStorage.removeItem('admin_database_content');
-      alert("Conteúdo limpo localmente. Drive: " + error.message);
-    }
-  }
-};
-
-// Executar operação em lote
-window.executeBatchOperation = async function() {
-  const operation = document.getElementById('batch-operation').value;
-  const data = document.getElementById('batch-data').value;
-  
-  if (!data.trim()) {
-    alert("Por favor, preencha os dados para a operação!");
+  if (!users.length) {
+    container.innerHTML = '<div class="text-center text-slate-500 text-xs py-6">Nenhum usuário encontrado.</div>';
     return;
   }
-  
-  try {
-    const parsedData = JSON.parse(data);
-    
-    // Simulação de operação
-    console.log("Executando operação:", operation, parsedData);
-    
-    // Na implementação real, enviaria para o backend
-    alert(`Operação "${operation}" executada com ${parsedData.length || 1} registros!`);
-    
-    document.getElementById('batch-data').value = '';
-  } catch (error) {
-    alert("Erro: Formato JSON inválido!");
-  }
+
+  container.innerHTML = users.map(([id, user]) => `
+    <button onclick="window.previewAdminUser('${window.escapeAdminHtml(id)}')" class="w-full text-left p-3 rounded-xl border ${window.adminData.selectedUserId===id?'border-amber-500 bg-amber-950/30':'border-slate-700 bg-slate-900'} hover:border-amber-600 transition">
+      <div class="font-bold text-white text-sm">${window.escapeAdminHtml(user?.fullName || id)}</div>
+      <div class="text-[10px] text-slate-400 uppercase">${window.escapeAdminHtml(id)}</div>
+    </button>
+  `).join('');
 };
 
-// Carregar configurações de métricas
-window.loadMetricsConfig = function() {
-  const saved = localStorage.getItem('admin_metrics_config');
-  if (saved) {
-    window.metricsConfig = JSON.parse(saved);
+window.previewAdminUser = function (userId) {
+  window.adminData.selectedUserId = userId;
+  const data = window.adminData.users?.[userId] || {};
+  const preview = document.getElementById('admin-user-preview');
+  if (preview) {
+    preview.textContent = JSON.stringify(data, null, 2);
   }
-  
-  // Atualizar UI
-  document.getElementById('config-temperature').value = window.metricsConfig.temperature;
-  document.getElementById('temp-value').textContent = window.metricsConfig.temperature;
-  document.getElementById('config-max-tokens').value = window.metricsConfig.maxTokens;
-  document.getElementById('config-personality').value = window.metricsConfig.personality;
-  
-  // Event listener para temperatura
-  document.getElementById('config-temperature').addEventListener('input', function(e) {
-    document.getElementById('temp-value').textContent = e.target.value;
-    window.metricsConfig.temperature = parseFloat(e.target.value);
+  window.renderAdminUsers();
+  window.renderAdminChats();
+};
+
+window.renderAdminChats = function () {
+  const container = document.getElementById('admin-chats-list');
+  const search = (document.getElementById('admin-chat-search')?.value || '').trim().toLowerCase();
+  if (!container) return;
+
+  const chats = Object.entries(window.adminData.chats || {}).filter(([chatId]) => {
+    const byUserFilter = !window.adminData.selectedUserId || chatId.startsWith(`${window.adminData.selectedUserId}_`);
+    const byTextFilter = !search || chatId.toLowerCase().includes(search);
+    return byUserFilter && byTextFilter;
   });
-};
 
-// Salvar configurações de métricas
-window.saveMetricsConfig = function() {
-  window.metricsConfig.temperature = parseFloat(document.getElementById('config-temperature').value);
-  window.metricsConfig.maxTokens = parseInt(document.getElementById('config-max-tokens').value);
-  window.metricsConfig.personality = document.getElementById('config-personality').value;
-  
-  localStorage.setItem('admin_metrics_config', JSON.stringify(window.metricsConfig));
-  alert("Configurações salvas com sucesso!");
-};
-
-// Atualizar display de métricas
-window.updateMetricsDisplay = function() {
-  // Simulação de métricas
-  document.getElementById('metric-response-time').textContent = (Math.random() * 2 + 0.5).toFixed(1) + 's';
-  document.getElementById('metric-success-rate').textContent = Math.floor(Math.random() * 20 + 80) + '%';
-  document.getElementById('metric-conversations').textContent = Math.floor(Math.random() * 50 + 10);
-  document.getElementById('metric-satisfaction').textContent = (Math.random() * 2 + 3).toFixed(1);
-};
-
-// Atualizar logs
-window.refreshLogs = function() {
-  const container = document.getElementById('logs-container');
-  const logs = [
-    `[${new Date().toLocaleTimeString()}] INFO: Sistema inicializado`,
-    `[${new Date().toLocaleTimeString()}] INFO: IA Hugging Face conectada`,
-    `[${new Date().toLocaleTimeString()}] INFO: Usuário autenticado`,
-    `[${new Date().toLocaleTimeString()}] DEBUG: Chat iniciado`,
-    `[${new Date().toLocaleTimeString()}] INFO: Treinamento recebido`,
-    `[${new Date().toLocaleTimeString()}] WARNING: Alta taxa de requisições`,
-    `[${new Date().toLocaleTimeString()}] ERROR: Falha na API - resolvido`
-  ];
-  
-  container.innerHTML = logs.map(log => 
-    `<div class="text-[10px] ${log.includes('ERROR') ? 'text-rose-400' : log.includes('WARNING') ? 'text-amber-400' : log.includes('INFO') ? 'text-emerald-400' : 'text-slate-400'}">${log}</div>`
-  ).join('');
-};
-
-// Limpar logs
-window.clearLogs = function() {
-  if (confirm("Tem certeza que deseja limpar todos os logs?")) {
-    document.getElementById('logs-container').innerHTML = '<div class="text-slate-500">Logs limpos</div>';
+  if (!chats.length) {
+    container.innerHTML = '<div class="text-center text-slate-500 text-xs py-6">Nenhuma conversa encontrada.</div>';
+    return;
   }
+
+  container.innerHTML = chats.map(([chatId, history]) => {
+    const last = Array.isArray(history) ? history.filter((m) => m.role !== 'system').slice(-1)[0] : null;
+    const assumed = !!window.adminData.overrides?.[chatId]?.assumed;
+    return `
+      <button onclick="window.openAdminChat('${window.escapeAdminHtml(chatId)}')" class="w-full text-left p-3 rounded-xl border ${window.adminData.selectedChatId===chatId?'border-amber-500 bg-amber-950/30':'border-slate-700 bg-slate-900'} hover:border-amber-600 transition">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-bold text-white text-sm">${window.escapeAdminHtml(chatId)}</div>
+          <div class="text-[10px] font-black uppercase ${assumed?'text-amber-300':'text-slate-500'}">${assumed?'Assumido':'Automático'}</div>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1 line-clamp-2">${window.escapeAdminHtml(last?.content || 'Sem mensagens ainda.')}</div>
+      </button>
+    `;
+  }).join('');
 };
 
-// Inicialização administrativa
-document.addEventListener('DOMContentLoaded', function() {
-  // Verificar se já está logado como admin
-  window.verifyAdminAccess();
-  
-  // Atualizar métricas a cada 30 segundos
-  setInterval(() => {
-    if (window.isAdmin) {
-      window.updateMetricsDisplay();
-    }
-  }, 30000);
-});
+window.openAdminChat = async function (chatId, switchTab = true) {
+  if (switchTab) window.showAdminSubTab('admin-chats');
+  window.adminData.selectedChatId = chatId;
+  document.getElementById('admin-selected-chat-title').innerText = chatId;
+  window.updateAdminTakeoverButton();
+  await window.refreshAdminSelectedChat();
+  window.renderAdminChats();
+};
 
-// Também verificar quando a página carregar
-window.addEventListener('load', function() {
-  setTimeout(() => {
-    window.verifyAdminAccess();
-  }, 1000);
+window.refreshAdminSelectedChat = async function () {
+  const chatId = window.adminData.selectedChatId;
+  if (!chatId) return;
+  const database = typeof db !== 'undefined' ? db : window.db;
+  if (!database) return;
+  const snap = await database.ref(`chats/${chatId}`).once('value');
+  const history = snap.val() || [];
+  window.adminData.chats[chatId] = history;
+  const container = document.getElementById('admin-chat-messages');
+  if (!container) return;
+  container.innerHTML = history.map((message) => {
+    const role = message?.role || 'system';
+    const label = role === 'user' ? 'Usuário' : role === 'assistant' ? 'Assistente' : 'Sistema';
+    const source = message?.meta?.source === 'admin' ? ' • enviado pelo Admin' : '';
+    return `<div class="admin-chat-line ${role}"><div class="text-[10px] uppercase font-black mb-1 ${role==='user'?'text-sky-300':role==='assistant'?'text-emerald-300':'text-amber-200'}">${label}${source}</div><div>${window.escapeAdminHtml(message?.content || '')}</div></div>`;
+  }).join('') || '<div class="text-center text-slate-500 text-xs py-8">Sem histórico nesta conversa.</div>';
+  container.scrollTop = container.scrollHeight;
+};
+
+window.updateAdminTakeoverButton = function () {
+  const chatId = window.adminData.selectedChatId;
+  const assumed = chatId ? !!window.adminData.overrides?.[chatId]?.assumed : false;
+  const button = document.getElementById('admin-assume-toggle');
+  const status = document.getElementById('admin-selected-chat-status');
+  if (button) {
+    button.innerText = assumed ? 'Liberar automático' : 'Assumir conversa';
+    button.className = `w-full p-3 rounded-xl text-[10px] font-black uppercase ${assumed ? 'bg-rose-700 text-white' : 'bg-amber-700 text-white'}`;
+  }
+  if (status) status.innerText = assumed ? 'Modo assumido pelo Admin' : 'Modo automático';
+};
+
+window.toggleAdminTakeover = async function () {
+  const chatId = window.adminData.selectedChatId;
+  if (!chatId) return alert('Selecione uma conversa primeiro.');
+  const database = typeof db !== 'undefined' ? db : window.db;
+  if (!database) return alert('Banco de dados indisponível.');
+
+  const assumed = !!window.adminData.overrides?.[chatId]?.assumed;
+  const nextValue = {
+    assumed: !assumed,
+    updatedAt: Date.now(),
+    updatedBy: 'admin'
+  };
+
+  await database.ref(`adminOverrides/${chatId}`).set(nextValue);
+  window.adminData.overrides[chatId] = nextValue;
+  window.updateAdminTakeoverButton();
+  window.renderAssumedChats();
+  window.renderAdminChats();
+};
+
+window.sendAdminReplyAsBot = async function () {
+  const chatId = window.adminData.selectedChatId;
+  const input = document.getElementById('admin-reply-input');
+  const content = input?.value.trim();
+  if (!chatId) return alert('Selecione uma conversa primeiro.');
+  if (!content) return alert('Digite a resposta que será enviada como assistente.');
+
+  const database = typeof db !== 'undefined' ? db : window.db;
+  if (!database) return alert('Banco de dados indisponível.');
+
+  const snap = await database.ref(`chats/${chatId}`).once('value');
+  const history = snap.val() || [];
+  history.push({
+    role: 'assistant',
+    content,
+    meta: {
+      source: 'admin',
+      sentAt: Date.now()
+    }
+  });
+  await database.ref(`chats/${chatId}`).set(history);
+  window.adminData.chats[chatId] = history;
+  input.value = '';
+  await database.ref(`adminOverrides/${chatId}`).set({
+    assumed: true,
+    updatedAt: Date.now(),
+    updatedBy: 'admin'
+  });
+  window.adminData.overrides[chatId] = {
+    assumed: true,
+    updatedAt: Date.now(),
+    updatedBy: 'admin'
+  };
+  window.updateAdminTakeoverButton();
+  window.renderAssumedChats();
+  window.renderAdminChats();
+  window.refreshAdminSelectedChat();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.verifyAdminAccess();
 });
