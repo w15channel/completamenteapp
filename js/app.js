@@ -40,6 +40,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 window.getTodayStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 
+window.normalizeUserKey=function(raw){return (raw||'').trim().toUpperCase().replace(/\s+/g,'_');};
+window.isValidAccessId=function(raw){const v=(raw||'').trim();return v.split(/\s+/).length>=2||/^[A-Za-z0-9_-]{3,32}$/.test(v);};
 
 
 window.showTab=function(id){
@@ -84,7 +86,7 @@ window.login = async function(isAuto) {
 
         const g = gEl ? gEl.value : '';
 
-        const n = nEl ? nEl.value.trim().toUpperCase() : '';
+        const rawIdentifier = nEl ? nEl.value.trim() : '';
 
         const p = pEl ? pEl.value.trim() : '';
 
@@ -92,17 +94,13 @@ window.login = async function(isAuto) {
 
 
 
-        if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) {
-
-            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
-
+        if (!isAuto && (!g || !window.isValidAccessId(rawIdentifier) || !/^[0-9]{8}$/.test(p))) {
+            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome ou Código de acesso, e a Senha (exatamente 8 números).");
         }
 
-
-
-        window.clientId = n.replace(/\s+/g, '_');
-
-        window.clientName = n.split(' ')[0];
+        const normalizedId = window.normalizeUserKey(rawIdentifier);
+        window.clientId = normalizedId;
+        window.clientName = rawIdentifier.split(/\s+/)[0] || 'Usuário';
 
 
 
@@ -118,7 +116,7 @@ window.login = async function(isAuto) {
 
             if (!snap.exists()) {
 
-                const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
+                const newUser = { pass: p, fullName: rawIdentifier.toUpperCase(), gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
 
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
 
@@ -156,7 +154,7 @@ window.login = async function(isAuto) {
 
             window.userDataCache.pass = p;
 
-            window.userDataCache.fullName = n;
+            window.userDataCache.fullName = rawIdentifier.toUpperCase();
 
             window.userDataCache.gender = g || 'M';
 
@@ -172,7 +170,7 @@ window.login = async function(isAuto) {
 
             localStorage.setItem('wr_remember', 'true');
 
-            localStorage.setItem('wr_user', n);
+            localStorage.setItem('wr_user', rawIdentifier);
 
             localStorage.setItem('wr_pass', p);
 
