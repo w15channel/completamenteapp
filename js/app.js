@@ -2,11 +2,7 @@
 
 const firebaseConfig={apiKey:"AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",authDomain:"completamenteapp.firebaseapp.com",databaseURL:"https://completamenteapp-default-rtdb.firebaseio.com",projectId:"completamenteapp",storageBucket:"completamenteapp.firebasestorage.app",messagingSenderId:"343038230333",appId:"1:343038230333:web:2338b20d2e706743b40f54"};
 
-<<<<<<< HEAD
 let db=null; try{ firebase.initializeApp(firebaseConfig); db=firebase.database(); window.db=db; }catch(e){ console.warn("DB offline",e); }
-=======
-let db=null; try{ firebase.initializeApp(firebaseConfig); db=firebase.database(); }catch(e){ console.warn("DB offline",e); }
->>>>>>> origin/main
 
 
 
@@ -44,11 +40,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 window.getTodayStr=function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 
-<<<<<<< HEAD
-=======
 window.normalizeUserKey=function(raw){return (raw||'').trim().toUpperCase().replace(/\s+/g,'_');};
 window.isValidAccessId=function(raw){const v=(raw||'').trim();return v.split(/\s+/).length>=2||/^[A-Za-z0-9_-]{3,32}$/.test(v);};
->>>>>>> origin/main
 
 
 window.showTab=function(id){
@@ -65,17 +58,12 @@ window.showTab=function(id){
 
     if(id==='saude')window.initSaudeTab();
 
-<<<<<<< HEAD
     if(id==='corpo')window.initCorpoTab();
 
     if(id==='relaxation')window.showRelaxSubTab('rx-video');
 
     if(id==='admin'&&window.isAdmin&&window.loadAdminData)window.loadAdminData();
 
-=======
-    if(id==='relaxation')window.showRelaxSubTab('rx-video');
-
->>>>>>> origin/main
     const mainArea=document.getElementById('main-area');
 
     if(id==='onboarding') mainArea.style.maxWidth='480px'; else mainArea.style.maxWidth='480px';
@@ -102,11 +90,7 @@ window.login = async function(isAuto) {
 
         const g = gEl ? gEl.value : '';
 
-<<<<<<< HEAD
-        const n = nEl ? nEl.value.trim().toUpperCase() : '';
-=======
         const rawIdentifier = nEl ? nEl.value.trim() : '';
->>>>>>> origin/main
 
         const p = pEl ? pEl.value.trim() : '';
 
@@ -114,19 +98,6 @@ window.login = async function(isAuto) {
 
 
 
-<<<<<<< HEAD
-        if (!isAuto && (!g || n.split(' ').length < 2 || !/^[0-9]{8}$/.test(p))) {
-
-            return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome e a Senha (exatamente 8 números).");
-
-        }
-
-
-
-        window.clientId = n.replace(/\s+/g, '_');
-
-        window.clientName = n.split(' ')[0];
-=======
         if (!isAuto && (!g || !window.isValidAccessId(rawIdentifier) || !/^[0-9]{8}$/.test(p))) {
             return alert("Atenção: Selecione seu gênero, digite Nome e Sobrenome ou Código de acesso, e a Senha (exatamente 8 números).");
         }
@@ -134,7 +105,6 @@ window.login = async function(isAuto) {
         const normalizedId = window.normalizeUserKey(rawIdentifier);
         window.clientId = normalizedId;
         window.clientName = rawIdentifier.split(/\s+/)[0] || 'Usuário';
->>>>>>> origin/main
 
 
 
@@ -150,11 +120,7 @@ window.login = async function(isAuto) {
 
             if (!snap.exists()) {
 
-<<<<<<< HEAD
-                const newUser = { pass: p, fullName: n, gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
-=======
                 const newUser = { pass: p, fullName: rawIdentifier.toUpperCase(), gender: g || 'M', created: Date.now(), relacional: {}, saude: {}, financas: { transactions: [] } };
->>>>>>> origin/main
 
                 if (partnerCode) newUser.relacional.linkedPartner = partnerCode;
 
@@ -192,11 +158,7 @@ window.login = async function(isAuto) {
 
             window.userDataCache.pass = p;
 
-<<<<<<< HEAD
-            window.userDataCache.fullName = n;
-=======
             window.userDataCache.fullName = rawIdentifier.toUpperCase();
->>>>>>> origin/main
 
             window.userDataCache.gender = g || 'M';
 
@@ -212,11 +174,7 @@ window.login = async function(isAuto) {
 
             localStorage.setItem('wr_remember', 'true');
 
-<<<<<<< HEAD
-            localStorage.setItem('wr_user', n);
-=======
             localStorage.setItem('wr_user', rawIdentifier);
->>>>>>> origin/main
 
             localStorage.setItem('wr_pass', p);
 
@@ -264,7 +222,6 @@ window.showSaudeSubTab=function(id){
 
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
 
-<<<<<<< HEAD
     ['sd-perfil','sd-agua','sd-nutricao'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
 
 }
@@ -277,12 +234,6 @@ window.showCorpoSubTab=function(id){
 
 }
 
-=======
-    ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
-
-}
-
->>>>>>> origin/main
 window.initSaudeTab=function(){
 
     window.showSaudeSubTab('sd-perfil');
@@ -1207,7 +1158,6 @@ window.submitChat=async function(t){
 
     const snap=await db.ref(`chats/${chatId}`).once('value'); let h=snap.val()||[]; h.push({role:'user',content:t}); await db.ref(`chats/${chatId}`).set(h);
 
-<<<<<<< HEAD
     let adminAssumed=false;
     try{
         if(db){
@@ -1223,8 +1173,6 @@ window.submitChat=async function(t){
         return;
     }
 
-=======
->>>>>>> origin/main
     
 
     document.getElementById('active-status-text').innerText = "Lendo";
@@ -1436,7 +1384,6 @@ window.initSaudeTab=async function(){
 
   window.renderBiotypeOptions();
   window.renderCaloricNeed();
-<<<<<<< HEAD
   window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
 };
 
@@ -1449,14 +1396,6 @@ window.initCorpoTab=async function(){
   window.initHomeFitTool?.();
 };
 
-=======
-  window.renderExerciseProgress();
-  window.renderAnxietyDailyState();
-  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
-  window.initHomeFitTool?.();
-};
-
->>>>>>> origin/main
 window.renderHydration=function(){
 
   window.ensureHealthStructures(); const w=window.userDataCache.saude.water;
