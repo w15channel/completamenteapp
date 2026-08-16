@@ -124,7 +124,9 @@
 
                 <button onclick="window.triggerChatSelection()" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-comment-medical text-3xl text-sky-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Conversar</span></button>
 
-                <button onclick="window.showTab('saude')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heartbeat text-3xl text-rose-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Saúde & Corpo</span></button>
+                <button onclick="window.showTab('saude')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-heartbeat text-3xl text-rose-500 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Saúde</span></button>
+
+                <button onclick="window.showTab('corpo')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-dumbbell text-3xl text-amber-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Corpo</span></button>
 
                 <button onclick="window.showTab('routines')" class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 flex flex-col items-center gap-3 hover:bg-slate-700 transition-all hover:scale-[1.02] shadow-sm"><i class="fas fa-check-circle text-3xl text-emerald-400 drop-shadow-md"></i><span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Minha Rotina</span></button>
 
@@ -146,8 +148,14 @@
 
                 <button onclick="window.logoutUser()" class="text-xs text-red-500 font-bold hover:text-red-400"><i class="fas fa-sign-out-alt"></i> Sair</button>
 
-                <i class="fas fa-lock text-[10px] text-white/10 absolute -right-6 top-1 cursor-pointer hover:text-white/30" title="Acesso ADM"></i>
+                <i class="fas fa-lock text-[10px] text-white/10 absolute -right-6 top-1 cursor-pointer hover:text-white/30" title="Acesso ADM" onclick="window.checkAdminAccess && window.checkAdminAccess()"></i>
 
+            </div>
+
+            <div id="admin-access" class="hidden w-full max-w-xs mt-2">
+                <button onclick="window.showTab('admin')" class="w-full p-3 bg-amber-900/50 border border-amber-500/50 text-amber-300 rounded-xl font-bold text-xs hover:bg-amber-800/60 transition-colors">
+                    <i class="fas fa-user-shield mr-2"></i>Abrir espaço administrativo
+                </button>
             </div>
 
         </div>
@@ -164,7 +172,7 @@
 
                 <button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
 
-                <div><h2 class="font-bold text-rose-400">Saúde & Corpo</h2></div>
+                <div><h2 class="font-bold text-rose-400">Saúde</h2></div>
 
             </div>
 
@@ -175,12 +183,6 @@
                 <button onclick="window.showSaudeSubTab('sd-agua')" id="btn-sd-agua" class="rel-nav-btn">Água</button>
 
                 <button onclick="window.showSaudeSubTab('sd-nutricao')" id="btn-sd-nutricao" class="rel-nav-btn">Nutr.</button>
-
-                <button onclick="window.showSaudeSubTab('sd-exercicio')" id="btn-sd-exercicio" class="rel-nav-btn">Exerc.</button>
-
-                <button onclick="window.showSaudeSubTab('sd-cardio')" id="btn-sd-cardio" class="rel-nav-btn">Cardio</button>
-
-                <button onclick="window.showSaudeSubTab('sd-ansiedade')" id="btn-sd-ansiedade" class="rel-nav-btn">Ansied.</button>
 
             </div>
 
@@ -352,7 +354,35 @@
 
             
 
-            <div id="sd-exercicio" class="hidden flex-1 overflow-y-auto pb-20">
+        </div>
+
+    </section>
+
+
+
+    <section id="corpo" class="tab-content">
+
+        <div class="glass-card p-4 h-full flex flex-col">
+
+            <div class="flex items-center gap-3 mb-4 flex-none">
+
+                <button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+
+                <div><h2 class="font-bold text-amber-400">Corpo</h2></div>
+
+            </div>
+
+            <div class="flex gap-2 mb-4 flex-none flex-wrap">
+
+                <button onclick="window.showCorpoSubTab('sd-exercicio')" id="btn-sd-exercicio" class="rel-nav-btn active">Exerc.</button>
+
+                <button onclick="window.showCorpoSubTab('sd-cardio')" id="btn-sd-cardio" class="rel-nav-btn">Cardio</button>
+
+                <button onclick="window.showCorpoSubTab('sd-ansiedade')" id="btn-sd-ansiedade" class="rel-nav-btn">Ansied.</button>
+
+            </div>
+
+            <div id="sd-exercicio" class="flex-1 overflow-y-auto pb-20">
 
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
 
@@ -1097,11 +1127,82 @@
 
     </section>
 
+    <section id="admin" class="tab-content">
+        <div class="glass-card p-4 h-full flex flex-col">
+            <div class="flex items-center gap-3 mb-4 flex-none">
+                <button onclick="window.showTab('home')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fas fa-arrow-left text-slate-300"></i></button>
+                <div>
+                    <h2 class="font-bold text-amber-400">Espaço Administrativo</h2>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Usuários, histórico e assunção de bots</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mb-4 flex-none flex-wrap">
+                <button onclick="window.showAdminSubTab('admin-overview')" id="btn-admin-overview" class="admin-nav-btn active">Visão geral</button>
+                <button onclick="window.showAdminSubTab('admin-users')" id="btn-admin-users" class="admin-nav-btn">Usuários</button>
+                <button onclick="window.showAdminSubTab('admin-chats')" id="btn-admin-chats" class="admin-nav-btn">Conversas</button>
+            </div>
+
+            <div id="admin-overview" class="flex-1 overflow-y-auto pb-20">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                        <p class="text-[10px] text-slate-400 uppercase font-black">Usuários</p>
+                        <p id="admin-total-users" class="text-2xl font-black text-white mt-1">0</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                        <p class="text-[10px] text-slate-400 uppercase font-black">Conversas</p>
+                        <p id="admin-total-chats" class="text-2xl font-black text-white mt-1">0</p>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 mb-4">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <p class="text-[10px] text-slate-400 uppercase font-black">Chats assumidos</p>
+                        <button onclick="window.loadAdminData()" class="px-3 py-2 bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase">Atualizar</button>
+                    </div>
+                    <div id="admin-assumed-list" class="space-y-2 text-[11px] text-slate-300"></div>
+                </div>
+                <div id="admin-user-preview" class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-[11px] text-slate-300 whitespace-pre-wrap">Selecione um usuário para visualizar os dados salvos.</div>
+            </div>
+
+            <div id="admin-users" class="hidden flex-1 overflow-y-auto pb-20">
+                <input type="text" id="admin-user-search" placeholder="Buscar por nome ou ID do usuário" class="w-full mb-3 p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white" oninput="window.renderAdminUsers()">
+                <div id="admin-users-list" class="space-y-2"></div>
+            </div>
+
+            <div id="admin-chats" class="hidden flex-1 overflow-y-auto pb-20">
+                <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 mb-3">
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="admin-chat-search" placeholder="Buscar chat por usuário ou terapeuta" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white" oninput="window.renderAdminChats()">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="admin-assume-toggle" onclick="window.toggleAdminTakeover()" class="w-full p-3 bg-amber-700 text-white rounded-xl text-[10px] font-black uppercase">Assumir conversa</button>
+                            <button onclick="window.refreshAdminSelectedChat()" class="w-full p-3 bg-slate-700 text-slate-200 rounded-xl text-[10px] font-black uppercase">Recarregar histórico</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="admin-chats-list" class="space-y-2 mb-3"></div>
+                <div class="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <div>
+                            <p id="admin-selected-chat-title" class="text-sm font-black text-white">Nenhuma conversa selecionada</p>
+                            <p id="admin-selected-chat-status" class="text-[10px] text-slate-400 uppercase">Modo automático</p>
+                        </div>
+                    </div>
+                    <div id="admin-chat-messages" class="chat-messages-area rounded-xl border border-slate-700 mb-3 min-h-[240px] max-h-[340px]"></div>
+                    <div class="flex gap-2">
+                        <textarea id="admin-reply-input" placeholder="Responder como assistente/bot desta conversa..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white resize-none h-24"></textarea>
+                        <button onclick="window.sendAdminReplyAsBot()" class="w-28 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase px-3">Responder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
 </main>
 
 
 
     <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
 
 </body>
 

@@ -2,7 +2,7 @@
 
 const firebaseConfig={apiKey:"AIzaSyCCi1hrmt4OQFlgrQThbB6-n54v5WwlJoY",authDomain:"completamenteapp.firebaseapp.com",databaseURL:"https://completamenteapp-default-rtdb.firebaseio.com",projectId:"completamenteapp",storageBucket:"completamenteapp.firebasestorage.app",messagingSenderId:"343038230333",appId:"1:343038230333:web:2338b20d2e706743b40f54"};
 
-let db=null; try{ firebase.initializeApp(firebaseConfig); db=firebase.database(); }catch(e){ console.warn("DB offline",e); }
+let db=null; try{ firebase.initializeApp(firebaseConfig); db=firebase.database(); window.db=db; }catch(e){ console.warn("DB offline",e); }
 
 
 
@@ -58,7 +58,11 @@ window.showTab=function(id){
 
     if(id==='saude')window.initSaudeTab();
 
+    if(id==='corpo')window.initCorpoTab();
+
     if(id==='relaxation')window.showRelaxSubTab('rx-video');
+
+    if(id==='admin'&&window.isAdmin&&window.loadAdminData)window.loadAdminData();
 
     const mainArea=document.getElementById('main-area');
 
@@ -218,7 +222,15 @@ window.showSaudeSubTab=function(id){
 
     document.querySelectorAll('#saude .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
 
-    ['sd-perfil','sd-agua','sd-nutricao','sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
+    ['sd-perfil','sd-agua','sd-nutricao'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
+
+}
+
+window.showCorpoSubTab=function(id){
+
+    document.querySelectorAll('#corpo .rel-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');
+
+    ['sd-exercicio','sd-cardio','sd-ansiedade'].forEach(t=>document.getElementById(t).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');
 
 }
 
@@ -1146,6 +1158,21 @@ window.submitChat=async function(t){
 
     const snap=await db.ref(`chats/${chatId}`).once('value'); let h=snap.val()||[]; h.push({role:'user',content:t}); await db.ref(`chats/${chatId}`).set(h);
 
+    let adminAssumed=false;
+    try{
+        if(db){
+            const adminSnap=await db.ref(`adminOverrides/${chatId}`).once('value');
+            adminAssumed=!!adminSnap.val()?.assumed;
+        }
+    }catch(e){ adminAssumed=false; }
+
+    if(adminAssumed){
+        document.getElementById('active-status-dot').className = "status-dot bg-amber-500";
+        document.getElementById('active-status-text').innerText = "Atendimento humano";
+        window.isWaiting=false;
+        return;
+    }
+
     
 
     document.getElementById('active-status-text').innerText = "Lendo";
@@ -1357,9 +1384,15 @@ window.initSaudeTab=async function(){
 
   window.renderBiotypeOptions();
   window.renderCaloricNeed();
+  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
+};
+
+window.initCorpoTab=async function(){
+
+  window.showCorpoSubTab('sd-exercicio'); window.ensureHealthStructures(); await window.resetWaterIfNewDay();
+
   window.renderExerciseProgress();
   window.renderAnxietyDailyState();
-  window.renderHydration(); window.renderHealthGoalsLog(); window.renderNutriHistory();
   window.initHomeFitTool?.();
 };
 
