@@ -103,3 +103,8 @@ iframe:-moz-full-screen {
     height: 100%;
     border: 0;
 }
+
+/* Ensure aspect-video wrapper is positioned for absolute iframe children */
+.aspect-video {
+    position: relative;
+}
